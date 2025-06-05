@@ -13,7 +13,7 @@ export function Footer() {
           <p>
             Learn languages through music | © {new Date().getFullYear()} | Made for the Bolt Hackathon |{' '}
             <a 
-              href="https://github.com/yourusername/audiora" 
+              href="https://github.com/TimothyPhan2/Audiora" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors"
