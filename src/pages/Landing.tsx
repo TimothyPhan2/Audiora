@@ -39,7 +39,7 @@ export function Landing() {
               className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400"
             >
               Master Languages Through
-              <span className="block bg-gradient-to-r from-purple-400 to-violet-600  text-transparent mt-2">
+              <span className="block bg-gradient-to-r from-purple-400 to-violet-600 bg-clip-text text-transparent mt-2">
                 AI-Powered Music Learning
               </span>
             </h1>
