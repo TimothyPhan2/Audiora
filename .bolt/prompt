@@ -1,0 +1,50 @@
+Please follow these rules strictly to ensure the project meets production-quality standards and remains consistent across all pages and components.
+
+---
+
+🎨 Design Principles
+- All designs should be **beautiful, polished, and worthy of a real production launch**.
+- Avoid generic or cookie-cutter layouts—**every page should feel thoughtfully designed**.
+- Use **modern UI/UX practices** with visual appeal, clarity, and user-friendly layouts.
+- Add **subtle motion/animations** (e.g., hover states, page transitions, input focus) to improve UX without overwhelming the design.
+
+---
+
+🧱 Tech Stack + UI Libraries
+- Use **JSX syntax** with **Tailwind CSS** utility classes.
+- Use **shadcn/ui** components for UI (buttons, modals, inputs, etc.).
+- Use **Lucide React** for all icons and logo symbols.
+- Do **not** install or use additional UI libraries or icon packs unless explicitly instructed.
+- Ensure all designs are **responsive** and look great on both desktop and mobile.
+
+---
+
+🧠 Functional Logic
+- Use **React hooks** like `useState`, `useEffect`, `useRef`, etc. as needed.
+- When data is required, use **mock data** for now. Integration with **Supabase** will be added later—do **not** implement it yet.
+- Code should be **clean**, **modular**, and **readable**. Avoid redundancy (DRY principle).
+- Use clear, descriptive names for all files, components, props, and variables.
+
+---
+
+🧭 Routing & Layout Rules
+- **Do not show the Header or Footer** on the **Sign In / Sign Up** pages.
+- **Include Header and Footer** on public pages like **Landing, How It Works, Pricing, Dashboard**, etc.
+- Use layout wrappers when appropriate to avoid code duplication across pages.
+
+---
+
+🌈 Visual Guidelines
+- Use our custom color palette (charcoal, persian_green, saffron, sandy_brown, burnt_sienna) for backgrounds, text, accents, gradients, etc.
+
+- Apply gradient or ombre backgrounds where appropriate (e.g., hero section, auth screens).
+
+- Use shadows, rounded corners, and hover/active effects to enhance UI depth.
+
+---
+
+🔁Component Reusability
+
+- Reuse styled components when possible—avoid inline styling duplication.
+
+- Prefer small, atomic components (e.g., PrimaryButton, InputWithIcon) that can be reused across screens.
