@@ -29,11 +29,11 @@ export function Landing() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)]"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.12),transparent_50%)]"></div>
           {/* Floating Music Notes */}
-          <div className="floating-note text-teal-400 text-4xl" style={{ left: '10%' }}>♪</div>
-          <div className="floating-note text-mint-400 text-3xl" style={{ left: '25%' }}>♫</div>
-          <div className="floating-note text-persian_green-400 text-5xl" style={{ left: '45%' }}>♩</div>
-          <div className="floating-note text-teal-400 text-4xl" style={{ left: '65%' }}>♬</div>
-          <div className="floating-note text-mint-400 text-3xl" style={{ left: '85%' }}>♪</div>
+          <div className="floating-note text-teal-400 text-4xl" style={{ left: '10%', top: '20%', textShadow: '0 0 10px rgba(2,128,144,0.5)' }}>♪</div>
+          <div className="floating-note text-mint-400 text-3xl" style={{ left: '25%', top: '40%', textShadow: '0 0 10px rgba(2,195,154,0.5)' }}>♫</div>
+          <div className="floating-note text-persian_green-400 text-5xl" style={{ left: '45%', top: '15%', textShadow: '0 0 10px rgba(0,168,150,0.5)' }}>♩</div>
+          <div className="floating-note text-teal-400 text-4xl" style={{ left: '65%', top: '35%', textShadow: '0 0 10px rgba(2,128,144,0.5)' }}>♬</div>
+          <div className="floating-note text-mint-400 text-3xl" style={{ left: '85%', top: '25%', textShadow: '0 0 10px rgba(2,195,154,0.5)' }}>♪</div>
           </div>
         
         
@@ -74,10 +74,10 @@ export function Landing() {
       <section className="py-20 bg-[#0c0a1d]">
         <div className="container-center">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-violet-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-teal-400 to-persian_green-500 bg-clip-text text-transparent">
               How Audiora Works
             </h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-cream-300 max-w-2xl mx-auto">
               Three simple steps to start learning your target language through music
             </p>
           </div>
@@ -100,11 +100,11 @@ export function Landing() {
                   }`}
                 >
                   <div className="card-gradient backdrop-blur-sm p-6 rounded-xl flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
-                      <IconComponent className="w-8 h-8 text-purple-400" />
+                    <div className="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
+                      <IconComponent className="w-8 h-8 text-teal-400" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
-                    <p className="text-gray-400">{step.description}</p>
+                    <h3 className="text-xl font-semibold mb-2 text-cream-100">{step.title}</h3>
+                    <p className="text-cream-300">{step.description}</p>
                   </div>
                 </div>
               );
@@ -117,10 +117,10 @@ export function Landing() {
       <section className="py-20 bg-[#0c0a1d]">
         <div className="container-center">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-violet-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-teal-400 to-persian_green-500 bg-clip-text text-transparent">
               Powerful Features for Effective Learning
             </h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-cream-300 max-w-2xl mx-auto">
               Everything you need to master a new language through music
             </p>
           </div>
@@ -145,12 +145,12 @@ export function Landing() {
                   }`}
                 >
                   <div className="card-gradient backdrop-blur-sm p-6 rounded-xl flex items-start">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                      <IconComponent className="w-6 h-6 text-purple-400" />
+                    <div className="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                      <IconComponent className="w-6 h-6 text-teal-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
-                      <p className="text-gray-400">{feature.description}</p>
+                      <h3 className="text-xl font-semibold mb-2 text-cream-100">{feature.title}</h3>
+                      <p className="text-cream-300">{feature.description}</p>
                     </div>
                   </div>
                 </div>
@@ -167,10 +167,10 @@ export function Landing() {
       >
         <div className="container-center">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-violet-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-teal-400 to-persian_green-500 bg-clip-text text-transparent">
               Discover Songs in Your Target Language
             </h2>
-            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-cream-300 max-w-2xl mx-auto">
               Browse our extensive library of songs across different languages, genres, and difficulty levels.
             </p>
           </div>
@@ -194,10 +194,10 @@ export function Landing() {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold mb-1 text-white">Despacito</h3>
-                <p className="text-gray-400 mb-3">Luis Fonsi</p>
+                <p className="text-cream-300 mb-3">Luis Fonsi</p>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Pop</span>
-                <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+                <span className="text-sm text-cream-400">Pop</span>
+                <Button variant="ghost" size="sm" className="text-teal-400 hover:text-teal-300">
                   Learn Now
                 </Button>
               </div>
@@ -219,10 +219,10 @@ export function Landing() {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold mb-1 text-white">La Vie En Rose</h3>
-                <p className="text-gray-400 mb-3">Edith Piaf</p>
+                <p className="text-cream-300 mb-3">Edith Piaf</p>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Classic</span>
-                <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+                <span className="text-sm text-cream-400">Classic</span>
+                <Button variant="ghost" size="sm" className="text-teal-400 hover:text-teal-300">
                   Learn Now
                 </Button>
               </div>
@@ -244,10 +244,10 @@ export function Landing() {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold mb-1 text-white">Je Veux</h3>
-                <p className="text-gray-400 mb-3">Zaz</p>
+                <p className="text-cream-300 mb-3">Zaz</p>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Jazz</span>
-                <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+                <span className="text-sm text-cream-400">Jazz</span>
+                <Button variant="ghost" size="sm" className="text-teal-400 hover:text-teal-300">
                   Learn Now
                 </Button>
               </div>
@@ -257,7 +257,7 @@ export function Landing() {
           
           <div className="text-center mt-12">
             <Link to="/signup">
-              <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-8">
+              <Button className="bg-gradient-to-r from-teal-600 to-persian_green-600 hover:from-teal-700 hover:to-persian_green-700 text-white px-8">
                 Explore All Songs
               </Button>
             </Link>
@@ -268,18 +268,18 @@ export function Landing() {
       {/* CTA Section */}
       <section className="py-20 hero-gradient text-white relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(101,70,255,0.12),transparent_50%)]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(101,70,255,0.12),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.12),transparent_50%)]"></div>
         </div>
         <div className="container-center text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Start Learning Languages Through Music Today
           </h2>
-          <p className="text-lg text-purple-200 max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-cream-200 max-w-2xl mx-auto mb-8">
             Experience the future of language learning with our AI-powered music platform.
           </p>
           <Link to="/signup">
-            <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-medium px-8 py-6 text-lg">
+            <Button className="bg-gradient-to-r from-teal-600 to-persian_green-600 hover:from-teal-700 hover:to-persian_green-700 text-white font-medium px-8 py-6 text-lg">
               Get Started Free
             </Button>
           </Link>
