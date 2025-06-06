@@ -267,7 +267,7 @@ export function Landing() {
       
       {/* CTA Section */}
       <section className="py-20 hero-gradient text-white relative overflow-hidden">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)]"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.12),transparent_50%)]"></div>
         </div>
