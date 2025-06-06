@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 4%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 4%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 252 56% 57%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 142 71% 45%;
-    --secondary-foreground: 240 10% 4%;
-    --muted: 240 10% 8%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 42 84% 66%;
-    --accent-foreground: 0 0% 9%;
+    --background: 197 94% 28%;
+    --foreground: 60 67% 85%;
+    --card: 197 94% 28%;
+    --card-foreground: 60 67% 85%;
+    --popover: 197 94% 28%;
+    --popover-foreground: 60 67% 85%;
+    --primary: 187 97% 28%;
+    --primary-foreground: 60 67% 85%;
+    --secondary: 174 100% 33%;
+    --secondary-foreground: 197 94% 28%;
+    --muted: 197 94% 15%;
+    --muted-foreground: 197 94% 65%;
+    --accent: 165 98% 38%;
+    --accent-foreground: 197 94% 28%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 12%;
-    --input: 240 10% 12%;
-    --ring: 252 56% 57%;
+    --destructive-foreground: 60 67% 85%;
+    --border: 197 94% 20%;
+    --input: 197 94% 20%;
+    --ring: 187 97% 28%;
     --radius: 0.75rem;
   }
 }
@@ -69,23 +69,23 @@
   }
   
   .auth-gradient {
-    @apply bg-gradient-to-br from-[#1a1633] via-[#2a1f66] to-[#3a2a99];
+    @apply bg-gradient-to-br from-lapis_lazuli-600 via-teal-500 to-persian_green-500;
   }
   
   .hero-gradient {
-    @apply bg-gradient-to-br from-[#0f0d1d] via-[#1a1633] to-[#2a1f66];
+    @apply bg-gradient-to-br from-lapis_lazuli-600 via-teal-500 to-persian_green-500;
   }
 
   .card-gradient {
-    @apply bg-gradient-to-br from-[#1a1633]/80 via-[#2a1f66]/80 to-[#3a2a99]/80 backdrop-blur-sm;
+    @apply bg-gradient-to-br from-lapis_lazuli-100/80 via-teal-100/80 to-persian_green-100/80 backdrop-blur-sm;
   }
 
   .button-gradient-primary {
-    @apply bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#d946ef] hover:from-[#4f46e5] hover:via-[#7c3aed] hover:to-[#c026d3];
+    @apply bg-gradient-to-r from-teal-600 to-persian_green-600 hover:from-teal-700 hover:to-persian_green-700;
   }
 
   .button-gradient-secondary {
-    @apply bg-gradient-to-br from-[#10b981] via-[#059669] to-[#047857] hover:from-[#059669] hover:via-[#047857] hover:to-[#065f46];
+    @apply bg-gradient-to-br from-persian_green-500 to-mint-500 hover:from-persian_green-600 hover:to-mint-600;
   }
 
   .btn-primary {
@@ -116,6 +116,44 @@
   }
   
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#d946ef];
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-persian_green-500 to-mint-500;
+  }
+
+  /* Floating music notes animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100vh) translateX(100px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .floating-note {
+    @apply absolute pointer-events-none;
+    animation: float 15s linear infinite;
+  }
+
+  .floating-note:nth-child(2n) {
+    animation-duration: 20s;
+    animation-delay: -7s;
+  }
+
+  .floating-note:nth-child(3n) {
+    animation-duration: 25s;
+    animation-delay: -3s;
+  }
+
+  .floating-note:nth-child(4n) {
+    animation-duration: 17s;
+    animation-delay: -5s;
   }
 }

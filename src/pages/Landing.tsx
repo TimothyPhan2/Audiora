@@ -26,9 +26,14 @@ export function Landing() {
       {/* Hero Section */}
       <section className="relative py-24 md:py-36 hero-gradient text-white overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(101,70,255,0.12),transparent_50%)]"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(101,70,255,0.12),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.12),transparent_50%)]"></div>
+          {/* Floating Music Notes */}
+          <div className="floating-note text-teal-400 text-4xl" style={{ left: '10%' }}>♪</div>
+          <div className="floating-note text-mint-400 text-3xl" style={{ left: '25%' }}>♫</div>
+          <div className="floating-note text-persian_green-400 text-5xl" style={{ left: '45%' }}>♩</div>
+          <div className="floating-note text-teal-400 text-4xl" style={{ left: '65%' }}>♬</div>
+          <div className="floating-note text-mint-400 text-3xl" style={{ left: '85%' }}>♪</div>
           </div>
         </div>
         
@@ -36,27 +41,27 @@ export function Landing() {
           <div className="flex flex-col items-center text-center">
             <h1 
               ref={titleRef}
-              className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400"
+              className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-white via-cream-200 to-cream-400"
             >
               Master Languages Through
-              <span className="block bg-gradient-to-r from-purple-400 to-violet-600 bg-clip-text text-transparent mt-2">
+              <span className="block bg-gradient-to-r from-mint-400 to-persian_green-600 bg-clip-text text-transparent mt-2">
                 AI-Powered Music Learning
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-200 max-w-2xl mb-8 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <p className="text-lg md:text-xl text-cream-200 max-w-2xl mb-8 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               Experience a revolutionary way to learn languages. Audiora combines the joy of music 
               with AI-powered insights to make language learning natural and effective.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <Link to="/signup">
-                <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-medium px-8 py-6 text-lg">
+                <Button className="bg-gradient-to-r from-teal-600 to-persian_green-600 hover:from-teal-700 hover:to-persian_green-700 text-white font-medium px-8 py-6 text-lg">
                   Get Started Free
                 </Button>
               </Link>
               <Link to="/how-it-works">
-                <Button variant="outline" className="bg-transparent border-purple-400/30 text-purple-200 hover:bg-purple-500/10 px-8 py-6 text-lg">
+                <Button variant="outline" className="bg-transparent border-teal-400/30 text-teal-200 hover:bg-teal-500/10 px-8 py-6 text-lg">
                   How It Works
                 </Button>
               </Link>
