@@ -91,7 +91,7 @@ export function Landing() {
                 'Music': Music,
                 'Brain': Brain,
                 'GraduationCap': GraduationCap
-              }[step.icon];
+              }[step.icon] || Music;
               
               return (
                 <div key={step.id} 
@@ -135,7 +135,7 @@ export function Landing() {
                 'Brain': Brain,
                 'BookMarked': BookMarked,
                 'ListChecks': ListChecks
-              }[feature.icon];
+              }[feature.icon] || Music;
               
               return (
                 <div
