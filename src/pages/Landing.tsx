@@ -35,7 +35,7 @@ export function Landing() {
           <div className="floating-note text-teal-400 text-4xl" style={{ left: '65%' }}>♬</div>
           <div className="floating-note text-mint-400 text-3xl" style={{ left: '85%' }}>♪</div>
           </div>
-        </div>
+        
         
         <div className="container-center relative z-10">
           <div className="flex flex-col items-center text-center">
