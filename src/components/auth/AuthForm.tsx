@@ -104,7 +104,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             <Input
               id="name"
               placeholder="Enter your name"
-              className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+              className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
                 errors.name ? 'border-red-500' : ''
               }`}
               {...register('name')}
@@ -121,7 +121,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
               errors.email ? 'border-red-500' : ''
             }`}
             {...register('email')}
@@ -137,7 +137,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="password"
             type="password"
             placeholder="Enter your password"
-            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
               errors.password ? 'border-red-500' : ''
             }`}
             {...register('password')}
