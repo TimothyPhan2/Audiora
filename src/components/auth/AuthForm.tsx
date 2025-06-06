@@ -161,11 +161,11 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 }`}>
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-teal-400/30">
-                  <SelectItem value="spanish">Spanish</SelectItem>
-                  <SelectItem value="french">French</SelectItem>
-                  <SelectItem value="italian">Italian</SelectItem>
-                  <SelectItem value="german">German</SelectItem>
+                <SelectContent className="bg-white border-teal-400/30 shadow-lg">
+                  <SelectItem value="spanish" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Spanish</SelectItem>
+                  <SelectItem value="french" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">French</SelectItem>
+                  <SelectItem value="italian" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Italian</SelectItem>
+                  <SelectItem value="german" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">German</SelectItem>
                 </SelectContent>
               </Select>
               {errors.language && (
@@ -185,11 +185,11 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 }`}>
                   <SelectValue placeholder="Select your level" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-teal-400/30">
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                  <SelectItem value="fluent">Fluent</SelectItem>
+                <SelectContent className="bg-white border-teal-400/30 shadow-lg">
+                  <SelectItem value="beginner" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Beginner</SelectItem>
+                  <SelectItem value="intermediate" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Intermediate</SelectItem>
+                  <SelectItem value="advanced" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Advanced</SelectItem>
+                  <SelectItem value="fluent" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Fluent</SelectItem>
                 </SelectContent>
               </Select>
               {errors.level && (
