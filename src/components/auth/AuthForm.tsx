@@ -86,13 +86,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
   };
 
   return (
-    <div className="frosted-glass p-8 w-full max-w-md mx-auto">
+    <div className="frosted-glass p-8 w-full max-w-md mx-auto border border-teal-400/20">
       <h2 className="text-2xl font-bold mb-6 text-center">
         {type === 'login' ? 'Welcome Back' : 'Create Your Account'}
       </h2>
       
       {error && (
-        <div className="mb-4 p-3 bg-destructive/20 border border-destructive text-destructive rounded-md text-sm">
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -104,11 +104,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             <Input
               id="name"
               placeholder="Enter your name"
+              className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+                errors.name ? 'border-red-500' : ''
+              }`}
               {...register('name')}
-              className={errors.name ? 'border-destructive' : ''}
             />
             {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
+              <p className="text-sm text-red-400">{errors.name.message}</p>
             )}
           </div>
         )}
@@ -119,11 +121,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="email"
             type="email"
             placeholder="Enter your email"
+            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+              errors.email ? 'border-red-500' : ''
+            }`}
             {...register('email')}
-            className={errors.email ? 'border-destructive' : ''}
           />
           {errors.email && (
-            <p className="text-sm text-destructive">{errors.email.message}</p>
+            <p className="text-sm text-red-400">{errors.email.message}</p>
           )}
         </div>
         
@@ -133,11 +137,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="password"
             type="password"
             placeholder="Enter your password"
+            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-100 placeholder:text-cream-500/50 ${
+              errors.password ? 'border-red-500' : ''
+            }`}
             {...register('password')}
-            className={errors.password ? 'border-destructive' : ''}
           />
           {errors.password && (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-sm text-red-400">{errors.password.message}</p>
           )}
         </div>
         
@@ -148,11 +154,14 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               <Select 
                 onValueChange={(value) => handleSelectChange('language', value)}
                 defaultValue="spanish"
+                className="bg-lapis_lazuli-600/50"
               >
-                <SelectTrigger className={errors.language ? 'border-destructive' : ''}>
+                <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
+                  errors.language ? 'border-red-500' : ''
+                }`}>
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-lapis_lazuli-600 border-teal-400/30">
                   <SelectItem value="spanish">Spanish</SelectItem>
                   <SelectItem value="french">French</SelectItem>
                   <SelectItem value="italian">Italian</SelectItem>
@@ -169,11 +178,14 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               <Select 
                 onValueChange={(value) => handleSelectChange('level', value as LanguageLevel)}
                 defaultValue="beginner"
+                className="bg-lapis_lazuli-600/50"
               >
-                <SelectTrigger className={errors.level ? 'border-destructive' : ''}>
+                <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
+                  errors.level ? 'border-red-500' : ''
+                }`}>
                   <SelectValue placeholder="Select your level" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-lapis_lazuli-600 border-teal-400/30">
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="intermediate">Intermediate</SelectItem>
                   <SelectItem value="advanced">Advanced</SelectItem>
@@ -189,7 +201,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
         
         <Button 
           type="submit" 
-          className="w-full btn-primary mt-6"
+          className="w-full button-gradient-primary mt-6 text-white"
           disabled={isLoading}
         >
           {isLoading ? 'Processing...' : type === 'login' ? 'Login' : 'Create Account'}
