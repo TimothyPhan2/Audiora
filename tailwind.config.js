@@ -15,31 +15,28 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+        base: {
+          dark1: '#0a0a0f',
+          dark2: '#0c0a1d',
+          dark3: '#1a1b3a'
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          teal: {
+            400: '#2dd4bf',
+            500: '#14b8a6'
+          },
+          persian: {
+            500: '#00a896'
+          },
+          mint: {
+            400: '#00d4b0'
+          }
+        },
+        text: {
+          cream100: '#fffcf7',
+          cream200: '#fff8e8',
+          cream300: '#fff4d6',
+          cream400: '#ffefbd'
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -47,75 +44,7 @@ export default {
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        // New color palette
-        lapis_lazuli: {
-          DEFAULT: '#05668d',
-          100: '#011219',
-          200: '#022533',
-          300: '#03374c',
-          400: '#044a66',
-          500: '#05668d',
-          600: '#0784b5',
-          700: '#09a2dd',
-          800: '#2bb8ef',
-          900: '#6ed0f4',
-        },
-        teal: {
-          DEFAULT: '#028090',
-          100: '#01191c',
-          200: '#013238',
-          300: '#024b54',
-          400: '#026470',
-          500: '#028090',
-          600: '#03a6bb',
-          700: '#04cce6',
-          800: '#26e0f7',
-          900: '#71ebfa',
-        },
-        persian_green: {
-          DEFAULT: '#00a896',
-          100: '#00211e',
-          200: '#00423c',
-          300: '#006359',
-          400: '#008477',
-          500: '#00a896',
-          600: '#00d6c1',
-          700: '#0bfce3',
-          800: '#42fde9',
-          900: '#85fef1',
-        },
-        mint: {
-          DEFAULT: '#02c39a',
-          100: '#01271f',
-          200: '#014e3e',
-          300: '#02745c',
-          400: '#029b7b',
-          500: '#02c39a',
-          600: '#03f5c3',
-          700: '#35f7d1',
-          800: '#6cf9de',
-          900: '#a3fbeb',
-        },
-        cream: {
-          DEFAULT: '#f0f3bd',
-          100: '#e1e67b',
-          200: '#e5e98a',
-          300: '#e8ec99',
-          400: '#ecefa8',
-          500: '#f0f3bd',
-          600: '#f3f5c7',
-          700: '#f6f8d1',
-          800: '#f9fadb',
-          900: '#fcfde5',
-        },
-        chart: {
-          1: 'hsl(var(--chart-1))',
-          2: 'hsl(var(--chart-2))',
-          3: 'hsl(var(--chart-3))',
-          4: 'hsl(var(--chart-4))',
-          5: 'hsl(var(--chart-5))',
-        },
+        ring: 'hsl(var(--ring))'
       },
       keyframes: {
         'accordion-down': {
