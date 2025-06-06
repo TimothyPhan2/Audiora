@@ -104,7 +104,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             <Input
               id="name"
               placeholder="Enter your name"
-              className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
+              className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
                 errors.name ? 'border-red-500' : ''
               }`}
               {...register('name')}
@@ -121,7 +121,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
+            className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
               errors.email ? 'border-red-500' : ''
             }`}
             {...register('email')}
@@ -137,7 +137,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
             id="password"
             type="password"
             placeholder="Enter your password"
-            className={`bg-lapis_lazuli-600/50 border-teal-400/30 focus:border-mint-400 text-cream-900 placeholder:text-cream-500/50 ${
+            className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
               errors.password ? 'border-red-500' : ''
             }`}
             {...register('password')}
@@ -154,14 +154,14 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               <Select 
                 onValueChange={(value) => handleSelectChange('language', value)}
                 defaultValue="spanish"
-                className="bg-lapis_lazuli-600/50"
+                className="bg-white"
               >
                 <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
                   errors.language ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
-                <SelectContent className="bg-lapis_lazuli-600 border-teal-400/30">
+                <SelectContent className="bg-white border-teal-400/30">
                   <SelectItem value="spanish">Spanish</SelectItem>
                   <SelectItem value="french">French</SelectItem>
                   <SelectItem value="italian">Italian</SelectItem>
@@ -178,14 +178,14 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               <Select 
                 onValueChange={(value) => handleSelectChange('level', value as LanguageLevel)}
                 defaultValue="beginner"
-                className="bg-lapis_lazuli-600/50"
+                className="bg-white"
               >
                 <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
                   errors.level ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select your level" />
                 </SelectTrigger>
-                <SelectContent className="bg-lapis_lazuli-600 border-teal-400/30">
+                <SelectContent className="bg-white border-teal-400/30">
                   <SelectItem value="beginner">Beginner</SelectItem>
                   <SelectItem value="intermediate">Intermediate</SelectItem>
                   <SelectItem value="advanced">Advanced</SelectItem>
