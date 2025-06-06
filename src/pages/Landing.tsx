@@ -43,15 +43,11 @@ export function Landing() {
               ref={titleRef}
               className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-white via-cream-200 to-cream-400"
             >
-              Master Languages Through
-              <span className="block bg-gradient-to-r from-mint-400 to-persian_green-600 bg-clip-text text-transparent mt-2">
-                AI-Powered Music Learning
-              </span>
+             Learn Languages with AI & Music
             </h1>
             
             <p className="text-lg md:text-xl text-cream-200 max-w-2xl mb-8 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-              Experience a revolutionary way to learn languages. Audiora combines the joy of music 
-              with AI-powered insights to make language learning natural and effective.
+              Audiora combines music with AI-powered insights for natural, effective language learning.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
