@@ -24,7 +24,7 @@ export function Landing() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-24 md:py-36 hero-gradient text-white overflow-hidden">
+      <section className="relative py-12 md:py-24 hero-gradient text-white overflow-hidden">
         {/* Positioned Image with Hyperlink */}
         <a 
           href="https://bolt.new/" 
