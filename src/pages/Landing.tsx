@@ -25,6 +25,20 @@ export function Landing() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative py-24 md:py-36 hero-gradient text-white overflow-hidden">
+        {/* Positioned Image with Hyperlink */}
+        <a 
+          href="https://bolt.new/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="absolute top-[calc(4rem+20px)] right-4 z-10 hover:opacity-80 transition-opacity duration-300"
+        >
+          <img 
+            src="/white_circle_360x360.png" 
+            alt="Powered by Bolt.new" 
+            className="max-w-[30vw] sm:max-w-[25vw] md:max-w-[20vw] lg:max-w-[15vw] xl:max-w-[12vw] h-auto object-contain"
+          />
+        </a>
+        
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)]"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.12),transparent_50%)]"></div>
