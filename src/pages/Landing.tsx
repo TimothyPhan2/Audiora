@@ -35,7 +35,7 @@ export function Landing() {
           <img 
             src="/white_circle_360x360.png" 
             alt="Powered by Bolt.new" 
-            className="w-12 sm:max-w-[25vw] md:max-w-[20vw] lg:max-w-[15vw] xl:max-w-[12vw] h-auto object-contain"
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 object-contain"
           />
         </a>
         
