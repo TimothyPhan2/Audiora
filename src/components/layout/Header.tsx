@@ -41,6 +41,9 @@ export function Header() {
             </>
           ) : (
             <>
+               <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+                Dashboard
+              </Link>
               <Link to="/login">
                 <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                   Login
