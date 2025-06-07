@@ -30,12 +30,12 @@ export function Landing() {
           href="https://bolt.new/" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="absolute top-[calc(4rem+20px)] right-4 z-10 hover:opacity-80 transition-opacity duration-300"
+          className="absolute top-4 right-4 z-20 hover:opacity-80 transition-opacity duration-300"
         >
           <img 
             src="/white_circle_360x360.png" 
             alt="Powered by Bolt.new" 
-            className="max-w-[30vw] sm:max-w-[25vw] md:max-w-[20vw] lg:max-w-[15vw] xl:max-w-[12vw] h-auto object-contain"
+            className="w-12 sm:max-w-[25vw] md:max-w-[20vw] lg:max-w-[15vw] xl:max-w-[12vw] h-auto object-contain"
           />
         </a>
         
