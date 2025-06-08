@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/lib/store';
 import { LanguageLevel } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -36,7 +36,6 @@ type FormValues = z.infer<typeof loginSchema> | z.infer<typeof signupSchema>;
 export function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { login, signup, error, clearError } = useAuthStore();
-  const { toast } = useToast();
 
   // Initialize form with the appropriate schema based on form type
   const {
@@ -67,14 +66,19 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
         onSuccess();
       }
 
-      toast({
-        title: type === 'login' ? 'Login successful!' : 'Account created!',
-        description: type === 'login' 
-          ? 'Welcome back to Audiora.' 
-          : 'Welcome to Audiora! Start your language learning journey.',
-      });
+      toast.success(
+        type === 'login' ? 'Login successful!' : 'Account created!',
+        {
+          description: type === 'login' 
+            ? 'Welcome back to Audiora.' 
+            : 'Welcome to Audiora! Start your language learning journey.',
+        }
+      );
     } catch (error) {
       console.error('Auth error:', error);
+      toast.error('Authentication failed', {
+        description: error instanceof Error ? error.message : 'Please check your credentials and try again'
+      });
     } finally {
       setIsLoading(false);
     }
