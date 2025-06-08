@@ -159,7 +159,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 onValueChange={(value) => handleSelectChange('language', value)}
                 defaultValue="spanish"
               >
-                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 ${
+                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 ${
                   (errors as any).language ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select a language" />
