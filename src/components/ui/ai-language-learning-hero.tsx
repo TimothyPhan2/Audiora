@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Music, Volume2, Headphones, Mic, Users } from "lucide-react";
+import { Music, Headphones, Mic, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Text Rotate Component
@@ -61,8 +61,8 @@ const TextRotate = React.forwardRef<HTMLSpanElement, TextRotateProps>(
 
     const splitIntoCharacters = (text: string): string[] => {
       if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
-        const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
-        return Array.from(segmenter.segment(text), ({ segment }) => segment);
+        const segmenter = new (Intl as any).Segmenter("en", { granularity: "grapheme" });
+        return Array.from(segmenter.segment(text), ({ segment }: any) => segment);
       }
       return Array.from(text);
     };
@@ -154,7 +154,7 @@ const TextRotate = React.forwardRef<HTMLSpanElement, TextRotateProps>(
             ).map((wordObj, wordIndex, array) => {
               const previousCharsCount = array
                 .slice(0, wordIndex)
-                .reduce((sum, word) => sum.characters.length, 0);
+                .reduce((sum, word) => sum + word.characters.length, 0);
 
               return (
                 <span
@@ -211,9 +211,8 @@ function ButtonColorful({
     <Button
       className={cn(
         "relative h-12 px-6 overflow-hidden",
-        "bg-gradient-to-r from-accent-teal-500 to-accent-persian-500",
-        "hover:from-accent-teal-400 hover:to-accent-persian-500",
-        "transition-all duration-300",
+        "button-gradient-primary",
+        "transition-all duration-200",
         "group",
         className
       )}
@@ -222,14 +221,14 @@ function ButtonColorful({
       <div
         className={cn(
           "absolute inset-0",
-          "bg-gradient-to-r from-accent-teal-400 to-accent-mint-400",
-          "opacity-0 group-hover:opacity-30",
-          "transition-opacity duration-300"
+          "bg-gradient-to-r from-accent-teal-400 via-accent-mint-400 to-accent-persian-500",
+          "opacity-40 group-hover:opacity-80",
+          "blur transition-opacity duration-500"
         )}
       />
       <div className="relative flex items-center justify-center gap-2">
         <span className="text-text-cream100 font-semibold">{label}</span>
-        <Music className="w-4 h-4 text-text-cream100" />
+        <Music className="w-4 h-4 text-text-cream100/90" />
       </div>
     </Button>
   );
@@ -242,7 +241,7 @@ function FloatingShape({
   width = 400,
   height = 100,
   rotate = 0,
-  gradient = "from-accent-teal-400/10",
+  gradient = "from-accent-teal-400/[0.08]",
 }: {
   className?: string;
   delay?: number;
@@ -291,7 +290,7 @@ function FloatingShape({
             "absolute inset-0 rounded-full",
             "bg-gradient-to-r to-transparent",
             gradient,
-            "backdrop-blur-[2px] border-2 border-accent-teal-400/20",
+            "backdrop-blur-[2px] border-2 border-accent-teal-400/[0.15]",
             "shadow-[0_8px_32px_0_rgba(45,212,191,0.1)]",
             "after:absolute after:inset-0 after:rounded-full",
             "after:bg-[radial-gradient(circle_at_50%_50%,rgba(45,212,191,0.2),transparent_70%)]"
@@ -304,8 +303,6 @@ function FloatingShape({
 
 // Main Hero Component
 function AILanguageLearningHero() {
-  const [currentLanguage, setCurrentLanguage] = useState(0);
-  
   const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
   const musicGenres = ["Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Folk"];
 
@@ -322,17 +319,10 @@ function AILanguageLearningHero() {
     }),
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentLanguage((prev) => (prev + 1) % languages.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [languages.length]);
-
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
       {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-500/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />
 
       {/* Floating shapes */}
       <div className="absolute inset-0 overflow-hidden">
@@ -341,7 +331,7 @@ function AILanguageLearningHero() {
           width={600}
           height={140}
           rotate={12}
-          gradient="from-accent-teal-400/15"
+          gradient="from-accent-teal-400/[0.15]"
           className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
         />
         <FloatingShape
@@ -349,7 +339,7 @@ function AILanguageLearningHero() {
           width={500}
           height={120}
           rotate={-15}
-          gradient="from-accent-persian-500/15"
+          gradient="from-accent-persian-500/[0.15]"
           className="right-[-5%] md:right-[0%] top-[70%] md:top-[75%]"
         />
         <FloatingShape
@@ -357,7 +347,7 @@ function AILanguageLearningHero() {
           width={300}
           height={80}
           rotate={-8}
-          gradient="from-accent-mint-400/15"
+          gradient="from-accent-mint-400/[0.15]"
           className="left-[5%] md:left-[10%] bottom-[5%] md:bottom-[10%]"
         />
         <FloatingShape
@@ -365,7 +355,7 @@ function AILanguageLearningHero() {
           width={200}
           height={60}
           rotate={20}
-          gradient="from-accent-teal-500/15"
+          gradient="from-accent-teal-400/[0.15]"
           className="right-[15%] md:right-[20%] top-[10%] md:top-[15%]"
         />
       </div>
@@ -388,10 +378,10 @@ function AILanguageLearningHero() {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-teal-500/10 border border-accent-teal-400/20 mb-8 md:mb-12"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-teal-400/[0.03] border border-accent-teal-400/[0.08] mb-8 md:mb-12"
           >
-            <Headphones className="h-4 w-4 fill-accent-teal-400 text-accent-teal-400" />
-            <span className="text-sm text-text-cream300 tracking-wide">
+            <Headphones className="h-4 w-4 fill-accent-persian-500/80 text-accent-persian-500/80" />
+            <span className="text-sm text-text-cream200/60 tracking-wide">
               AI-Powered Music Learning
             </span>
           </motion.div>
@@ -404,7 +394,7 @@ function AILanguageLearningHero() {
             animate="visible"
           >
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-b from-text-cream100 to-text-cream200">
+              <span className="bg-clip-text text-transparent bg-gradient-to-b from-text-cream100 to-text-cream200/80">
                 Learn{" "}
               </span>
               <TextRotate
@@ -429,7 +419,7 @@ function AILanguageLearningHero() {
             initial="hidden"
             animate="visible"
           >
-            <p className="text-base sm:text-lg md:text-xl text-text-cream300 mb-8 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
+            <p className="text-base sm:text-lg md:text-xl text-text-cream200/60 mb-8 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
               Discover a revolutionary way to master languages through the power of music. 
               Our AI analyzes songs and creates personalized learning experiences that make 
               language acquisition natural, fun, and unforgettable.
@@ -444,15 +434,15 @@ function AILanguageLearningHero() {
             animate="visible"
             className="flex flex-wrap justify-center gap-6 mb-8"
           >
-            <div className="flex items-center gap-2 text-text-cream400 text-sm">
+            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
               <Music className="w-4 h-4" />
               <span>10,000+ Songs</span>
             </div>
-            <div className="flex items-center gap-2 text-text-cream400 text-sm">
+            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
               <Users className="w-4 h-4" />
               <span>500K+ Learners</span>
             </div>
-            <div className="flex items-center gap-2 text-text-cream400 text-sm">
+            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
               <Mic className="w-4 h-4" />
               <span>AI Voice Coach</span>
             </div>
@@ -480,11 +470,11 @@ function AILanguageLearningHero() {
             animate="visible"
             className="mt-12 flex flex-wrap justify-center gap-3"
           >
-            {musicGenres.map((genre, index) => (
+            {musicGenres.map((genre) => (
               <Badge
                 key={genre}
                 variant="outline"
-                className="bg-accent-teal-500/10 border-accent-teal-400/30 text-text-cream300 hover:bg-accent-teal-500/20 transition-colors cursor-pointer"
+                className="bg-accent-teal-400/5 border-accent-teal-400/20 text-text-cream200/70 hover:bg-accent-teal-400/10 transition-colors cursor-pointer"
               >
                 {genre}
               </Badge>
