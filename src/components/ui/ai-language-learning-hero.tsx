@@ -493,7 +493,7 @@ function AILanguageLearningHero() {
             animate="visible"
             className="mt-12 flex flex-wrap justify-center gap-3"
           >
-            {musicGenres.map((genre, index) => (
+            {musicGenres.map((genre) => (
               <Badge
                 key={genre}
                 variant="outline"
