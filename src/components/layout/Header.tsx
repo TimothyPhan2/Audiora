@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { Music } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Header() {
@@ -13,7 +12,7 @@ export function Header() {
       <div className="container-center flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <Music className="h-6 w-6 text-primary" />
+            <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-8 w-8" />
             <span className="text-2xl font-bold gradient-text">Audiora</span>
           </Link>
         </div>

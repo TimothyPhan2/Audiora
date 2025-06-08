@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { Music } from 'lucide-react';
 
 export function Login() {
   const navigate = useNavigate();
@@ -17,7 +16,7 @@ export function Login() {
           <div className="floating-note text-teal-400 text-3xl" style={{ left: '-20%' }}>♪</div>
           <div className="floating-note text-mint-400 text-4xl" style={{ right: '-20%' }}>♫</div>
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <Music className="h-8 w-8 text-mint-400" />
+            <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-10 w-10" />
             <span className="text-3xl font-bold gradient-text">Audiora</span>
           </Link>
           <h1 className="text-3xl font-bold gradient-text">Welcome Back</h1>

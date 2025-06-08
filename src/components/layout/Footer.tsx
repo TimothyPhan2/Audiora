@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Music } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -7,7 +6,7 @@ export function Footer() {
       <div className="container-center">
         <div className="flex flex-col items-center justify-center text-center text-sm text-muted-foreground space-y-2">
           <Link to="/" className="flex items-center gap-2 mb-2">
-            <Music className="h-4 w-4 text-primary" />
+            <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-6 w-6" />
             <span className="font-medium">Audiora</span>
           </Link>
           <p>

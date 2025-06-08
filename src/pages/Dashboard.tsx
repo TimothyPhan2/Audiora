@@ -81,7 +81,7 @@ export function Dashboard() {
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             {/* Logo */}
             <div className="flex items-center gap-2 py-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-accent-teal-400 to-accent-mint-400 rounded-lg flex-shrink-0" />
+              <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-8 w-8 flex-shrink-0" />
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
