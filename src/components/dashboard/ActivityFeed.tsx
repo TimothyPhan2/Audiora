@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, Music, Trophy, Target } from 'lucide-react';
+import { Music, Trophy, Target } from 'lucide-react';
 
 interface Activity {
   id: string;

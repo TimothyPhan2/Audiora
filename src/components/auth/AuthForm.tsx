@@ -109,12 +109,12 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               id="name"
               placeholder="Enter your name"
               className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
-                errors.name ? 'border-red-500' : ''
+                (errors as any).name ? 'border-red-500' : ''
               }`}
               {...register('name')}
             />
-            {errors.name && (
-              <p className="text-sm text-red-400">{errors.name.message}</p>
+            {(errors as any).name && (
+              <p className="text-sm text-red-400">{(errors as any).name.message}</p>
             )}
           </div>
         )}
@@ -161,7 +161,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 className="bg-white"
               >
                 <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
-                  errors.language ? 'border-red-500' : ''
+                  (errors as any).language ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
@@ -172,8 +172,8 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                   <SelectItem value="german" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">German</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.language && (
-                <p className="text-sm text-destructive">{errors.language.message}</p>
+              {(errors as any).language && (
+                <p className="text-sm text-destructive">{(errors as any).language.message}</p>
               )}
             </div>
             
@@ -185,7 +185,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 className="bg-white"
               >
                 <SelectTrigger className={`border-teal-400/30 focus:border-mint-400 ${
-                  errors.level ? 'border-red-500' : ''
+                  (errors as any).level ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select your level" />
                 </SelectTrigger>
@@ -196,8 +196,8 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                   <SelectItem value="fluent" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Fluent</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.level && (
-                <p className="text-sm text-destructive">{errors.level.message}</p>
+              {(errors as any).level && (
+                <p className="text-sm text-destructive">{(errors as any).level.message}</p>
               )}
             </div>
           </>

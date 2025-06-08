@@ -1,4 +1,4 @@
-import { LanguageLevel, Song, User, VocabularyItem, Quiz } from './types';
+import { Song, User, VocabularyItem, Quiz } from './types';
 
 // Mock users data
 export const mockUsers: User[] = [
