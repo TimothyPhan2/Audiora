@@ -303,6 +303,8 @@ function FloatingShape({
 
 // Main Hero Component
 function AILanguageLearningHero() {
+  const [currentLanguage, setCurrentLanguage] = useState(0);
+  
   const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
   const musicGenres = ["Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Folk"];
 
@@ -319,10 +321,31 @@ function AILanguageLearningHero() {
     }),
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentLanguage((prev) => (prev + 1) % languages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [languages.length]);
+
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
+      {/* Positioned Bolt Logo */}
+      <a 
+        href="https://bolt.new/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="absolute top-4 right-4 z-20 hover:opacity-80 transition-opacity duration-300"
+      >
+        <img 
+          src="/white_circle_360x360.png" 
+          alt="Powered by Bolt.new" 
+          className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 object-contain"
+        />
+      </a>
+
       {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-500/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />
 
       {/* Floating shapes */}
       <div className="absolute inset-0 overflow-hidden">
@@ -331,7 +354,7 @@ function AILanguageLearningHero() {
           width={600}
           height={140}
           rotate={12}
-          gradient="from-accent-teal-400/[0.15]"
+          gradient="from-accent-teal-500/[0.15]"
           className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
         />
         <FloatingShape
@@ -378,10 +401,10 @@ function AILanguageLearningHero() {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-teal-400/[0.03] border border-accent-teal-400/[0.08] mb-8 md:mb-12"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-teal-500/[0.03] border border-accent-teal-400/[0.08] mb-8 md:mb-12"
           >
-            <Headphones className="h-4 w-4 fill-accent-persian-500/80 text-accent-persian-500/80" />
-            <span className="text-sm text-text-cream200/60 tracking-wide">
+            <Headphones className="h-4 w-4 fill-accent-teal-400/80 text-accent-teal-400/80" />
+            <span className="text-sm text-text-cream300 tracking-wide">
               AI-Powered Music Learning
             </span>
           </motion.div>
@@ -394,7 +417,7 @@ function AILanguageLearningHero() {
             animate="visible"
           >
             <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 tracking-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-b from-text-cream100 to-text-cream200/80">
+              <span className="bg-clip-text text-transparent bg-gradient-to-b from-text-cream100 to-text-cream200">
                 Learn{" "}
               </span>
               <TextRotate
@@ -419,7 +442,7 @@ function AILanguageLearningHero() {
             initial="hidden"
             animate="visible"
           >
-            <p className="text-base sm:text-lg md:text-xl text-text-cream200/60 mb-8 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
+            <p className="text-base sm:text-lg md:text-xl text-text-cream300 mb-8 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
               Discover a revolutionary way to master languages through the power of music. 
               Our AI analyzes songs and creates personalized learning experiences that make 
               language acquisition natural, fun, and unforgettable.
@@ -434,15 +457,15 @@ function AILanguageLearningHero() {
             animate="visible"
             className="flex flex-wrap justify-center gap-6 mb-8"
           >
-            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
+            <div className="flex items-center gap-2 text-text-cream400 text-sm">
               <Music className="w-4 h-4" />
               <span>10,000+ Songs</span>
             </div>
-            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
+            <div className="flex items-center gap-2 text-text-cream400 text-sm">
               <Users className="w-4 h-4" />
               <span>500K+ Learners</span>
             </div>
-            <div className="flex items-center gap-2 text-text-cream200/50 text-sm">
+            <div className="flex items-center gap-2 text-text-cream400 text-sm">
               <Mic className="w-4 h-4" />
               <span>AI Voice Coach</span>
             </div>
@@ -470,11 +493,11 @@ function AILanguageLearningHero() {
             animate="visible"
             className="mt-12 flex flex-wrap justify-center gap-3"
           >
-            {musicGenres.map((genre) => (
+            {musicGenres.map((genre, index) => (
               <Badge
                 key={genre}
                 variant="outline"
-                className="bg-accent-teal-400/5 border-accent-teal-400/20 text-text-cream200/70 hover:bg-accent-teal-400/10 transition-colors cursor-pointer"
+                className="bg-accent-teal-500/5 border-accent-teal-400/20 text-text-cream300 hover:bg-accent-teal-500/10 transition-colors cursor-pointer"
               >
                 {genre}
               </Badge>
