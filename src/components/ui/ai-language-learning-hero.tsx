@@ -303,7 +303,6 @@ function FloatingShape({
 
 // Main Hero Component
 function AILanguageLearningHero() {
-  const [currentLanguage, setCurrentLanguage] = useState(0);
   
   const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
   const musicGenres = ["Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Folk"];
@@ -320,13 +319,6 @@ function AILanguageLearningHero() {
       },
     }),
   };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentLanguage((prev) => (prev + 1) % languages.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [languages.length]);
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
