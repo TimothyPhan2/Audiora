@@ -182,7 +182,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 onValueChange={(value) => handleSelectChange('level', value as LanguageLevel)}
                 defaultValue="beginner"
               >
-                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 ${
+                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 ${
                   (errors as any).level ? 'border-red-500' : ''
                 }`}>
                   <SelectValue placeholder="Select your level" />
