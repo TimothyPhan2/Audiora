@@ -24,6 +24,7 @@ Please follow these rules strictly to ensure the project meets production-qualit
 - When data is required, use **mock data** for now. Integration with **Supabase** will be added later—do **not** implement it yet.
 - Code should be **clean**, **modular**, and **readable**. Avoid redundancy (DRY principle).
 - Use clear, descriptive names for all files, components, props, and variables.
+- Try to keep each file at 300 lines or less
 
 ---
 
@@ -35,7 +36,7 @@ Please follow these rules strictly to ensure the project meets production-qualit
 ---
 
 🌈 Visual Guidelines
-- Use our custom color palette (charcoal, persian_green, saffron, sandy_brown, burnt_sienna) for backgrounds, text, accents, gradients, etc.
+- Use our custom color palette for backgrounds, text, accents, gradients, etc.
 
 - Apply gradient or ombre backgrounds where appropriate (e.g., hero section, auth screens).
 
