@@ -162,7 +162,7 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
                 <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 ${
                   (errors as any).language ? 'border-red-500' : ''
                 }`}>
-                  <SelectValue className="text-base-dark3/60" placeholder="Select a language" />
+                  <SelectValue placeholder="Select a language" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-teal-400/30 shadow-lg">
                   <SelectItem value="spanish" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Spanish</SelectItem>
