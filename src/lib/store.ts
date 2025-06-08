@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { 
   AuthFormData, 
-  LanguageLevel, 
   Song, 
   SongFilters, 
   User, 

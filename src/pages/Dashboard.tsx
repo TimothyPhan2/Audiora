@@ -19,7 +19,6 @@ import {
   Clock,
   Volume2,
   BarChart3,
-  Award,
   Mic
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
