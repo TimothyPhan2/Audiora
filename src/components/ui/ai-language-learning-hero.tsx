@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -469,6 +470,9 @@ function AILanguageLearningHero() {
             animate="visible"
             className="flex justify-center"
           >
+            <Link href="/signup">
+            
+            </Link>
             <ButtonColorful
               label="Start Learning Free"
               className="text-base px-8 py-3"
