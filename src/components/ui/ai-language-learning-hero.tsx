@@ -470,7 +470,7 @@ function AILanguageLearningHero() {
             animate="visible"
             className="flex justify-center"
           >
-            <Link href="/signup">
+            <Link to="/signup">
               <ButtonColorful
                 label="Start Learning Free"
                 className="text-base px-8 py-3"
