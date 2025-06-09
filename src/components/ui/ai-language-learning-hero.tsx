@@ -471,12 +471,11 @@ function AILanguageLearningHero() {
             className="flex justify-center"
           >
             <Link href="/signup">
-            
+              <ButtonColorful
+                label="Start Learning Free"
+                className="text-base px-8 py-3"
+              />
             </Link>
-            <ButtonColorful
-              label="Start Learning Free"
-              className="text-base px-8 py-3"
-            />
           </motion.div>
 
           {/* Music genre showcase */}
