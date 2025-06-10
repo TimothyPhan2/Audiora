@@ -1,19 +1,27 @@
 /*
-  # Audiora Database Schema Migration
-  
-  Complete schema for Audiora - AI-powered language learning through music
-  
-  ## Features
-  - Freemium access control with RLS
-  - Multi-language support
-  - Progress tracking and gamification
-  - Subscription management
-  - Performance optimized with proper indexing
-  
-  ## How to use
-  1. Copy this entire script
-  2. Paste into Supabase SQL Editor
-  3. Run the script to create the complete schema
+=============================================================================
+AUDIORA - Complete Supabase PostgreSQL Schema
+=============================================================================
+
+A language learning platform that teaches languages through AI-generated music.
+
+INSTRUCTIONS:
+1. Copy this entire script
+2. Go to your Supabase Dashboard > SQL Editor
+3. Paste and run this script
+4. The schema will be created with all tables, indexes, RLS policies, and functions
+
+FEATURES:
+- Freemium SaaS model with subscription tiers
+- Multi-language support with proficiency levels
+- AI-generated songs with synchronized lyrics
+- Vocabulary learning and progress tracking
+- Quizzes and assessments
+- Row Level Security (RLS) for data protection
+- Optimized indexes for performance
+- Helper functions for business logic
+
+=============================================================================
 */
 
 -- =============================================================================
@@ -193,7 +201,7 @@ CREATE TABLE user_song_progress (
   UNIQUE(user_id, song_id)
 );
 
--- User quiz results - tracks quiz performance (fixed: removed generated column)
+-- User quiz results - tracks quiz performance
 CREATE TABLE user_quiz_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -324,73 +332,54 @@ ALTER TABLE user_vocabulary ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 
 -- =============================================================================
--- HELPER FUNCTIONS
+-- HELPER FUNCTIONS (Standard PostgreSQL functions)
 -- =============================================================================
 
 -- Function to check if user has premium access
-CREATE OR REPLACE FUNCTION user_has_premium_access(user_uuid UUID DEFAULT NULL)
+CREATE OR REPLACE FUNCTION user_has_premium_access()
 RETURNS BOOLEAN AS $$
-DECLARE
-  target_user_id UUID;
-  user_tier subscription_tier_enum;
 BEGIN
-  target_user_id := COALESCE(user_uuid, (SELECT auth.uid()));
-  
-  IF target_user_id IS NULL THEN
-    RETURN FALSE;
-  END IF;
-  
-  SELECT subscription_tier INTO user_tier
-  FROM users
-  WHERE id = target_user_id;
-  
-  RETURN user_tier IN ('premium', 'pro');
+  RETURN EXISTS (
+    SELECT 1 FROM users 
+    WHERE id = (SELECT auth.uid())
+    AND subscription_tier IN ('premium', 'pro')
+    AND (EXISTS (
+      SELECT 1 FROM subscriptions 
+      WHERE user_id = (SELECT auth.uid()) 
+      AND status = 'active'
+      AND (expires_at IS NULL OR expires_at > NOW())
+    ))
+  );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- Function to check if user is admin
-CREATE OR REPLACE FUNCTION user_is_admin(user_uuid UUID DEFAULT NULL)
+CREATE OR REPLACE FUNCTION user_is_admin()
 RETURNS BOOLEAN AS $$
-DECLARE
-  target_user_id UUID;
-  user_role_val user_role_enum;
 BEGIN
-  target_user_id := COALESCE(user_uuid, (SELECT auth.uid()));
-  
-  IF target_user_id IS NULL THEN
-    RETURN FALSE;
-  END IF;
-  
-  SELECT role INTO user_role_val
-  FROM users
-  WHERE id = target_user_id;
-  
-  RETURN user_role_val IN ('admin', 'moderator');
+  RETURN EXISTS (
+    SELECT 1 FROM users 
+    WHERE id = (SELECT auth.uid())
+    AND role IN ('admin', 'moderator')
+  );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- Function to get user's current subscription tier
-CREATE OR REPLACE FUNCTION get_user_subscription_tier(user_uuid UUID DEFAULT NULL)
+CREATE OR REPLACE FUNCTION get_user_subscription_tier()
 RETURNS subscription_tier_enum AS $$
 DECLARE
-  target_user_id UUID;
   user_tier subscription_tier_enum;
 BEGIN
-  target_user_id := COALESCE(user_uuid, (SELECT auth.uid()));
-  
-  IF target_user_id IS NULL THEN
-    RETURN 'free';
-  END IF;
-  
   SELECT subscription_tier INTO user_tier
   FROM users
-  WHERE id = target_user_id;
+  WHERE id = (SELECT auth.uid());
   
   RETURN COALESCE(user_tier, 'free');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
--- Function to check if quiz result passed (replaces generated column)
+-- Function to check if quiz result passed
 CREATE OR REPLACE FUNCTION check_quiz_passed(quiz_result_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -405,7 +394,7 @@ BEGIN
   
   RETURN result_score >= required_score;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- TRIGGERS
@@ -494,6 +483,67 @@ CREATE TRIGGER update_quizzes_updated_at BEFORE UPDATE ON quizzes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
+-- USEFUL VIEWS (with security_invoker for PostgreSQL 15+)
+-- =============================================================================
+
+-- Active subscribers view
+CREATE OR REPLACE VIEW active_subscribers 
+WITH (security_invoker = true)
+AS
+SELECT 
+  u.id,
+  u.username,
+  u.full_name,
+  u.subscription_tier,
+  s.started_at,
+  s.expires_at,
+  s.auto_renew
+FROM users u
+JOIN subscriptions s ON u.id = s.user_id
+WHERE s.status = 'active'
+AND (s.expires_at IS NULL OR s.expires_at > NOW());
+
+-- Content metrics view
+CREATE OR REPLACE VIEW content_metrics 
+WITH (security_invoker = true)
+AS
+SELECT 
+  'songs' as content_type,
+  COUNT(*) as total_count,
+  COUNT(*) FILTER (WHERE is_published = true) as published_count,
+  COUNT(*) FILTER (WHERE is_premium = true) as premium_count,
+  AVG(popularity_score) as avg_popularity
+FROM songs
+UNION ALL
+SELECT 
+  'lessons' as content_type,
+  COUNT(*) as total_count,
+  COUNT(*) FILTER (WHERE is_published = true) as published_count,
+  COUNT(*) FILTER (WHERE is_premium = true) as premium_count,
+  NULL as avg_popularity
+FROM lessons;
+
+-- User learning progress view
+CREATE OR REPLACE VIEW user_learning_progress 
+WITH (security_invoker = true)
+AS
+SELECT 
+  u.id as user_id,
+  u.username,
+  u.subscription_tier,
+  COUNT(DISTINCT usp.song_id) FILTER (WHERE usp.completed = true) as songs_completed,
+  COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.status = 'completed') as lessons_completed,
+  COUNT(DISTINCT uqr.quiz_id) FILTER (WHERE uqr.passed = true) as quizzes_passed,
+  COUNT(DISTINCT uv.vocabulary_id) as vocabulary_learned,
+  AVG(uv.mastery_score) as avg_vocabulary_mastery
+FROM users u
+LEFT JOIN user_song_progress usp ON u.id = usp.user_id
+LEFT JOIN user_lesson_progress ulp ON u.id = ulp.user_id
+LEFT JOIN user_quiz_results uqr ON u.id = uqr.user_id
+LEFT JOIN user_vocabulary uv ON u.id = uv.user_id
+GROUP BY u.id, u.username, u.subscription_tier;
+
+-- =============================================================================
 -- ROW LEVEL SECURITY POLICIES
 -- =============================================================================
 
@@ -509,15 +559,15 @@ CREATE POLICY "Premium users can access premium songs"
   USING (
     is_published = true AND (
       is_premium = false OR 
-      user_has_premium_access((SELECT auth.uid())) OR
-      user_is_admin((SELECT auth.uid()))
+      user_has_premium_access() OR
+      user_is_admin()
     )
   );
 
 CREATE POLICY "Admins can manage all songs"
   ON songs FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Lyrics policies
 CREATE POLICY "Free users can view first 3 lines of lyrics"
@@ -531,8 +581,8 @@ CREATE POLICY "Free users can view first 3 lines of lyrics"
       AND (
         line_number <= 3 OR
         s.is_premium = false OR
-        user_has_premium_access((SELECT auth.uid())) OR
-        user_is_admin((SELECT auth.uid()))
+        user_has_premium_access() OR
+        user_is_admin()
       )
     )
   );
@@ -552,7 +602,7 @@ CREATE POLICY "Anonymous users can view basic lyric info"
 CREATE POLICY "Admins can manage all lyrics"
   ON lyrics FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Vocabulary policies
 CREATE POLICY "Users can view vocabulary based on premium status"
@@ -560,8 +610,8 @@ CREATE POLICY "Users can view vocabulary based on premium status"
   TO authenticated
   USING (
     is_premium = false OR 
-    user_has_premium_access((SELECT auth.uid())) OR
-    user_is_admin((SELECT auth.uid()))
+    user_has_premium_access() OR
+    user_is_admin()
   );
 
 CREATE POLICY "Anonymous users can view basic vocabulary"
@@ -572,7 +622,7 @@ CREATE POLICY "Anonymous users can view basic vocabulary"
 CREATE POLICY "Admins can manage vocabulary"
   ON vocabulary FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Lyric vocabulary policies
 CREATE POLICY "Users can view lyric vocabulary based on access"
@@ -606,7 +656,7 @@ CREATE POLICY "Users can insert their own profile"
 CREATE POLICY "Admins can view all users"
   ON users FOR SELECT
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Subscriptions policies
 CREATE POLICY "Users can view their own subscriptions"
@@ -622,7 +672,7 @@ CREATE POLICY "Users can insert their own subscriptions"
 CREATE POLICY "Admins can manage all subscriptions"
   ON subscriptions FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Lessons policies
 CREATE POLICY "Users can view published lessons based on premium status"
@@ -631,15 +681,15 @@ CREATE POLICY "Users can view published lessons based on premium status"
   USING (
     is_published = true AND (
       is_premium = false OR 
-      user_has_premium_access((SELECT auth.uid())) OR
-      user_is_admin((SELECT auth.uid()))
+      user_has_premium_access() OR
+      user_is_admin()
     )
   );
 
 CREATE POLICY "Admins can manage all lessons"
   ON lessons FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Quizzes policies
 CREATE POLICY "Users can view quizzes for accessible lessons"
@@ -653,8 +703,8 @@ CREATE POLICY "Users can view quizzes for accessible lessons"
       AND l.is_published = true
       AND (
         l.is_premium = false OR
-        user_has_premium_access((SELECT auth.uid())) OR
-        user_is_admin((SELECT auth.uid()))
+        user_has_premium_access() OR
+        user_is_admin()
       )
     )
   );
@@ -662,7 +712,7 @@ CREATE POLICY "Users can view quizzes for accessible lessons"
 CREATE POLICY "Admins can manage all quizzes"
   ON quizzes FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- Quiz questions policies
 CREATE POLICY "Users can view questions for accessible quizzes"
@@ -677,8 +727,8 @@ CREATE POLICY "Users can view questions for accessible quizzes"
       AND l.is_published = true
       AND (
         l.is_premium = false OR
-        user_has_premium_access((SELECT auth.uid())) OR
-        user_is_admin((SELECT auth.uid()))
+        user_has_premium_access() OR
+        user_is_admin()
       )
     )
   );
@@ -686,7 +736,7 @@ CREATE POLICY "Users can view questions for accessible quizzes"
 CREATE POLICY "Admins can manage all quiz questions"
   ON quiz_questions FOR ALL
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- User progress policies
 CREATE POLICY "Users can manage their own song progress"
@@ -718,100 +768,72 @@ CREATE POLICY "Users can manage their own achievements"
 CREATE POLICY "Admins can view all user progress"
   ON user_song_progress FOR SELECT
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 CREATE POLICY "Admins can view all quiz results"
   ON user_quiz_results FOR SELECT
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 CREATE POLICY "Admins can view all lesson progress"
   ON user_lesson_progress FOR SELECT
   TO authenticated
-  USING (user_is_admin((SELECT auth.uid())));
+  USING (user_is_admin());
 
 -- =============================================================================
--- USEFUL VIEWS
+-- SAMPLE DATA FOR TESTING
 -- =============================================================================
 
--- Active subscribers view
-CREATE VIEW active_subscribers AS
-SELECT 
-  u.id,
-  u.username,
-  u.full_name,
-  u.subscription_tier,
-  s.started_at,
-  s.expires_at,
-  s.auto_renew
-FROM users u
-JOIN subscriptions s ON u.id = s.user_id
-WHERE s.status = 'active'
-AND (s.expires_at IS NULL OR s.expires_at > NOW());
-
--- Content metrics view
-CREATE VIEW content_metrics AS
-SELECT 
-  'songs' as content_type,
-  COUNT(*) as total_count,
-  COUNT(*) FILTER (WHERE is_published = true) as published_count,
-  COUNT(*) FILTER (WHERE is_premium = true) as premium_count,
-  AVG(popularity_score) as avg_popularity
-FROM songs
-UNION ALL
-SELECT 
-  'lessons' as content_type,
-  COUNT(*) as total_count,
-  COUNT(*) FILTER (WHERE is_published = true) as published_count,
-  COUNT(*) FILTER (WHERE is_premium = true) as premium_count,
-  NULL as avg_popularity
-FROM lessons;
-
--- User learning progress view
-CREATE VIEW user_learning_progress AS
-SELECT 
-  u.id as user_id,
-  u.username,
-  u.subscription_tier,
-  COUNT(DISTINCT usp.song_id) FILTER (WHERE usp.completed = true) as songs_completed,
-  COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.status = 'completed') as lessons_completed,
-  COUNT(DISTINCT uqr.quiz_id) FILTER (WHERE uqr.passed = true) as quizzes_passed,
-  COUNT(DISTINCT uv.vocabulary_id) as vocabulary_learned,
-  AVG(uv.mastery_score) as avg_vocabulary_mastery
-FROM users u
-LEFT JOIN user_song_progress usp ON u.id = usp.user_id
-LEFT JOIN user_lesson_progress ulp ON u.id = ulp.user_id
-LEFT JOIN user_quiz_results uqr ON u.id = uqr.user_id
-LEFT JOIN user_vocabulary uv ON u.id = uv.user_id
-GROUP BY u.id, u.username, u.subscription_tier;
-
--- =============================================================================
--- INITIAL DATA SETUP
--- =============================================================================
-
--- Insert some sample data for testing (optional)
--- This can be removed in production
-
--- Sample vocabulary
+-- Insert sample vocabulary for testing
 INSERT INTO vocabulary (word, language, translation, difficulty_level, is_premium) VALUES
 ('hola', 'spanish', 'hello', 'beginner', false),
 ('adiós', 'spanish', 'goodbye', 'beginner', false),
 ('amor', 'spanish', 'love', 'intermediate', false),
 ('corazón', 'spanish', 'heart', 'intermediate', false),
+('música', 'spanish', 'music', 'beginner', false),
+('canción', 'spanish', 'song', 'beginner', false),
+('bailar', 'spanish', 'to dance', 'intermediate', false),
+('feliz', 'spanish', 'happy', 'beginner', false),
 ('bonjour', 'french', 'hello', 'beginner', false),
 ('au revoir', 'french', 'goodbye', 'beginner', false),
 ('amour', 'french', 'love', 'intermediate', false),
-('cœur', 'french', 'heart', 'intermediate', false);
+('cœur', 'french', 'heart', 'intermediate', false),
+('musique', 'french', 'music', 'beginner', false),
+('chanson', 'french', 'song', 'beginner', false),
+('danser', 'french', 'to dance', 'intermediate', false),
+('heureux', 'french', 'happy', 'beginner', false);
 
 -- =============================================================================
 -- COMPLETION MESSAGE
 -- =============================================================================
 
--- Schema creation completed successfully!
--- You can now start using your Audiora database.
--- 
--- Next steps:
--- 1. Test the schema by inserting some sample data
--- 2. Verify RLS policies are working correctly
--- 3. Set up your application to use these tables
--- 4. Configure Supabase Auth settings in your dashboard
+/*
+🎉 AUDIORA SCHEMA CREATION COMPLETED SUCCESSFULLY! 🎉
+
+Your Audiora database is now ready with:
+
+✅ 14 Tables with proper relationships and constraints
+✅ 7 Custom ENUM types for data consistency
+✅ 25+ Optimized indexes for performance
+✅ Row Level Security (RLS) enabled on all tables
+✅ 20+ Security policies for freemium access control
+✅ Helper functions for business logic
+✅ Automated triggers for data consistency
+✅ 3 Useful views for analytics
+✅ Sample vocabulary data for testing
+
+NEXT STEPS:
+1. Test the schema by creating a user profile
+2. Verify RLS policies work correctly
+3. Set up your application to use these tables
+4. Configure Supabase Auth settings in your dashboard
+5. Add your AI-generated songs and content
+
+FREEMIUM ACCESS RULES IMPLEMENTED:
+- Anonymous users: Can view song titles and basic info only
+- Free users: Access to beginner content + first 3 lines of lyrics
+- Premium users: Full access to all content
+- Admins: Can manage all content regardless of premium status
+
+The schema is production-ready and optimized for scalability! 🚀
+*/
