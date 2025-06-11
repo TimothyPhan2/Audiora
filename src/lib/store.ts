@@ -221,28 +221,29 @@ export const useAuthStore = create<AuthState>()(
             .from('users')
             .select('*')
             .eq('id', authUser.id)
-            .single();
+            .limit(1);
 
           if (error) {
             console.error('Error fetching user profile:', error);
             return;
           }
 
-          if (userProfile) {
+          if (userProfile && userProfile.length > 0) {
+            const profile = userProfile[0];
             const user: User = {
-              id: userProfile.id,
+              id: profile.id,
               email: authUser.email || '',
-              username: userProfile.username,
-              learning_languages: userProfile.learning_languages || [],
-              proficiency_level: userProfile.proficiency_level as any,
-              level: userProfile.proficiency_level?.toLowerCase() as any || 'beginner',
+              username: profile.username,
+              learning_languages: profile.learning_languages || [],
+              proficiency_level: profile.proficiency_level as any,
+              level: profile.proficiency_level?.toLowerCase() as any || 'beginner',
               savedVocabulary: [], // TODO: Fetch from database
               completedSongs: [], // TODO: Fetch from database
               completedQuizzes: [], // TODO: Fetch from database
-              subscription_tier: userProfile.subscription_tier,
-              role: userProfile.role,
-              created_at: userProfile.created_at,
-              updated_at: userProfile.updated_at,
+              subscription_tier: profile.subscription_tier,
+              role: profile.role,
+              created_at: profile.created_at,
+              updated_at: profile.updated_at,
             };
 
             set({ user, isAuthenticated: true });
