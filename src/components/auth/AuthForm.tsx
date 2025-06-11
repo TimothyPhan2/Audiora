@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 
 // Enhanced validation schemas
 const loginSchema = z.object({
@@ -43,7 +44,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login, signup, error, clearError } = useAuthStore();
+  const { login, signup, signInWithGoogle, error, clearError } = useAuthStore();
 
   const schema = type === 'login' ? loginSchema : signupSchema;
   
@@ -107,6 +108,21 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    clearError();
+
+    try {
+      await signInWithGoogle();
+      // OAuth redirect will handle the rest
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      toast.error('Google sign in failed', {
+        description: error instanceof Error ? error.message : 'Please try again'
+      });
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="frosted-glass p-8 w-full max-w-md mx-auto border border-accent-teal-500/20 rounded-xl backdrop-blur-md">
       <h2 className="text-2xl font-bold mb-6 text-center text-text-cream100">
@@ -118,6 +134,30 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
           {error}
         </div>
       )}
+      {/* Google Sign In Button */}
+      <Button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={isLoading}
+        className="w-full mb-6 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-medium py-3 transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <FcGoogle className="mr-2 h-5 w-5" />
+        )}
+        Continue with Google
+      </Button>
+
+      {/* Divider */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-accent-teal-500/30" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-base-dark2 px-2 text-text-cream400">Or continue with email</span>
+        </div>
+      </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {type === 'signup' && (

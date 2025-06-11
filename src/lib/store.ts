@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { supabase } from './supabase';
 import { 
   AuthFormData, 
   OnboardingData,
@@ -9,18 +10,22 @@ import {
   User, 
   VocabularyItem 
 } from './types';
-import { mockSongs, mockUsers } from './mockData';
+import { mockSongs } from './mockData';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  session: any;
   login: (data: AuthFormData) => Promise<void>;
   signup: (data: AuthFormData) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   updateUserPreferences: (data: PreferenceUpdate) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
+  setSession: (session: any) => void;
+  fetchUser: () => Promise<void>;
 }
 
 interface SongState {
@@ -52,33 +57,42 @@ interface RecordingState {
   clearRecording: () => void;
 }
 
-// Auth store with mock authentication
+// Auth store with real Supabase authentication
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      session: null,
       
       login: async (data: AuthFormData) => {
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Mock login logic
-          const user = mockUsers.find(u => u.email === data.email);
-          
-          if (!user) {
-            throw new Error('Invalid email or password');
+          const { data: authData, error } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
+
+          if (error) {
+            throw error;
           }
-          
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+
+          if (authData.user) {
+            set({ 
+              session: authData.session,
+              isAuthenticated: true,
+              isLoading: false 
+            });
+            
+            // Fetch user profile
+            await get().fetchUser();
+          }
+        } catch (error: any) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to login', 
+            error: error.message || 'Failed to login', 
             isLoading: false 
           });
           throw error;
@@ -89,47 +103,75 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Check if user already exists
-          const existingUser = mockUsers.find(u => u.email === data.email);
-          
-          if (existingUser) {
-            throw new Error('Email already in use');
+          const { data: authData, error } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+              data: {
+                username: data.username,
+              },
+            },
+          });
+
+          if (error) {
+            throw error;
           }
 
-          // Check if username is taken (for signup)
-          if (data.username) {
-            const existingUsername = mockUsers.find(u => u.username === data.username);
-            if (existingUsername) {
-              throw new Error('Username already taken');
+          if (authData.user) {
+            // Create user profile in database
+            const { error: profileError } = await supabase
+              .from('users')
+              .insert({
+                id: authData.user.id,
+                username: data.username,
+                subscription_tier: 'free',
+                role: 'user',
+                learning_languages: [],
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              });
+
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+              // Don't throw here as the auth was successful
             }
+
+            set({ 
+              session: authData.session,
+              isAuthenticated: true,
+              isLoading: false 
+            });
+            
+            // Fetch user profile
+            await get().fetchUser();
           }
-          
-          // Create new mock user
-          const newUser: User = {
-            id: `user-${Date.now()}`,
-            email: data.email,
-            username: data.username,
-            learning_languages: [],
-            proficiency_level: undefined,
-            level: 'beginner',
-            savedVocabulary: [],
-            completedSongs: [],
-            completedQuizzes: [],
-            subscription_tier: 'free',
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          
-          // In a real app, this would be stored in the database
-          // For now, we just set it in the state
-          set({ user: newUser, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to sign up', 
+            error: error.message || 'Failed to sign up', 
+            isLoading: false 
+          });
+          throw error;
+        }
+      },
+
+      signInWithGoogle: async () => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          // OAuth redirect will handle the rest
+        } catch (error: any) {
+          set({ 
+            error: error.message || 'Failed to sign in with Google', 
             isLoading: false 
           });
           throw error;
@@ -140,35 +182,101 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          const currentUser = get().user;
-          if (!currentUser) {
-            throw new Error('User not authenticated');
+          const { error } = await supabase
+            .from('users')
+            .update({
+              learning_languages: [data.selectedLanguage.toLowerCase()],
+              proficiency_level: data.proficiencyLevel,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', data.userId);
+
+          if (error) {
+            throw error;
           }
 
-          // Update user with preferences
-          const updatedUser: User = {
-            ...currentUser,
-            learning_languages: [data.selectedLanguage.toLowerCase()],
-            proficiency_level: data.proficiencyLevel,
-            level: data.proficiencyLevel.toLowerCase() as any,
-            updated_at: new Date().toISOString(),
-          };
-
-          set({ user: updatedUser, isLoading: false });
-        } catch (error) {
+          // Fetch updated user data
+          await get().fetchUser();
+          
+          set({ isLoading: false });
+        } catch (error: any) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to update preferences', 
+            error: error.message || 'Failed to update preferences', 
             isLoading: false 
           });
           throw error;
         }
       },
+
+      fetchUser: async () => {
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          
+          if (!authUser) {
+            set({ user: null, isAuthenticated: false });
+            return;
+          }
+
+          const { data: userProfile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
+
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            return;
+          }
+
+          if (userProfile) {
+            const user: User = {
+              id: userProfile.id,
+              email: authUser.email || '',
+              username: userProfile.username,
+              learning_languages: userProfile.learning_languages || [],
+              proficiency_level: userProfile.proficiency_level as any,
+              level: userProfile.proficiency_level?.toLowerCase() as any || 'beginner',
+              savedVocabulary: [], // TODO: Fetch from database
+              completedSongs: [], // TODO: Fetch from database
+              completedQuizzes: [], // TODO: Fetch from database
+              subscription_tier: userProfile.subscription_tier,
+              role: userProfile.role,
+              created_at: userProfile.created_at,
+              updated_at: userProfile.updated_at,
+            };
+
+            set({ user, isAuthenticated: true });
+          }
+        } catch (error) {
+          console.error('Error in fetchUser:', error);
+        }
+      },
       
-      logout: () => {
-        set({ user: null, isAuthenticated: false });
+      logout: async () => {
+        try {
+          await supabase.auth.signOut();
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            session: null,
+            error: null 
+          });
+        } catch (error) {
+          console.error('Logout error:', error);
+        }
+      },
+
+      setSession: (session: any) => {
+        set({ 
+          session,
+          isAuthenticated: !!session,
+        });
+        
+        if (session) {
+          get().fetchUser();
+        } else {
+          set({ user: null });
+        }
       },
       
       clearError: () => {
@@ -178,11 +286,16 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'audiora-auth',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        // Only persist user data, not session (Supabase handles session persistence)
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
 
-// Song store with mock data
+// Song store with mock data (will be updated to use Supabase later)
 export const useSongStore = create<SongState>()((set, get) => ({
   songs: [],
   currentSong: null,
@@ -194,7 +307,7 @@ export const useSongStore = create<SongState>()((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
+      // Simulate API call - TODO: Replace with Supabase query
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Apply filters to mock data
@@ -271,8 +384,7 @@ export const useVocabularyStore = create<VocabularyState>()((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // In a real app, this would fetch from the database
-      // For now, we just use what's in the store or from the user object
+      // TODO: Fetch from Supabase
       const user = useAuthStore.getState().user;
       
       if (user && user.savedVocabulary.length > 0) {
