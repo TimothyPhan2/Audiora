@@ -34,13 +34,15 @@ export function Header() {
               <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
               </Link>
-              <Button 
-                onClick={handleLogout} 
-                variant="ghost" 
-                className="justify-start px-0 text-muted-foreground hover:text-foreground"
-              >
-                Logout
-              </Button>
+              <Link to="/">
+                <Button 
+                  onClick={handleLogout} 
+                  variant="ghost" 
+                  className="justify-start px-0 text-muted-foreground hover:text-foreground"
+                >
+                  Logout
+                </Button>
+              </Link>
             </>
           ) : (
             <>
