@@ -250,6 +250,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('Error in fetchUser:', error);
+          await get().logout();
         }
       },
       
