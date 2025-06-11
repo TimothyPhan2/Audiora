@@ -73,15 +73,24 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
       } else {
         // Check if username is unique (in real app, this would be handled by the API)
         const signupData = data as SignupFormValues;
-        await signup(signupData);
-        toast.success('Account created successfully!', {
-          description: 'Welcome to Audiora! Let\'s set up your learning preferences.',
-        });
+        const result = await signup(signupData);
+        
+        if (result.needsEmailConfirmation) {
+          toast.success('Account created!', {
+            description: 'Please check your email to confirm your account before continuing.',
+          });
+          // Don't call onSuccess - user needs to confirm email first
+        } else {
+          toast.success('Account created successfully!', {
+            description: 'Welcome to Audiora! Let\'s set up your learning preferences.',
+          });
+          
+          if (onSuccess) {
+            onSuccess();
+          }
+        }
       }
 
-      if (onSuccess) {
-        onSuccess();
-      }
     } catch (error) {
       console.error('Auth error:', error);
       

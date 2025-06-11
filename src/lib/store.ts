@@ -5,6 +5,7 @@ import {
   AuthFormData, 
   OnboardingData,
   PreferenceUpdate,
+  SignupResult,
   Song, 
   SongFilters, 
   User, 
@@ -19,7 +20,7 @@ interface AuthState {
   error: string | null;
   session: any;
   login: (data: AuthFormData) => Promise<void>;
-  signup: (data: AuthFormData) => Promise<void>;
+  signup: (data: AuthFormData) => Promise<SignupResult>;
   signInWithGoogle: () => Promise<void>;
   updateUserPreferences: (data: PreferenceUpdate) => Promise<void>;
   logout: () => Promise<void>;
@@ -135,15 +136,29 @@ export const useAuthStore = create<AuthState>()(
               // Don't throw here as the auth was successful
             }
 
-            set({ 
-              session: authData.session,
-              isAuthenticated: true,
-              isLoading: false 
-            });
-            
-            // Fetch user profile
-            await get().fetchUser();
+            // Check if session exists (email confirmation status)
+            if (authData.session) {
+              // Email confirmation disabled or user confirmed immediately
+              set({ 
+                session: authData.session,
+                isAuthenticated: true,
+                isLoading: false 
+              });
+              
+              // Fetch user profile
+              await get().fetchUser();
+              
+              return { needsEmailConfirmation: false };
+            } else {
+              // Email confirmation required
+              set({ isLoading: false });
+              return { needsEmailConfirmation: true };
+            }
           }
+          
+          // Fallback - should not reach here normally
+          set({ isLoading: false });
+          return { needsEmailConfirmation: true };
         } catch (error: any) {
           set({ 
             error: error.message || 'Failed to sign up', 

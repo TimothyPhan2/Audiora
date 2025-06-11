@@ -113,6 +113,10 @@ export interface PreferenceUpdate {
   proficiencyLevel: ProficiencyLevel;
 }
 
+export interface SignupResult {
+  needsEmailConfirmation: boolean;
+}
+
 // Filter types
 export interface SongFilters {
   language?: string;
