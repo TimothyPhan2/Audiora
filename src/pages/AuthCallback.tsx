@@ -22,37 +22,15 @@ export function AuthCallback() {
         if (data.session) {
           setSession(data.session);
           
-          // Check if user profile exists, create if not
-          const { data: userProfile, error: profileError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-
-          if (profileError && profileError.code === 'PGRST116') {
-            // User profile doesn't exist, create it
-            const { error: insertError } = await supabase
-              .from('users')
-              .insert({
-                id: data.session.user.id,
-                username: data.session.user.user_metadata?.full_name || 
-                         data.session.user.email?.split('@')[0],
-                subscription_tier: 'free',
-                role: 'user',
-                learning_languages: [],
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              });
-
-            if (insertError) {
-              console.error('Error creating user profile:', insertError);
-            }
-          }
-
-          // Fetch user data
+          // Fetch user data (this will create profile if it doesn't exist)
           await fetchUser();
           
+          // Get updated user state to check onboarding status
+          const userState = useAuthStore.getState();
+          const user = userState.user;
+          
           // Redirect based on onboarding status
-          if (userProfile && userProfile.learning_languages?.length > 0 && userProfile.proficiency_level) {
+          if (user && user.learning_languages?.length > 0 && user.proficiency_level) {
             navigate('/dashboard', { replace: true });
           } else {
             navigate('/onboarding', { replace: true });

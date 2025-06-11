@@ -119,23 +119,6 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (authData.user) {
-            // Create user profile in database
-            const { error: profileError } = await supabase
-              .from('users')
-              .insert({
-                id: authData.user.id,
-                username: data.username,
-                subscription_tier: 'free',
-                role: 'user',
-                learning_languages: [],
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              });
-
-            if (profileError) {
-              console.error('Profile creation error:', profileError);
-              // Don't throw here as the auth was successful
-            }
-
             // Check if session exists (email confirmation status)
             if (authData.session) {
               // Email confirmation disabled or user confirmed immediately
@@ -145,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
                 isLoading: false 
               });
               
-              // Fetch user profile
+              // Fetch user profile (this will create it if it doesn't exist)
               await get().fetchUser();
               
               return { needsEmailConfirmation: false };
@@ -232,18 +215,69 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
+          // Try to fetch user profile
           const { data: userProfile, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', authUser.id)
             .limit(1);
 
-          if (error) {
+          // If user profile doesn't exist, create it
+          if (error && error.code === 'PGRST116') {
+            // User profile doesn't exist, create it
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: authUser.id,
+                username: authUser.user_metadata?.username || 
+                         authUser.user_metadata?.full_name || 
+                         authUser.email?.split('@')[0],
+                subscription_tier: 'free',
+                role: 'user',
+                learning_languages: [],
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              });
+
+            if (insertError) {
+              console.error('Error creating user profile:', insertError);
+              return;
+            }
+
+            // Fetch the newly created profile
+            const { data: newUserProfile, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', authUser.id)
+              .limit(1);
+
+            if (fetchError || !newUserProfile || newUserProfile.length === 0) {
+              console.error('Error fetching newly created user profile:', fetchError);
+              return;
+            }
+
+            const profile = newUserProfile[0];
+            const user: User = {
+              id: profile.id,
+              email: authUser.email || '',
+              username: profile.username,
+              learning_languages: profile.learning_languages || [],
+              proficiency_level: profile.proficiency_level as any,
+              level: profile.proficiency_level?.toLowerCase() as any || 'beginner',
+              savedVocabulary: [], // TODO: Fetch from database
+              completedSongs: [], // TODO: Fetch from database
+              completedQuizzes: [], // TODO: Fetch from database
+              subscription_tier: profile.subscription_tier,
+              role: profile.role,
+              created_at: profile.created_at,
+              updated_at: profile.updated_at,
+            };
+
+            set({ user, isAuthenticated: true });
+          } else if (error) {
             console.error('Error fetching user profile:', error);
             return;
-          }
-
-          if (userProfile && userProfile.length > 0) {
+          } else if (userProfile && userProfile.length > 0) {
+            // User profile exists
             const profile = userProfile[0];
             const user: User = {
               id: profile.id,
