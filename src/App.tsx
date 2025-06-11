@@ -54,7 +54,7 @@ function AppContent() {
         </Routes>
       </main>
       {!isAuthPage && !isDashboardPage && <Footer />}
-      <Toaster position="top-right" />
+      <Toaster position="top-right" duration={2500}/>
     </div>
   );
 }
