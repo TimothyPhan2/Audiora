@@ -56,7 +56,15 @@
   
   .auth-gradient {
     @apply bg-gradient-to-b from-base-dark1 via-base-dark2 to-base-dark1;
-    @apply after:content-[''] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_center,rgba(2,195,154,0.08),transparent_70%)] after:pointer-events-none;
+    @apply relative;
+  }
+
+  .auth-gradient::before {
+    @apply content-[''] absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(2,195,154,0.12),transparent_50%)] pointer-events-none;
+  }
+
+  .auth-gradient::after {
+    @apply content-[''] absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(2,195,154,0.08),transparent_70%)] pointer-events-none;
   }
   
   .hero-gradient {

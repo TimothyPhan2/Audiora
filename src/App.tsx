@@ -9,12 +9,13 @@ import { Footer } from '@/components/layout/Footer';
 import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Signup } from '@/pages/Signup';
+import { Onboarding } from '@/pages/Onboarding';
 import { Pricing } from '@/pages/Pricing';
 import { Dashboard } from '@/pages/Dashboard';
 
 function AppContent() {
   const { pathname } = useLocation();
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/onboarding';
   const isDashboardPage = pathname === '/dashboard';
 
   return (
@@ -25,6 +26,7 @@ function AppContent() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>

@@ -2,15 +2,22 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
-  language: string;
+  username?: string;
+  learning_languages: string[];
+  proficiency_level?: ProficiencyLevel;
   level: LanguageLevel;
   savedVocabulary: VocabularyItem[];
   completedSongs: string[];
   completedQuizzes: string[];
+  subscription_tier: 'free' | 'premium' | 'pro';
+  role: 'user' | 'admin' | 'moderator';
+  created_at: string;
+  updated_at: string;
 }
 
 export type LanguageLevel = 'beginner' | 'intermediate' | 'advanced' | 'fluent';
+export type ProficiencyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Fluent';
+export type SupportedLanguage = 'Spanish' | 'French' | 'Italian' | 'German';
 
 // Song and lyrics types
 export interface Song {
@@ -92,9 +99,18 @@ export interface UserProgress {
 export interface AuthFormData {
   email: string;
   password: string;
-  name?: string;
-  language?: string;
-  level?: LanguageLevel;
+  username?: string;
+}
+
+export interface OnboardingData {
+  selectedLanguage: SupportedLanguage;
+  proficiencyLevel: ProficiencyLevel;
+}
+
+export interface PreferenceUpdate {
+  userId: string;
+  selectedLanguage: SupportedLanguage;
+  proficiencyLevel: ProficiencyLevel;
 }
 
 // Filter types

@@ -1,11 +1,31 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { useAuthStore } from '@/lib/store';
+import { useEffect } from 'react';
 
 export function Login() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users appropriately
+    if (isAuthenticated && user) {
+      // Check if user has completed onboarding
+      if (user.learning_languages.length > 0 && user.proficiency_level) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/onboarding', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
   
   const handleLoginSuccess = () => {
-    navigate('/dashboard');
+    // Check if user needs onboarding
+    if (user && (user.learning_languages.length === 0 || !user.proficiency_level)) {
+      navigate('/onboarding');
+    } else {
+      navigate('/dashboard');
+    }
   };
   
   return (

@@ -5,93 +5,111 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/lib/store';
-import { LanguageLevel } from '@/lib/types';
 import { toast } from 'sonner';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
-// Form validation schemas
+// Enhanced validation schemas
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  email: z.string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
+  password: z.string()
+    .min(1, { message: 'Password is required' }),
 });
 
 const signupSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  language: z.string().min(1, { message: 'Please select a language' }),
-  level: z.enum(['beginner', 'intermediate', 'advanced', 'fluent']),
+  username: z.string()
+    .min(3, { message: 'Username must be at least 3 characters' })
+    .max(20, { message: 'Username must be no more than 20 characters' })
+    .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores' }),
+  email: z.string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters' })
+    .regex(/(?=.*[0-9])/, { message: 'Password must contain at least one number' })
+    .regex(/(?=.*[!@#$%^&*])/, { message: 'Password must contain at least one special character (!@#$%^&*)' }),
 });
 
-// Type for the form props
 type AuthFormProps = {
   type: 'login' | 'signup';
   onSuccess?: () => void;
 };
 
-// Type for the form values based on the form type
-type FormValues = z.infer<typeof loginSchema> | z.infer<typeof signupSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, signup, error, clearError } = useAuthStore();
 
-  // Initialize form with the appropriate schema based on form type
+  const schema = type === 'login' ? loginSchema : signupSchema;
+  
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(type === 'login' ? loginSchema : signupSchema),
+    setError,
+  } = useForm<LoginFormValues | SignupFormValues>({
+    resolver: zodResolver(schema),
     defaultValues: type === 'login' 
       ? { email: '', password: '' } 
-      : { name: '', email: '', password: '', language: 'spanish', level: 'beginner' as LanguageLevel },
+      : { username: '', email: '', password: '' },
   });
 
-  // Handle form submission
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: LoginFormValues | SignupFormValues) => {
     setIsLoading(true);
     clearError();
 
     try {
       if (type === 'login') {
-        await login(data);
+        await login(data as LoginFormValues);
+        toast.success('Welcome back!', {
+          description: 'You have successfully logged in.',
+        });
       } else {
-        await signup(data);
+        // Check if username is unique (in real app, this would be handled by the API)
+        const signupData = data as SignupFormValues;
+        await signup(signupData);
+        toast.success('Account created successfully!', {
+          description: 'Welcome to Audiora! Let\'s set up your learning preferences.',
+        });
       }
 
       if (onSuccess) {
         onSuccess();
       }
-
-      toast.success(
-        type === 'login' ? 'Login successful!' : 'Account created!',
-        {
-          description: type === 'login' 
-            ? 'Welcome back to Audiora.' 
-            : 'Welcome to Audiora! Start your language learning journey.',
-        }
-      );
     } catch (error) {
       console.error('Auth error:', error);
-      toast.error('Authentication failed', {
-        description: error instanceof Error ? error.message : 'Please check your credentials and try again'
-      });
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('username')) {
+          setError('username', { 
+            type: 'manual', 
+            message: 'This username is already taken' 
+          });
+        } else if (error.message.includes('email')) {
+          setError('email', { 
+            type: 'manual', 
+            message: 'This email is already registered' 
+          });
+        } else {
+          toast.error('Authentication failed', {
+            description: error.message || 'Please check your credentials and try again'
+          });
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Helper for Select components since they don't work directly with register
-  const handleSelectChange = (field: string, value: string) => {
-    setValue(field as any, value, { shouldValidate: true });
-  };
-
   return (
-    <div className="frosted-glass p-8 w-full max-w-md mx-auto border border-teal-400/20">
-      <h2 className="text-2xl font-bold mb-6 text-center">
+    <div className="frosted-glass p-8 w-full max-w-md mx-auto border border-accent-teal-500/20 rounded-xl backdrop-blur-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-text-cream100">
         {type === 'login' ? 'Welcome Back' : 'Create Your Account'}
       </h2>
       
@@ -101,34 +119,36 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
         </div>
       )}
       
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {type === 'signup' && (
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="username" className="text-text-cream200">Username</Label>
             <Input
-              id="name"
-              placeholder="Enter your name"
-              className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
-                (errors as any).name ? 'border-red-500' : ''
+              id="username"
+              placeholder="Enter your username"
+              className={`bg-white/10 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 placeholder:text-text-cream400/60 transition-all duration-300 ${
+                errors.username ? 'border-red-500 focus:border-red-500' : ''
               }`}
-              {...register('name')}
+              {...register('username')}
+              disabled={isLoading}
             />
-            {(errors as any).name && (
-              <p className="text-sm text-red-400">{(errors as any).name.message}</p>
+            {errors.username && (
+              <p className="text-sm text-red-400">{errors.username.message}</p>
             )}
           </div>
         )}
         
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-text-cream200">Email</Label>
           <Input
             id="email"
             type="email"
             placeholder="Enter your email"
-            className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
-              errors.email ? 'border-red-500' : ''
+            className={`bg-white/10 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 placeholder:text-text-cream400/60 transition-all duration-300 ${
+              errors.email ? 'border-red-500 focus:border-red-500' : ''
             }`}
             {...register('email')}
+            disabled={isLoading}
           />
           {errors.email && (
             <p className="text-sm text-red-400">{errors.email.message}</p>
@@ -136,77 +156,50 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 placeholder:text-base-dark3/60 ${
-              errors.password ? 'border-red-500' : ''
-            }`}
-            {...register('password')}
-          />
+          <Label htmlFor="password" className="text-text-cream200">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter your password"
+              className={`bg-white/10 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 placeholder:text-text-cream400/60 pr-10 transition-all duration-300 ${
+                errors.password ? 'border-red-500 focus:border-red-500' : ''
+              }`}
+              {...register('password')}
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-cream400 hover:text-text-cream200 transition-colors duration-200"
+              disabled={isLoading}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           {errors.password && (
             <p className="text-sm text-red-400">{errors.password.message}</p>
           )}
+          {type === 'signup' && (
+            <div className="text-xs text-text-cream400 mt-1">
+              Password must contain at least 8 characters, 1 number, and 1 special character
+            </div>
+          )}
         </div>
-        
-        {type === 'signup' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="language">Language to Learn</Label>
-              <Select 
-                onValueChange={(value) => handleSelectChange('language', value)}
-                defaultValue="spanish"
-              >
-                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 ${
-                  (errors as any).language ? 'border-red-500' : ''
-                }`}>
-                  <SelectValue placeholder="Select a language" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-teal-400/30 shadow-lg">
-                  <SelectItem value="spanish" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Spanish</SelectItem>
-                  <SelectItem value="french" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">French</SelectItem>
-                  <SelectItem value="italian" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Italian</SelectItem>
-                  <SelectItem value="german" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">German</SelectItem>
-                </SelectContent>
-              </Select>
-              {(errors as any).language && (
-                <p className="text-sm text-destructive">{(errors as any).language.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="level">Your Current Level</Label>
-              <Select 
-                onValueChange={(value) => handleSelectChange('level', value as LanguageLevel)}
-                defaultValue="beginner"
-              >
-                <SelectTrigger className={`bg-white border-teal-400/30 focus:border-mint-400 text-base-dark1 ${
-                  (errors as any).level ? 'border-red-500' : ''
-                }`}>
-                  <SelectValue placeholder="Select your level" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-teal-400/30 shadow-lg">
-                  <SelectItem value="beginner" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Beginner</SelectItem>
-                  <SelectItem value="intermediate" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Intermediate</SelectItem>
-                  <SelectItem value="advanced" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Advanced</SelectItem>
-                  <SelectItem value="fluent" className="text-base-dark1 focus:bg-gray-100 focus:text-accent-teal-500 data-[state=checked]:text-accent-persian-500 data-[state=checked]:bg-gray-50">Fluent</SelectItem>
-                </SelectContent>
-              </Select>
-              {(errors as any).level && (
-                <p className="text-sm text-destructive">{(errors as any).level.message}</p>
-              )}
-            </div>
-          </>
-        )}
         
         <Button 
           type="submit" 
-          className="w-full button-gradient-primary mt-6 text-white"
+          className="w-full button-gradient-primary text-white font-medium py-3 transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
-          {isLoading ? 'Processing...' : type === 'login' ? 'Login' : 'Create Account'}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {type === 'login' ? 'Signing in...' : 'Creating account...'}
+            </>
+          ) : (
+            type === 'login' ? 'Sign In' : 'Create Account'
+          )}
         </Button>
       </form>
     </div>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
@@ -68,11 +70,31 @@ const levelColors = {
 
 export function Dashboard() {
   const [open, setOpen] = useState(false);
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
-  const userLanguage = user?.language || 'spanish';
-  const userLevel = user?.level || 'beginner';
-  const userName = user?.name || 'Language Learner';
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    // Redirect to onboarding if user hasn't completed it
+    if (user && (user.learning_languages.length === 0 || !user.proficiency_level)) {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Don't render anything while checking authentication/onboarding status
+  if (!isAuthenticated || !user || user.learning_languages.length === 0 || !user.proficiency_level) {
+    return null;
+  }
+
+  const userLanguage = user.learning_languages[0] || 'spanish';
+  const userLevel = user.proficiency_level?.toLowerCase() || 'beginner';
+  const userName = user.username || 'Language Learner';
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 overflow-hidden">

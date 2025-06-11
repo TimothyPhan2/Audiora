@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { 
   AuthFormData, 
+  OnboardingData,
+  PreferenceUpdate,
   Song, 
   SongFilters, 
   User, 
@@ -16,6 +18,7 @@ interface AuthState {
   error: string | null;
   login: (data: AuthFormData) => Promise<void>;
   signup: (data: AuthFormData) => Promise<void>;
+  updateUserPreferences: (data: PreferenceUpdate) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
@@ -78,6 +81,7 @@ export const useAuthStore = create<AuthState>()(
             error: error instanceof Error ? error.message : 'Failed to login', 
             isLoading: false 
           });
+          throw error;
         }
       },
       
@@ -94,17 +98,30 @@ export const useAuthStore = create<AuthState>()(
           if (existingUser) {
             throw new Error('Email already in use');
           }
+
+          // Check if username is taken (for signup)
+          if (data.username) {
+            const existingUsername = mockUsers.find(u => u.username === data.username);
+            if (existingUsername) {
+              throw new Error('Username already taken');
+            }
+          }
           
           // Create new mock user
           const newUser: User = {
             id: `user-${Date.now()}`,
             email: data.email,
-            name: data.name || 'User',
-            language: data.language || 'spanish',
-            level: data.level || 'beginner',
+            username: data.username,
+            learning_languages: [],
+            proficiency_level: undefined,
+            level: 'beginner',
             savedVocabulary: [],
             completedSongs: [],
             completedQuizzes: [],
+            subscription_tier: 'free',
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
           
           // In a real app, this would be stored in the database
@@ -115,6 +132,38 @@ export const useAuthStore = create<AuthState>()(
             error: error instanceof Error ? error.message : 'Failed to sign up', 
             isLoading: false 
           });
+          throw error;
+        }
+      },
+
+      updateUserPreferences: async (data: PreferenceUpdate) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          const currentUser = get().user;
+          if (!currentUser) {
+            throw new Error('User not authenticated');
+          }
+
+          // Update user with preferences
+          const updatedUser: User = {
+            ...currentUser,
+            learning_languages: [data.selectedLanguage.toLowerCase()],
+            proficiency_level: data.proficiencyLevel,
+            level: data.proficiencyLevel.toLowerCase() as any,
+            updated_at: new Date().toISOString(),
+          };
+
+          set({ user: updatedUser, isLoading: false });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to update preferences', 
+            isLoading: false 
+          });
+          throw error;
         }
       },
       

@@ -7,6 +7,10 @@ export function Header() {
   const { isAuthenticated, logout } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container-center flex h-16 items-center justify-between">
@@ -31,7 +35,7 @@ export function Header() {
                 Dashboard
               </Link>
               <Button 
-                onClick={() => logout()} 
+                onClick={handleLogout} 
                 variant="ghost" 
                 className="justify-start px-0 text-muted-foreground hover:text-foreground"
               >
@@ -95,8 +99,7 @@ export function Header() {
                 </Link>
                 <Button 
                   onClick={() => {
-                    logout();
-                    setIsMenuOpen(false);
+                    handleLogout();
                   }} 
                   variant="ghost" 
                   className="justify-start px-0 text-charcoal-600 hover:text-charcoal-800"
