@@ -126,6 +126,11 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-teal-400 to-accent-persian-500;
   }
 
+  /* Backface visibility for 3D card flips */
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
   /* Floating music notes animation */
   @keyframes float {
     0% {
