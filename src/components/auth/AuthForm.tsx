@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
+import { EmailConfirmationModal } from './EmailConfirmationModal';
 
 // Enhanced validation schemas
 const loginSchema = z.object({
@@ -44,6 +45,8 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export function AuthForm({ type, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
   const { login, signup, signInWithGoogle, error, clearError } = useAuthStore();
 
   const schema = type === 'login' ? loginSchema : signupSchema;
@@ -76,10 +79,9 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
         const result = await signup(signupData);
         
         if (result.needsEmailConfirmation) {
-          toast.success('Account created!', {
-            description: 'Please check your email to confirm your account before continuing.',
-          });
-          // Don't call onSuccess - user needs to confirm email first
+          // Show email confirmation modal instead of toast
+          setUserEmail(signupData.email);
+          setShowEmailModal(true);
         } else {
           toast.success('Account created successfully!', {
             description: 'Welcome to Audiora! Let\'s set up your learning preferences.',
@@ -134,6 +136,11 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
       });
       setIsLoading(false);
     }
+  };
+
+  const handleEmailModalClose = () => {
+    setShowEmailModal(false);
+    setUserEmail('');
   };
   return (
     <div className="frosted-glass p-8 w-full max-w-md mx-auto border border-accent-teal-500/20 rounded-xl backdrop-blur-md">
@@ -254,6 +261,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
           )}
         </Button>
       </form>
+      
+      {/* Email Confirmation Modal */}
+      <EmailConfirmationModal
+        isOpen={showEmailModal}
+        onClose={handleEmailModalClose}
+        email={userEmail}
+      />
     </div>
   );
 }
