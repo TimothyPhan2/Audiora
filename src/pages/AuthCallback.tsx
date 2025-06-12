@@ -65,7 +65,7 @@ export function AuthCallback() {
         <div className="flex items-center justify-center gap-2 text-text-cream300">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>Please wait while we set up your account</span>
-          <div className="mt-4 text-sm text-text-cream400">
+          <div className="text-center mt-4 text-sm text-text-cream400">
             <p>This may take a few moments. Please don't close this window.</p>
           </div>
         </div>
