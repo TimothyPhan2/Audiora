@@ -22,17 +22,18 @@ export function AuthCallback() {
         if (data.session) {
           setSession(data.session);
           
-          // Fetch user data (this will create profile if it doesn't exist)
-          await fetchUser();
+          // Fetch user data and get the returned user object
+          const user = await fetchUser();
           
-          // Get updated user state to check onboarding status
-          const userState = useAuthStore.getState();
-          const user = userState.user;
-          
-          // Redirect based on onboarding status
-          if (user && user.learning_languages?.length > 0 && user.proficiency_level) {
-            navigate('/dashboard', { replace: true });
+          if (user) {
+            // Use the returned user object to make navigation decision
+            if (user.learning_languages?.length > 0 && user.proficiency_level) {
+              navigate('/dashboard', { replace: true });
+            } else {
+              navigate('/onboarding', { replace: true });
+            }
           } else {
+            // If user fetch failed, redirect to onboarding as fallback
             navigate('/onboarding', { replace: true });
           }
         } else {

@@ -25,7 +25,7 @@ interface AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   setSession: (session: any) => void;
-  fetchUser: () => Promise<void>;
+  fetchUser: () => Promise<User | null>;
 }
 
 interface SongState {
@@ -206,13 +206,13 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      fetchUser: async () => {
+      fetchUser: async (): Promise<User | null> => {
         try {
           const { data: { user: authUser } } = await supabase.auth.getUser();
           
           if (!authUser) {
             set({ user: null, isAuthenticated: false });
-            return;
+            return null;
           }
 
           // Try to fetch user profile
@@ -240,7 +240,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (insertError) {
               console.error('Error creating user profile:', insertError);
-              return;
+              return null;
             }
 
             // Fetch the newly created profile
@@ -252,7 +252,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (fetchError || !newUserProfile || newUserProfile.length === 0) {
               console.error('Error fetching newly created user profile:', fetchError);
-              return;
+              return null;
             }
 
             const profile = newUserProfile[0];
@@ -273,9 +273,10 @@ export const useAuthStore = create<AuthState>()(
             };
 
             set({ user, isAuthenticated: true });
+            return user;
           } else if (error) {
             console.error('Error fetching user profile:', error);
-            return;
+            return null;
           } else if (userProfile && userProfile.length > 0) {
             // User profile exists
             const profile = userProfile[0];
@@ -296,10 +297,14 @@ export const useAuthStore = create<AuthState>()(
             };
 
             set({ user, isAuthenticated: true });
+            return user;
           }
+          
+          return null;
         } catch (error) {
           console.error('Error in fetchUser:', error);
           await get().logout();
+          return null;
         }
       },
       
