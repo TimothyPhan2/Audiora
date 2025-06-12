@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 
 export function Header() {
   const { isAuthenticated, logout } = useAuthStore();
@@ -62,13 +63,15 @@ export function Header() {
 
         {/* Mobile Navigation Toggle */}
         <button 
-          className="md:hidden flex flex-col space-y-1.5 p-2"
+          className="md:hidden p-2 rounded-md hover:bg-accent/20 transition-colors"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
         >
-          <span className={`block w-6 h-0.5 bg-foreground transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-          <span className={`block w-6 h-0.5 bg-foreground transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-          <span className={`block w-6 h-0.5 bg-foreground transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+          {isMenuOpen ? (
+            <X className="h-6 w-6 text-foreground" />
+          ) : (
+            <Menu className="h-6 w-6 text-foreground" />
+          )}
         </button>
       </div>
 
