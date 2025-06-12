@@ -1,537 +1,379 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Music, Globe, Star, ArrowRight, Volume2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Music, Globe, Star, ArrowRight, Check } from 'lucide-react';
 
-// GlowEffect component adapted for Audiora's color scheme
-export type GlowEffectProps = {
-  className?: string;
-  style?: React.CSSProperties;
-  colors?: string[];
-  mode?:
-    | 'rotate'
-    | 'pulse'
-    | 'breathe'
-    | 'colorShift'
-    | 'flowHorizontal'
-    | 'static';
-  blur?:
-    | number
-    | 'softest'
-    | 'soft'
-    | 'medium'
-    | 'strong'
-    | 'stronger'
-    | 'strongest'
-    | 'none';
-  scale?: number;
-  duration?: number;
-};
+// Musical notes for animation
+const musicalNotes = ['♪', '♫', '♩', '♬', '♭', '♮', '♯', '♭'];
 
-export function GlowEffect({
-  className,
-  style,
-  colors = ['#2dd4bf', '#14b8a6', '#00a896', '#00d4b0'],
-  mode = 'rotate',
-  blur = 'medium',
-  scale = 1,
-  duration = 5,
-}: GlowEffectProps) {
-  const BASE_TRANSITION = {
-    repeat: Infinity,
-    duration: duration,
-    ease: 'linear',
-  };
-
-  const animations = {
-    rotate: {
-      background: [
-        `conic-gradient(from 0deg at 50% 50%, ${colors.join(', ')})`,
-        `conic-gradient(from 360deg at 50% 50%, ${colors.join(', ')})`,
-      ],
-      transition: BASE_TRANSITION,
-    },
-    pulse: {
-      background: colors.map(
-        (color) =>
-          `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 100%)`
-      ),
-      scale: [1 * scale, 1.1 * scale, 1 * scale],
-      opacity: [0.5, 0.8, 0.5],
-      transition: {
-        ...BASE_TRANSITION,
-        repeatType: 'mirror' as const,
-      },
-    },
-    breathe: {
-      background: [
-        ...colors.map(
-          (color) =>
-            `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 100%)`
-        ),
-      ],
-      scale: [1 * scale, 1.05 * scale, 1 * scale],
-      transition: {
-        ...BASE_TRANSITION,
-        repeatType: 'mirror' as const,
-      },
-    },
-    colorShift: {
-      background: colors.map((color, index) => {
-        const nextColor = colors[(index + 1) % colors.length];
-        return `conic-gradient(from 0deg at 50% 50%, ${color} 0%, ${nextColor} 50%, ${color} 100%)`;
-      }),
-      transition: {
-        ...BASE_TRANSITION,
-        repeatType: 'mirror' as const,
-      },
-    },
-    flowHorizontal: {
-      background: colors.map((color) => {
-        const nextColor = colors[(colors.indexOf(color) + 1) % colors.length];
-        return `linear-gradient(to right, ${color}, ${nextColor})`;
-      }),
-      transition: {
-        ...BASE_TRANSITION,
-        repeatType: 'mirror' as const,
-      },
-    },
-    static: {
-      background: `linear-gradient(to right, ${colors.join(', ')})`,
-    },
-  };
-
-  const getBlurClass = (blur: GlowEffectProps['blur']) => {
-    if (typeof blur === 'number') {
-      return `blur-[${blur}px]`;
-    }
-
-    const presets = {
-      softest: 'blur-sm',
-      soft: 'blur',
-      medium: 'blur-md',
-      strong: 'blur-lg',
-      stronger: 'blur-xl',
-      strongest: 'blur-xl',
-      none: 'blur-none',
-    };
-
-    return presets[blur as keyof typeof presets];
-  };
-
+// Component: BackgroundBeams
+// Purpose: Create an animated musical background with floating notes and waves
+const BackgroundBeams = React.memo(() => {
   return (
-    <motion.div
-      style={
-        {
-          ...style,
-          '--scale': scale,
-          willChange: 'transform',
-          backfaceVisibility: 'hidden',
-        } as React.CSSProperties
-      }
-      animate={animations[mode]}
-      className={cn(
-        'pointer-events-none absolute inset-0 h-full w-full',
-        'scale-[var(--scale)] transform-gpu',
-        getBlurClass(blur),
-        className
-      )}
-    />
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Background waves with reduced opacity */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 1200 800"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <linearGradient id="wave-gradient-1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(45, 212, 191, 0.2)" />
+            <stop offset="50%" stopColor="rgba(0, 168, 150, 0.2)" />
+            <stop offset="100%" stopColor="rgba(0, 212, 176, 0.2)" />
+          </linearGradient>
+          <linearGradient id="wave-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(0, 212, 176, 0.2)" />
+            <stop offset="50%" stopColor="rgba(45, 212, 191, 0.2)" />
+            <stop offset="100%" stopColor="rgba(0, 168, 150, 0.2)" />
+          </linearGradient>
+        </defs>
+        
+        {/* Background waves */}
+        <motion.path
+          d="M0,400 Q300,300 600,400 T1200,400 L1200,800 L0,800 Z"
+          fill="url(#wave-gradient-1)"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 0.2 }}
+          transition={{ duration: 3, ease: "easeInOut" }}
+        />
+        <motion.path
+          d="M0,500 Q300,450 600,500 T1200,500 L1200,800 L0,800 Z"
+          fill="url(#wave-gradient-2)"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 0.2 }}
+          transition={{ duration: 3, delay: 0.5, ease: "easeInOut" }}
+        />
+      </svg>
+
+      {/* Floating musical notes */}
+      <div className="absolute inset-0">
+        {musicalNotes.map((note, index) => (
+          <motion.div
+            key={index}
+            className="absolute text-accent-teal-400 text-4xl font-bold pointer-events-none select-none"
+            style={{
+              left: `${10 + index * 12}%`,
+              top: `${20 + Math.sin(index) * 15}%`,
+              fontSize: '32px',
+              textShadow: '0 0 20px rgba(45, 212, 191, 0.6), 0 0 40px rgba(45, 212, 191, 0.4)',
+              filter: 'drop-shadow(0 0 10px rgba(45, 212, 191, 0.8))',
+            }}
+            initial={{ 
+              opacity: 0.4,
+              scale: 0.95,
+              y: -30,
+              x: 0,
+              rotate: -10
+            }}
+            animate={{
+              opacity: [0.4, 0.8, 0.4],
+              scale: [0.95, 1.05, 0.95],
+              y: [-30, 30, -30],
+              x: [0, 15, 0],
+              rotate: [-10, 10, -10],
+            }}
+            transition={{
+              duration: 4 + (index % 3),
+              delay: index * 0.2,
+              repeat: Infinity,
+              repeatType: "reverse" as const,
+              ease: "easeInOut",
+            }}
+          >
+            {note}
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
+});
+
+BackgroundBeams.displayName = 'BackgroundBeams';
+
+interface OnboardingData {
+  language: string;
+  fluency: string;
 }
 
-// BackgroundBeams component with Audiora's teal color scheme
-export const BackgroundBeams = React.memo(
-  ({ className }: { className?: string }) => {
-    // Musical wave patterns that combine both sound waves and language elements
-    const paths = [
-      // Treble clef inspired wave
-      "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
-      // Bass clef inspired wave
-      "M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
-      // Eighth note inspired wave
-      "M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
-      // Quarter note inspired wave
-      "M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
-      // Half note inspired wave
-      "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
-    ];
-    
-    return (
-      <div
-        className={cn(
-          "absolute h-full w-full inset-0 [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center",
-          className,
-        )}
-      >
-        <svg
-          className="z-0 h-full w-full pointer-events-none absolute"
-          width="100%"
-          height="100%"
-          viewBox="0 0 696 316"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Animated musical waves */}
-          {paths.map((path, index) => (
-            <motion.path
-              key={`path-${index}`}
-              d={path}
-              stroke={`url(#linearGradient-${index})`}
-              strokeOpacity="0.4"
-              strokeWidth="0.5"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ 
-                pathLength: 1,
-                opacity: 0.4,
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                pathLength: { duration: 2, ease: "easeInOut" },
-                opacity: { duration: 1 },
-                scale: { 
-                  duration: 4,
-                  repeat: Infinity,
-                  repeatType: "reverse" as const,
-                  ease: "easeInOut"
-                }
-              }}
-            />
-          ))}
+interface MusicLanguageLearningOnboardingProps {
+  onComplete: (data: OnboardingData) => void;
+}
 
-          {/* Floating musical notes */}
-          {[...Array(5)].map((_, i) => (
-            <motion.g
-              key={`note-${i}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ 
-                opacity: [0.2, 0.4, 0.2],
-                y: [-20, 20, -20],
-                x: [0, 10, 0],
-                rotate: [0, 5, 0]
-              }}
-              transition={{
-                duration: 3 + i,
-                repeat: Infinity,
-                repeatType: "reverse" as const,
-                ease: "easeInOut",
-                delay: i * 0.5
-              }}
-            >
-              <text
-                x={100 + i * 120}
-                y={150}
-                className="text-accent-teal-400"
-                style={{ fontSize: '24px' }}
-              >
-                {['♪', '♫', '♩', '♬', '♭'][i]}
-              </text>
-            </motion.g>
-          ))}
-
-          <defs>
-            {paths.map((_, index) => (
-              <motion.linearGradient
-                id={`linearGradient-${index}`}
-                key={`gradient-${index}`}
-                initial={{
-                  x1: "0%",
-                  x2: "0%",
-                  y1: "0%",
-                  y2: "0%",
-                }}
-                animate={{
-                  x1: ["0%", "100%"],
-                  x2: ["0%", "95%"],
-                  y1: ["0%", "100%"],
-                  y2: ["0%", `${93 + Math.random() * 8}%`],
-                }}
-                transition={{
-                  duration: Math.random() * 10 + 10,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  delay: Math.random() * 10,
-                }}
-              >
-                <stop stopColor="#2dd4bf" stopOpacity="0" />
-                <stop stopColor="#2dd4bf" />
-                <stop offset="32.5%" stopColor="#14b8a6" />
-                <stop offset="100%" stopColor="#00a896" stopOpacity="0" />
-              </motion.linearGradient>
-            ))}
-          </defs>
-        </svg>
-      </div>
-    );
-  },
-);
-
-BackgroundBeams.displayName = "BackgroundBeams";
-
-// Language options data - matching Audiora's supported languages
 const languages = [
-  { value: 'Spanish', label: 'Spanish', flag: '🇪🇸' },
-  { value: 'French', label: 'French', flag: '🇫🇷' },
-  { value: 'German', label: 'German', flag: '🇩🇪' },
-  { value: 'Italian', label: 'Italian', flag: '🇮🇹' },
+  { code: 'spanish', name: 'Spanish', flag: '🇪🇸', description: 'Learn with Latin rhythms' },
+  { code: 'french', name: 'French', flag: '🇫🇷', description: 'Discover chanson and pop' },
+  { code: 'italian', name: 'Italian', flag: '🇮🇹', description: 'Opera and modern hits' },
+  { code: 'german', name: 'German', flag: '🇩🇪', description: 'From classical to electronic' },
 ];
 
 const fluencyLevels = [
-  { value: 'Beginner', label: 'Beginner', description: 'Just starting out or know very basic words' },
-  { value: 'Intermediate', label: 'Intermediate', description: 'Can understand simple conversations and texts' },
-  { value: 'Advanced', label: 'Advanced', description: 'Comfortable with complex topics and expressions' },
-  { value: 'Fluent', label: 'Fluent', description: 'Near-native level understanding and speaking' },
+  { 
+    level: 'Beginner', 
+    description: 'Just starting out',
+    details: 'Perfect for first-time learners. We\'ll start with simple songs and basic vocabulary.',
+    icon: <Star className="w-5 h-5" />
+  },
+  { 
+    level: 'Intermediate', 
+    description: 'Some experience',
+    details: 'You know some basics. We\'ll help you expand with more complex songs and grammar.',
+    icon: <Globe className="w-5 h-5" />
+  },
+  { 
+    level: 'Advanced', 
+    description: 'Quite comfortable',
+    details: 'You\'re confident with the language. Let\'s refine your skills with challenging content.',
+    icon: <Music className="w-5 h-5" />
+  },
+  { 
+    level: 'Fluent', 
+    description: 'Nearly native level',
+    details: 'You\'re almost fluent. We\'ll help you perfect nuances and cultural expressions.',
+    icon: <Check className="w-5 h-5" />
+  },
 ];
 
-interface OnboardingFormProps {
-  onComplete?: (data: { language: string; fluency: string }) => void;
-}
-
-function MusicLanguageLearningOnboarding({ onComplete }: OnboardingFormProps = {}) {
+export function MusicLanguageLearningOnboarding({ onComplete }: MusicLanguageLearningOnboardingProps) {
+  const [step, setStep] = useState(1);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [selectedFluency, setSelectedFluency] = useState('');
-  const [step, setStep] = useState(1);
 
-  const handleNext = () => {
-    if (step === 1 && selectedLanguage) {
-      setStep(2);
-    } else if (step === 2 && selectedFluency) {
-      onComplete?.({ language: selectedLanguage, fluency: selectedFluency });
+  const handleLanguageSelect = (language: string) => {
+    setSelectedLanguage(language);
+    setTimeout(() => setStep(2), 300);
+  };
+
+  const handleFluencySelect = (fluency: string) => {
+    setSelectedFluency(fluency);
+  };
+
+  const handleComplete = () => {
+    if (selectedLanguage && selectedFluency) {
+      onComplete({
+        language: selectedLanguage,
+        fluency: selectedFluency,
+      });
     }
   };
 
-  const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
-    }
-  };
-
-  const canProceed = step === 1 ? selectedLanguage : selectedFluency;
+  const selectedLanguageData = languages.find(lang => lang.code === selectedLanguage);
+  const selectedFluencyData = fluencyLevels.find(level => level.level === selectedFluency);
 
   return (
-    <div className="min-h-screen auth-gradient relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 flex items-center justify-center p-4 relative overflow-hidden">
       <BackgroundBeams />
       
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-2xl"
-        >
-          <Card className="relative overflow-hidden frosted-glass border border-accent-teal-500/20 shadow-2xl">
-            <GlowEffect
-              colors={['#2dd4bf', '#14b8a6', '#00a896', '#00d4b0']}
-              mode="breathe"
-              blur="medium"
-              className="opacity-20"
-            />
-            
-            <CardHeader className="relative z-10 text-center pb-8 pt-12">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-accent-teal-400 to-accent-teal-500 rounded-full flex items-center justify-center"
-              >
-                <Music className="w-10 h-10 text-base-dark2" />
-              </motion.div>
-              
-              <motion.h1
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-4xl font-bold gradient-text mb-4"
-              >
-                Welcome to Audiora!
-              </motion.h1>
-              
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="text-lg text-text-cream300 max-w-md mx-auto"
-              >
-                Learn languages through the power of music. Let's personalize your learning journey!
-              </motion.p>
-            </CardHeader>
-
-            <CardContent className="relative z-10 px-8 pb-12">
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step >= 1 ? 'bg-accent-teal-400 text-base-dark2' : 'bg-base-dark3 text-text-cream400'
-                    }`}>
-                      1
-                    </div>
-                    <span className={`text-sm font-medium ${step >= 1 ? 'text-text-cream100' : 'text-text-cream400'}`}>
-                      Choose Language
-                    </span>
-                  </div>
-                  
-                  <div className="flex-1 mx-4 h-1 bg-base-dark3 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-accent-teal-400 to-accent-mint-400"
-                      initial={{ width: "0%" }}
-                      animate={{ width: step >= 2 ? "100%" : "0%" }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step >= 2 ? 'bg-accent-teal-400 text-base-dark2' : 'bg-base-dark3 text-text-cream400'
-                    }`}>
-                      2
-                    </div>
-                    <span className={`text-sm font-medium ${step >= 2 ? 'text-text-cream100' : 'text-text-cream400'}`}>
-                      Fluency Level
-                    </span>
-                  </div>
-                </div>
+      <div className="w-full max-w-4xl mx-auto relative z-10">
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="text-center space-y-8"
+            >
+              {/* Header */}
+              <div className="space-y-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent-teal-500/20 rounded-full border border-accent-teal-500/30"
+                >
+                  <Music className="w-5 h-5 text-accent-teal-400" />
+                  <span className="text-accent-teal-400 font-medium">Welcome to Audiora</span>
+                </motion.div>
+                
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-4xl md:text-5xl font-bold gradient-text"
+                >
+                  Which language would you like to learn?
+                </motion.h1>
+                
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-lg text-text-cream300 max-w-2xl mx-auto"
+                >
+                  Choose your target language and start your musical learning journey
+                </motion.p>
               </div>
 
+              {/* Language Selection */}
               <motion.div
-                key={step}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto"
               >
-                {step === 1 && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <Globe className="w-12 h-12 text-accent-teal-400 mx-auto mb-4" />
-                      <h2 className="text-2xl font-semibold mb-2 text-text-cream100">Which language would you like to learn?</h2>
-                      <p className="text-text-cream300">Choose the language you want to master through music</p>
-                    </div>
+                {languages.map((language, index) => (
+                  <motion.div
+                    key={language.code}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Card
+                      className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 ${
+                        selectedLanguage === language.code
+                          ? 'border-accent-teal-400 bg-accent-teal-500/10'
+                          : 'border-accent-teal-500/20 hover:border-accent-teal-400/50 bg-base-dark3/60'
+                      }`}
+                      onClick={() => handleLanguageSelect(language.code)}
+                    >
+                      <CardContent className="p-6 text-center space-y-3">
+                        <div className="text-4xl mb-2">{language.flag}</div>
+                        <h3 className="text-xl font-semibold text-text-cream100">{language.name}</h3>
+                        <p className="text-text-cream300 text-sm">{language.description}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
 
-                    <div className="space-y-3">
-                      <Label htmlFor="language-select" className="text-base font-medium text-text-cream200">
-                        Select Language
-                      </Label>
-                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="h-14 text-left bg-white/10 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
-                          <SelectValue placeholder="Choose your target language..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
-                          {languages.map((language) => (
-                            <SelectItem key={language.value} value={language.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
-                              <div className="flex items-center space-x-3">
-                                <span className="text-2xl">{language.flag}</span>
-                                <span className="font-medium">{language.label}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-8"
+            >
+              {/* Header */}
+              <div className="text-center space-y-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent-teal-500/20 rounded-full border border-accent-teal-500/30"
+                >
+                  {selectedLanguageData?.flag}
+                  <span className="text-accent-teal-400 font-medium">{selectedLanguageData?.name}</span>
+                </motion.div>
+                
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-4xl md:text-5xl font-bold gradient-text"
+                >
+                  What's your current level?
+                </motion.h1>
+                
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-lg text-text-cream300 max-w-2xl mx-auto"
+                >
+                  Help us personalize your learning experience
+                </motion.p>
+              </div>
 
-                    {selectedLanguage && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-4 bg-accent-teal-500/10 border border-accent-teal-400/30 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Volume2 className="w-5 h-5 text-accent-teal-400" />
+              {/* Fluency Level Selection */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto"
+              >
+                {fluencyLevels.map((level, index) => (
+                  <motion.div
+                    key={level.level}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Card
+                      className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 ${
+                        selectedFluency === level.level
+                          ? 'border-accent-teal-400 bg-accent-teal-500/10'
+                          : 'border-accent-teal-500/20 hover:border-accent-teal-400/50 bg-base-dark3/60'
+                      }`}
+                      onClick={() => handleFluencySelect(level.level)}
+                    >
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-accent-teal-500/20 rounded-lg">
+                            {level.icon}
+                          </div>
                           <div>
-                            <p className="font-medium text-text-cream100">Great choice!</p>
-                            <p className="text-sm text-text-cream300">
-                              You'll learn {languages.find(l => l.value === selectedLanguage)?.label} through popular songs and music.
-                            </p>
+                            <h3 className="text-lg font-semibold text-text-cream100">{level.level}</h3>
+                            <p className="text-text-cream400 text-sm">{level.description}</p>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <Star className="w-12 h-12 text-accent-teal-400 mx-auto mb-4" />
-                      <h2 className="text-2xl font-semibold mb-2 text-text-cream100">What's your current fluency level?</h2>
-                      <p className="text-text-cream300">
-                        This helps us personalize your learning experience in {languages.find(l => l.value === selectedLanguage)?.label}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium text-text-cream200">Current Level</Label>
-                      <div className="grid gap-3">
-                        {fluencyLevels.map((level) => (
-                          <motion.div
-                            key={level.value}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setSelectedFluency(level.value)}
-                              className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                                selectedFluency === level.value
-                                  ? 'border-accent-teal-400 bg-accent-teal-500/10'
-                                  : 'border-accent-teal-500/20 hover:border-accent-teal-400/50 bg-white/5'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h3 className="font-medium text-text-cream100">{level.label}</h3>
-                                  <p className="text-sm text-text-cream300">{level.description}</p>
-                                </div>
-                                <div className={`w-5 h-5 rounded-full border-2 ${
-                                  selectedFluency === level.value
-                                    ? 'border-accent-teal-400 bg-accent-teal-400'
-                                    : 'border-text-cream400'
-                                }`}>
-                                  {selectedFluency === level.value && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      className="w-full h-full rounded-full bg-accent-teal-400"
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                        <p className="text-text-cream300 text-sm leading-relaxed">{level.details}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </motion.div>
 
-              <div className="flex justify-between mt-8 pt-6 border-t border-accent-teal-500/20">
-                {step > 1 && (
-                  <Button variant="outline" onClick={handleBack} className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
-                    Back
-                  </Button>
-                )}
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto"
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="w-full sm:w-auto bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
+                >
+                  Back
+                </Button>
                 
                 <Button
-                  onClick={handleNext}
-                  disabled={!canProceed}
-                  className={`${step === 1 ? 'ml-auto' : ''} group button-gradient-primary text-white font-medium transition-all duration-300 hover:shadow-lg disabled:opacity-50`}
+                  onClick={handleComplete}
+                  disabled={!selectedFluency}
+                  className="w-full sm:w-auto button-gradient-primary text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {step === 2 ? 'Start Learning!' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  Start Learning
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </motion.div>
+
+              {/* Selection Summary */}
+              {selectedFluency && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.9 }}
+                  className="text-center"
+                >
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent-teal-500/10 rounded-full border border-accent-teal-500/30">
+                    <Badge variant="secondary" className="bg-accent-teal-500/20 text-accent-teal-400 border-accent-teal-500/30">
+                      {selectedLanguageData?.name}
+                    </Badge>
+                    <span className="text-text-cream400">•</span>
+                    <Badge variant="secondary" className="bg-accent-teal-500/20 text-accent-teal-400 border-accent-teal-500/30">
+                      {selectedFluencyData?.level}
+                    </Badge>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 }
-
-export { MusicLanguageLearningOnboarding };
-export default MusicLanguageLearningOnboarding;
