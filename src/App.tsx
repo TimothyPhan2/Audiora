@@ -18,6 +18,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Lessons } from '@/pages/Lessons';
 import { PracticePage } from '@/pages/Practice';
 import { ProgressPage } from '@/pages/Progress';
+import { Settings } from '@/pages/Settings';
 import { AuthCallback } from '@/pages/AuthCallback';
 
 function AppContent() {
@@ -26,6 +27,7 @@ function AppContent() {
   const isDashboardPage = pathname === '/dashboard';
   const isPracticePage = pathname === '/practice';
   const isProgressPage = pathname === '/progress';
+  const isSettingsPage = pathname === '/settings';
   const { setSession } = useAuthStore();
 
   useEffect(() => {
@@ -46,8 +48,8 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAuthPage && !isDashboardPage  && <Header />}
-      <main className={isDashboardPage || isPracticePage || isProgressPage ? "" : "flex-grow"}>
+      {!isAuthPage && !isDashboardPage && <Header />}
+      <main className={isDashboardPage || isPracticePage || isProgressPage || isSettingsPage ? "" : "flex-grow"}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -58,10 +60,11 @@ function AppContent() {
           <Route path="/lessons" element={<Lessons />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </main>
-      {!isAuthPage && !isDashboardPage && !isPracticePage && !isProgressPage && <Footer />}
+      {!isAuthPage && !isDashboardPage && !isPracticePage && !isProgressPage && !isSettingsPage && <Footer />}
       <Toaster position="top-right" duration={2500}/>
     </div>
   );
