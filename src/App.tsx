@@ -15,6 +15,7 @@ import { Signup } from '@/pages/Signup';
 import { Onboarding } from '@/pages/Onboarding';
 import { Pricing } from '@/pages/Pricing';
 import { Dashboard } from '@/pages/Dashboard';
+import { Lessons } from '@/pages/Lessons';
 import { AuthCallback } from '@/pages/AuthCallback';
 
 function AppContent() {
@@ -50,6 +51,7 @@ function AppContent() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/lessons" element={<Lessons />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </main>
