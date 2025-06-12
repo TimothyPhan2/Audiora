@@ -46,7 +46,7 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAuthPage && !isDashboardPage && !isPracticePage && !isProgressPage && <Header />}
+      {!isAuthPage && !isDashboardPage  && <Header />}
       <main className={isDashboardPage || isPracticePage || isProgressPage ? "" : "flex-grow"}>
         <Routes>
           <Route path="/" element={<Landing />} />
