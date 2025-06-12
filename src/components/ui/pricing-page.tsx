@@ -649,7 +649,9 @@ function PricingPage() {
           title: "Still have questions?",
           description: "We're here to help you choose the right plan",
           buttonText: "Contact Support",
-          onContact: () => console.log("Contact support clicked"),
+          onContact: () => {
+            window.open('mailto:support@audiora.xyz', '_self');
+          },
         }}
       />
     </div>
