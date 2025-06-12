@@ -1,5 +1,5 @@
-import Progress from '@/components/ui/progress';
+import ProgressPage from '@/components/ui/progress-page';
 
 export function ProgressPage() {
-  return <Progress />;
+  return <ProgressPage />;
 }
