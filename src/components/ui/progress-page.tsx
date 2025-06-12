@@ -220,7 +220,8 @@ const StreakVisualizer: React.FC<StreakVisualizerProps> = ({ days, currentStreak
   )
 }
 
-const Progress: React.FC = () => {
+
+export default function ProgressPageComponent() {
   const milestones = [
     {
       id: "1",
@@ -254,23 +255,6 @@ const Progress: React.FC = () => {
 
   const weeklyStreak = [true, true, false, true, true, false, true]
   const currentStreak = weeklyStreak.filter(Boolean).length
-
-export default function ProgressPageComponent() {
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('overview')
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner':
-        return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'intermediate':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-      case 'advanced':
-        return 'bg-red-500/20 text-red-400 border-red-500/30'
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-    }
-  }
 
   return (
    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
