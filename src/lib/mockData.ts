@@ -12,7 +12,7 @@ export const mockUsers: User[] = [
     savedVocabulary: [],
     completedSongs: [],
     completedQuizzes: [],
-    subscription_tier: 'premium',
+    subscription_tier: 'pro',
     role: 'user',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
@@ -346,7 +346,7 @@ export const mockQuizzes: Quiz[] = [
   },
 ];
 
-// Mock pricing plans
+// Mock pricing plans (updated to remove premium tier)
 export const mockPricingPlans = [
   {
     id: 'plan-1',
@@ -361,7 +361,7 @@ export const mockPricingPlans = [
   },
   {
     id: 'plan-2',
-    name: 'Premium',
+    name: 'Pro',
     price: 9.99,
     features: [
       'Unlimited song access',
@@ -369,21 +369,10 @@ export const mockPricingPlans = [
       'Unlimited quizzes',
       'Pronunciation feedback',
       'Progress tracking',
-    ],
-    popular: true,
-  },
-  {
-    id: 'plan-3',
-    name: 'Pro',
-    price: 19.99,
-    features: [
-      'All Premium features',
       'Personalized learning path',
-      '1-on-1 virtual sessions',
-      'Offline mode',
       'Priority support',
     ],
-    popular: false,
+    popular: true,
   },
 ];
 

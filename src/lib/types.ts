@@ -9,7 +9,7 @@ export interface User {
   savedVocabulary: VocabularyItem[];
   completedSongs: string[];
   completedQuizzes: string[];
-  subscription_tier: 'free' | 'premium' | 'pro';
+  subscription_tier: 'free' | 'pro';
   role: 'user' | 'admin' | 'moderator';
   created_at: string;
   updated_at: string;

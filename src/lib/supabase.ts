@@ -23,7 +23,7 @@ export interface Database {
         Row: {
           id: string;
           username: string | null;
-          subscription_tier: 'free' | 'premium' | 'pro';
+          subscription_tier: 'free' | 'pro';
           role: 'user' | 'admin' | 'moderator';
           learning_languages: string[];
           proficiency_level: string | null;
@@ -35,7 +35,7 @@ export interface Database {
         Insert: {
           id: string;
           username?: string | null;
-          subscription_tier?: 'free' | 'premium' | 'pro';
+          subscription_tier?: 'free' | 'pro';
           role?: 'user' | 'admin' | 'moderator';
           learning_languages?: string[];
           proficiency_level?: string | null;
@@ -47,7 +47,7 @@ export interface Database {
         Update: {
           id?: string;
           username?: string | null;
-          subscription_tier?: 'free' | 'premium' | 'pro';
+          subscription_tier?: 'free' | 'pro';
           role?: 'user' | 'admin' | 'moderator';
           learning_languages?: string[];
           proficiency_level?: string | null;
