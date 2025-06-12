@@ -26,9 +26,6 @@ export function Header() {
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
             Home
           </Link>
-          <Link to="/lessons" className="text-muted-foreground hover:text-foreground transition-colors">
-            Lessons
-          </Link>
           <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
             Pricing
           </Link>
