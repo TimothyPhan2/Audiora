@@ -163,4 +163,7 @@
     animation-duration: 17s;
     animation-delay: -5s;
   }
-}
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
