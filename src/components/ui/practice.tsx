@@ -556,7 +556,6 @@ const Practice: React.FC = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-text-cream100">{continueSession.title}</h3>
                 <div className="flex items-center gap-4 mt-2">
-                  <Progress value={continueSession.progress} className="w-32 h-2" />
                   <span className="text-sm text-text-cream300">{continueSession.progress}% complete</span>
                   <div className="flex items-center gap-1 text-sm text-text-cream400">
                     <Clock className="w-4 h-4" />
