@@ -1,21 +1,9 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useAuthStore } from '@/lib/store';
-import { OnboardingData, SupportedLanguage, ProficiencyLevel } from '@/lib/types';
+import { SupportedLanguage, ProficiencyLevel } from '@/lib/types';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { MusicLanguageLearningOnboarding } from '@/components/ui/music-language-learning-onboarding';
-
-const onboardingSchema = z.object({
-  selectedLanguage: z.enum(['Spanish', 'French', 'Italian', 'German'], {
-    required_error: 'Please select a language to learn',
-  }),
-  proficiencyLevel: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Fluent'], {
-    required_error: 'Please select your proficiency level',
-  }),
-});
 
 type OnboardingFormProps = {
   onSuccess?: () => void;

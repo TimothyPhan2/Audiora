@@ -3,7 +3,6 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from './supabase';
 import { 
   AuthFormData, 
-  OnboardingData,
   PreferenceUpdate,
   SignupResult,
   Song, 

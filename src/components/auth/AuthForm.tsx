@@ -97,10 +97,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
       // Handle specific error types
       if (error instanceof Error) {
         if (error.message.includes('username')) {
-          setError('username', { 
-            type: 'manual', 
-            message: 'This username is already taken' 
-          });
+          // Type assertion for signup form errors
+          if (type === 'signup') {
+            (setError as any)('username', { 
+              type: 'manual', 
+              message: 'This username is already taken' 
+            });
+          }
         } else if (error.message.includes('email')) {
           setError('email', { 
             type: 'manual', 
@@ -176,13 +179,13 @@ export function AuthForm({ type, onSuccess }: AuthFormProps) {
               id="username"
               placeholder="Enter your username"
               className={`bg-white/10 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 placeholder:text-text-cream400/60 transition-all duration-300 ${
-                errors.username ? 'border-red-500 focus:border-red-500' : ''
+                type === 'signup' && (errors as any).username ? 'border-red-500 focus:border-red-500' : ''
               }`}
               {...register('username')}
               disabled={isLoading}
             />
-            {errors.username && (
-              <p className="text-sm text-red-400">{errors.username.message}</p>
+            {type === 'signup' && (errors as any).username && (
+              <p className="text-sm text-red-400">{(errors as any).username.message}</p>
             )}
           </div>
         )}
