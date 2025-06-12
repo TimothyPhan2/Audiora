@@ -13,14 +13,19 @@ import {
   Edit3, 
   Save, 
   X, 
-  Globe, 
   Crown, 
   CreditCard, 
   LogOut, 
   HelpCircle,
   Check,
   Star,
-  Zap
+  Zap,
+  Music,
+  BookMarked,
+  Headphones,
+  Target,
+  BarChart3,
+  Users
 } from "lucide-react";
 
 interface LanguageOption {
@@ -33,7 +38,7 @@ interface UserProfile {
   username: string;
   languages: LanguageOption[];
   proficiency: string;
-  plan: 'Free' | 'Premium' | 'Pro';
+  plan: 'free' | 'pro';
   timezone: string;
 }
 
@@ -61,7 +66,7 @@ const AudioraSettings = () => {
     username: 'AudioLearner',
     languages: [LANGUAGES[0], LANGUAGES[1]],
     proficiency: 'Intermediate',
-    plan: 'Free',
+    plan: 'free',
     timezone: 'UTC+00:00'
   });
 
@@ -100,39 +105,40 @@ const AudioraSettings = () => {
     });
   };
 
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'Free': return 'bg-gray-600';
-      case 'Premium': return 'bg-teal-600';
-      case 'Pro': return 'bg-purple-600';
-      default: return 'bg-gray-600';
-    }
-  };
-
   const getPlanFeatures = (plan: string) => {
     switch (plan) {
-      case 'Free':
-        return ['Basic lessons', '5 languages', 'Community support'];
-      case 'Premium':
-        return ['Unlimited lessons', 'All languages', 'Priority support', 'Offline mode'];
-      case 'Pro':
-        return ['Everything in Premium', 'AI tutor', '1-on-1 sessions', 'Custom curriculum'];
+      case 'free':
+        return [
+          { icon: Music, text: 'Access to 10 songs' },
+          { icon: BookMarked, text: 'Basic vocabulary tools' },
+          { icon: Target, text: 'Limited quizzes' }
+        ];
+      case 'pro':
+        return [
+          { icon: Music, text: 'Unlimited song access' },
+          { icon: BookMarked, text: 'Advanced vocabulary tools' },
+          { icon: Target, text: 'Unlimited quizzes' },
+          { icon: Headphones, text: 'Pronunciation feedback' },
+          { icon: BarChart3, text: 'Progress tracking' },
+          { icon: Target, text: 'Personalized learning path' },
+          { icon: Users, text: 'Priority support' }
+        ];
       default:
         return [];
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 text-text-cream200 p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-2"
         >
-          <h1 className="text-4xl font-bold gradient-text">Audiora Settings</h1>
-          <p className="text-text-cream400">Customize your language learning experience</p>
+          <h1 className="text-4xl font-bold gradient-text">Settings</h1>
+          <p className="text-text-cream300">Customize your language learning experience</p>
         </motion.div>
 
         {/* Profile Settings */}
@@ -141,7 +147,7 @@ const AudioraSettings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="frosted-glass border-accent-teal-500/20">
+          <Card className="frosted-glass border border-accent-teal-500/20">
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-3">
                 <User className="w-6 h-6 text-accent-teal-400" />
@@ -150,14 +156,14 @@ const AudioraSettings = () => {
 
               {/* Username */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream300">Username</label>
+                <label className="text-sm font-medium text-text-cream200">Username</label>
                 <div className="flex items-center gap-3">
                   {isEditingUsername ? (
                     <>
                       <Input
                         value={tempUsername}
                         onChange={(e) => setTempUsername(e.target.value)}
-                        className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 flex-1"
+                        className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100 placeholder:text-text-cream400/60 flex-1"
                         disabled={isLoading}
                       />
                       <Button
@@ -180,7 +186,7 @@ const AudioraSettings = () => {
                         onClick={handleCancelEdit}
                         variant="outline"
                         size="sm"
-                        className="border-accent-teal-500/30 text-text-cream300 hover:bg-accent-teal-500/10"
+                        className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -192,7 +198,7 @@ const AudioraSettings = () => {
                         onClick={() => setIsEditingUsername(true)}
                         variant="outline"
                         size="sm"
-                        className="border-accent-teal-500/30 text-text-cream300 hover:bg-accent-teal-500/10"
+                        className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
@@ -203,7 +209,7 @@ const AudioraSettings = () => {
 
               {/* Learning Languages */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream300">Learning Languages</label>
+                <label className="text-sm font-medium text-text-cream200">Learning Languages</label>
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 flex-wrap flex-1">
                     {profile.languages.map((lang) => (
@@ -217,14 +223,14 @@ const AudioraSettings = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-accent-teal-500/30 text-text-cream300 hover:bg-accent-teal-500/10"
+                        className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-base-dark2 border-accent-teal-500/20 text-text-cream100">
                       <DialogHeader>
-                        <DialogTitle>Select Learning Languages</DialogTitle>
+                        <DialogTitle className="text-text-cream100">Select Learning Languages</DialogTitle>
                       </DialogHeader>
                       <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
                         {LANGUAGES.map((lang) => (
@@ -260,17 +266,17 @@ const AudioraSettings = () => {
 
               {/* Proficiency Level */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream300">Proficiency Level</label>
+                <label className="text-sm font-medium text-text-cream200">Proficiency Level</label>
                 <Select
                   value={profile.proficiency}
                   onValueChange={(value) => setProfile(prev => ({ ...prev, proficiency: value }))}
                 >
-                  <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 text-text-cream100">
+                  <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-base-dark2 border-accent-teal-500/20">
                     {['Beginner', 'Intermediate', 'Advanced', 'Fluent'].map((level) => (
-                      <SelectItem key={level} value={level} className="text-text-cream100 hover:bg-accent-teal-500/10">
+                      <SelectItem key={level} value={level} className="text-text-cream100 hover:bg-accent-teal-500/10 focus:bg-accent-teal-500/10">
                         {level}
                       </SelectItem>
                     ))}
@@ -287,7 +293,7 @@ const AudioraSettings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="frosted-glass border-accent-teal-500/20">
+          <Card className="frosted-glass border border-accent-teal-500/20">
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-3">
                 <Crown className="w-6 h-6 text-accent-persian-500" />
@@ -300,19 +306,23 @@ const AudioraSettings = () => {
                   <div>
                     <h3 className="text-lg font-medium text-text-cream100">Current Plan</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge className={`${getPlanColor(profile.plan)} text-white`}>
-                        {profile.plan}
+                      <Badge className={`${
+                        profile.plan === 'pro' 
+                          ? 'bg-gradient-to-r from-accent-teal-500 to-accent-persian-500 text-white' 
+                          : 'bg-base-dark3 text-text-cream300'
+                      }`}>
+                        {profile.plan === 'pro' ? 'Pro' : 'Free'}
                       </Badge>
                       <span className="text-sm text-green-400">● Active</span>
                     </div>
                   </div>
-                  {profile.plan === 'Free' ? (
+                  {profile.plan === 'free' ? (
                     <Button className="button-gradient-primary text-white">
                       <Star className="w-4 h-4 mr-2" />
                       Upgrade to Pro
                     </Button>
                   ) : (
-                    <Button variant="outline" className="border-accent-teal-500/30 text-text-cream300 hover:bg-accent-teal-500/10">
+                    <Button variant="outline" className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
                       <CreditCard className="w-4 h-4 mr-2" />
                       Manage Plan
                     </Button>
@@ -321,29 +331,34 @@ const AudioraSettings = () => {
 
                 {/* Plan Features */}
                 <div className="bg-base-dark3/30 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-text-cream300 mb-3">Plan Features</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {getPlanFeatures(profile.plan).map((feature, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-accent-teal-400" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
+                  <h4 className="text-sm font-medium text-text-cream200 mb-3">Plan Features</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {getPlanFeatures(profile.plan).map((feature, index) => {
+                      const IconComponent = feature.icon;
+                      return (
+                        <div key={index} className="flex items-center gap-3 text-sm">
+                          <div className="p-1.5 bg-accent-teal-500/20 rounded-full">
+                            <IconComponent className="w-3 h-3 text-accent-teal-400" />
+                          </div>
+                          <span className="text-text-cream200">{feature.text}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Upgrade CTA for Free Users */}
-                {profile.plan === 'Free' && (
+                {profile.plan === 'free' && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gradient-to-r from-accent-teal-500/20 to-accent-persian-500/20 border border-accent-teal-500/30 rounded-lg p-4"
+                    className="bg-gradient-to-r from-accent-teal-500/10 to-accent-persian-500/10 border border-accent-teal-500/30 rounded-lg p-4"
                   >
                     <div className="flex items-center gap-3">
-                      <Zap className="w-8 h-8 text-accent-mint-400" />
+                      <Zap className="w-8 h-8 text-accent-persian-500" />
                       <div className="flex-1">
                         <h4 className="font-medium text-text-cream100">Unlock Pro Features</h4>
-                        <p className="text-sm text-text-cream300">Get unlimited access to all languages and AI-powered lessons</p>
+                        <p className="text-sm text-text-cream300">Get unlimited access to all songs, advanced vocabulary tools, and personalized learning paths</p>
                       </div>
                       <Button className="button-gradient-primary text-white">
                         Upgrade Now
@@ -355,17 +370,17 @@ const AudioraSettings = () => {
 
               {/* Timezone */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream300">Timezone</label>
+                <label className="text-sm font-medium text-text-cream200">Timezone</label>
                 <Select
                   value={profile.timezone}
                   onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}
                 >
-                  <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 text-text-cream100">
+                  <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-base-dark2 border-accent-teal-500/20 max-h-60">
                     {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz} value={tz} className="text-text-cream100 hover:bg-accent-teal-500/10">
+                      <SelectItem key={tz} value={tz} className="text-text-cream100 hover:bg-accent-teal-500/10 focus:bg-accent-teal-500/10">
                         {tz}
                       </SelectItem>
                     ))}
@@ -377,7 +392,7 @@ const AudioraSettings = () => {
               <div className="pt-4 border-t border-accent-teal-500/20">
                 <Button
                   variant="outline"
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-400"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -393,16 +408,16 @@ const AudioraSettings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="frosted-glass border-accent-teal-500/20">
+          <Card className="frosted-glass border border-accent-teal-500/20">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <HelpCircle className="w-6 h-6 text-accent-mint-400" />
                 <h2 className="text-2xl font-semibold text-text-cream100">Support</h2>
               </div>
-              <p className="text-text-cream400 mb-4">Need help? We're here to assist you with any questions.</p>
+              <p className="text-text-cream300 mb-4">Need help? We're here to assist you with any questions.</p>
               <Button
                 variant="outline"
-                className="border-accent-teal-500/30 text-text-cream300 hover:bg-accent-teal-500/10"
+                className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Contact Support
