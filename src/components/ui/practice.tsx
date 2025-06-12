@@ -24,7 +24,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 
 interface PracticeTypeCardProps {
@@ -355,9 +354,6 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-32">
-              <Progress value={progress} className="h-2" />
-            </div>
             <span className="text-sm text-text-cream300">{Math.round(progress)}%</span>
           </div>
         </div>
@@ -556,7 +552,6 @@ const Practice: React.FC = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-text-cream100">{continueSession.title}</h3>
                 <div className="flex items-center gap-4 mt-2">
-                  <Progress value={continueSession.progress} className="w-32 h-2" />
                   <span className="text-sm text-text-cream300">{continueSession.progress}% complete</span>
                   <div className="flex items-center gap-1 text-sm text-text-cream400">
                     <Clock className="w-4 h-4" />
