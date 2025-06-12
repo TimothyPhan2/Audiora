@@ -411,3 +411,5 @@ export default function Progress() {
     </div>
   )
 }
+
+export { Progress }
