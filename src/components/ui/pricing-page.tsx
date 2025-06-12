@@ -1,19 +1,11 @@
-'use client';
-
 import React, { useState, useMemo, type JSX } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
   Zap, 
   Crown, 
-  Star, 
   ArrowRight, 
   Sparkles, 
-  Shield, 
-  Rocket,
-  Brain,
-  Users,
-  Globe,
   ChevronDown,
   Mail
 } from 'lucide-react';
