@@ -113,28 +113,63 @@ export function Dashboard() {
               </motion.span>
             </div>
 
-            {/* User Profile Section */}
+            {/* User Profile Section - Fixed for collapsed state */}
             <motion.div 
-              className="mt-6 p-4 frosted-glass rounded-xl border border-accent-teal-500/20"
+              className={`mt-6 frosted-glass rounded-xl border border-accent-teal-500/20 transition-all duration-300 ${
+                open ? 'p-4' : 'p-2'
+              }`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-accent-teal-400 to-accent-mint-400 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-base-dark2" />
+              <div className={`flex items-center transition-all duration-300 ${
+                open ? 'gap-3 mb-3' : 'gap-0 mb-0 justify-center'
+              }`}>
+                <div className={`bg-gradient-to-r from-accent-teal-400 to-accent-mint-400 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                  open ? 'w-12 h-12' : 'w-10 h-10'
+                }`}>
+                  <User className={`text-base-dark2 transition-all duration-300 ${
+                    open ? 'h-6 w-6' : 'h-5 w-5'
+                  }`} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-text-cream100 truncate">{userName}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-lg">{languageFlags[userLanguage as keyof typeof languageFlags]}</span>
-                    <span className="text-xs text-text-cream300 capitalize">{userLanguage}</span>
+                {open && (
+                  <motion.div 
+                    className="flex-1 min-w-0"
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="text-sm font-medium text-text-cream100 truncate">{userName}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-lg">{languageFlags[userLanguage as keyof typeof languageFlags]}</span>
+                      <span className="text-xs text-text-cream300 capitalize">{userLanguage}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+              {open && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${levelColors[userLevel as keyof typeof levelColors]}`}>
+                    {userLevel.charAt(0).toUpperCase() + userLevel.slice(1)}
                   </div>
-                </div>
-              </div>
-              <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${levelColors[userLevel as keyof typeof levelColors]}`}>
-                {userLevel.charAt(0).toUpperCase() + userLevel.slice(1)}
-              </div>
+                </motion.div>
+              )}
+              {!open && (
+                <motion.div 
+                  className="flex justify-center mt-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="w-2 h-2 bg-accent-teal-400 rounded-full"></div>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Navigation */}
