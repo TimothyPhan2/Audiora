@@ -3,14 +3,16 @@ import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Header() {
   const { isAuthenticated, logout } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const navigate = useNavigate(); 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
+    navigate('/')
   };
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
@@ -35,7 +37,7 @@ export function Header() {
               <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
               </Link>
-              <Link to="/">
+             
                 <Button 
                   onClick={handleLogout} 
                   variant="ghost" 
@@ -43,7 +45,7 @@ export function Header() {
                 >
                   Logout
                 </Button>
-              </Link>
+              
             </>
           ) : (
             <>
