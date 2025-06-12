@@ -64,7 +64,7 @@ export function GlowEffect({
       opacity: [0.5, 0.8, 0.5],
       transition: {
         ...BASE_TRANSITION,
-        repeatType: 'mirror',
+        repeatType: 'mirror' as const,
       },
     },
     breathe: {
@@ -77,7 +77,7 @@ export function GlowEffect({
       scale: [1 * scale, 1.05 * scale, 1 * scale],
       transition: {
         ...BASE_TRANSITION,
-        repeatType: 'mirror',
+        repeatType: 'mirror' as const,
       },
     },
     colorShift: {
@@ -87,7 +87,7 @@ export function GlowEffect({
       }),
       transition: {
         ...BASE_TRANSITION,
-        repeatType: 'mirror',
+        repeatType: 'mirror' as const,
       },
     },
     flowHorizontal: {
@@ -97,7 +97,7 @@ export function GlowEffect({
       }),
       transition: {
         ...BASE_TRANSITION,
-        repeatType: 'mirror',
+        repeatType: 'mirror' as const,
       },
     },
     static: {
@@ -147,11 +147,17 @@ export function GlowEffect({
 // BackgroundBeams component with Audiora's teal color scheme
 export const BackgroundBeams = React.memo(
   ({ className }: { className?: string }) => {
+    // Musical wave patterns that combine both sound waves and language elements
     const paths = [
+      // Treble clef inspired wave
       "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
+      // Bass clef inspired wave
       "M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
+      // Eighth note inspired wave
       "M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
+      // Quarter note inspired wave
       "M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
+      // Half note inspired wave
       "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
     ];
     
@@ -170,6 +176,7 @@ export const BackgroundBeams = React.memo(
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          {/* Animated musical waves */}
           {paths.map((path, index) => (
             <motion.path
               key={`path-${index}`}
@@ -177,10 +184,57 @@ export const BackgroundBeams = React.memo(
               stroke={`url(#linearGradient-${index})`}
               strokeOpacity="0.4"
               strokeWidth="0.5"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ 
+                pathLength: 1,
+                opacity: 0.4,
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                pathLength: { duration: 2, ease: "easeInOut" },
+                opacity: { duration: 1 },
+                scale: { 
+                  duration: 4,
+                  repeat: Infinity,
+                  repeatType: "reverse" as const,
+                  ease: "easeInOut"
+                }
+              }}
             />
           ))}
+
+          {/* Floating musical notes */}
+          {[...Array(5)].map((_, i) => (
+            <motion.g
+              key={`note-${i}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: [0.2, 0.4, 0.2],
+                y: [-20, 20, -20],
+                x: [0, 10, 0],
+                rotate: [0, 5, 0]
+              }}
+              transition={{
+                duration: 3 + i,
+                repeat: Infinity,
+                repeatType: "reverse" as const,
+                ease: "easeInOut",
+                delay: i * 0.5
+              }}
+            >
+              <text
+                x={100 + i * 120}
+                y={150}
+                className="text-accent-teal-400"
+                style={{ fontSize: '24px' }}
+              >
+                {['♪', '♫', '♩', '♬', '♭'][i]}
+              </text>
+            </motion.g>
+          ))}
+
           <defs>
-            {paths.map((path, index) => (
+            {paths.map((_, index) => (
               <motion.linearGradient
                 id={`linearGradient-${index}`}
                 key={`gradient-${index}`}
