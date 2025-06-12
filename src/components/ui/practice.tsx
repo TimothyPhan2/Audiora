@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -49,16 +51,16 @@ const PracticeTypeCard: React.FC<PracticeTypeCardProps> = ({
       className={`cursor-pointer ${className}`}
       onClick={onClick}
     >
-      <Card className="p-6 h-full card-gradient border-accent-teal-500/20 hover:border-accent-teal-400/30 transition-all duration-300 group">
+      <Card className="p-6 h-full bg-gradient-to-br from-accent-teal-500 to-accent-teal-600 border-accent-teal-400/30 hover:border-accent-teal-400/50 transition-all duration-300 group">
         <div className="flex items-center gap-4 mb-4">
           <div className="text-4xl">{emoji}</div>
-          <div className="text-accent-teal-400 group-hover:scale-105 transition-transform">
+          <div className="text-white group-hover:scale-105 transition-transform">
             {icon}
           </div>
         </div>
-        <h3 className="text-xl font-bold text-text-cream100 mb-2">{title}</h3>
-        <p className="text-text-cream300 text-sm">{description}</p>
-        <div className="mt-4 flex items-center text-text-cream400 text-sm">
+        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+        <p className="text-white/80 text-sm">{description}</p>
+        <div className="mt-4 flex items-center text-white/60 text-sm">
           <span>Start practicing</span>
           <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </div>
@@ -158,10 +160,10 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             transition={{ duration: 0.6 }}
             style={{ transformStyle: "preserve-3d" }}
           >
-            <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-accent-teal-500 to-accent-teal-400 border-accent-teal-400/30 flex items-center justify-center">
+            <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-blue-500 to-blue-600 border-blue-400/30 flex items-center justify-center">
               <div className="text-center text-white">
                 <h3 className="text-2xl font-bold mb-2">{item.word}</h3>
-                <p className="text-accent-teal-100">Tap to reveal meaning</p>
+                <p className="text-blue-100">Tap to reveal meaning</p>
               </div>
             </Card>
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-green-500 to-green-600 border-green-400/30 flex items-center justify-center"
@@ -174,7 +176,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           </motion.div>
         </motion.div>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={handleSkip} className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
             Skip
           </Button>
           <Button onClick={handleNext} className="button-gradient-primary text-white">
@@ -194,8 +196,8 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           <p className="text-text-cream300 mb-6">{item.phonetic}</p>
           <motion.button
             className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              isRecording ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-accent-teal-500 to-accent-teal-400 hover:from-accent-teal-400 hover:to-accent-teal-500"
-            } transition-all duration-300`}
+              isRecording ? "bg-red-500 hover:bg-red-600" : "bg-accent-teal-500 hover:bg-accent-teal-600"
+            }`}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsRecording(!isRecording)}
           >
@@ -206,7 +208,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           </p>
         </Card>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={handleSkip} className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
             Skip
           </Button>
           <Button onClick={handleNext} className="button-gradient-primary text-white">
@@ -227,7 +229,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
               variant="outline"
               size="lg"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-16 h-16 rounded-full button-gradient-secondary"
+              className="w-16 h-16 rounded-full bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
             >
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
             </Button>
@@ -241,7 +243,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
                 className={`w-full justify-start ${
                   selectedAnswer === option 
                     ? "button-gradient-primary text-white" 
-                    : "button-gradient-secondary"
+                    : "bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                 }`}
                 onClick={() => setSelectedAnswer(option)}
               >
@@ -251,7 +253,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           </div>
         </Card>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={handleSkip} className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
             Skip
           </Button>
           <Button 
@@ -280,7 +282,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
                 className={`w-full justify-start text-left h-auto p-4 ${
                   selectedAnswer === option 
                     ? "button-gradient-primary text-white" 
-                    : "button-gradient-secondary"
+                    : "bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                 }`}
                 onClick={() => {
                   setSelectedAnswer(option)
@@ -306,7 +308,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           )}
         </Card>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={handleSkip} className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10">
             Skip
           </Button>
           <Button 
@@ -356,7 +358,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             <div className="w-32">
               <Progress value={progress} className="h-2" />
             </div>
-            <span className="text-sm text-text-cream300">{Math.round(progress)}%</span>
+            <span className="text-sm text-text-cream400">{Math.round(progress)}%</span>
           </div>
         </div>
       </div>
@@ -507,7 +509,7 @@ const Practice: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="text-center p-3 rounded-lg frosted-glass border border-accent-teal-500/20 shadow-sm">
                 <div className="flex items-center justify-center text-2xl font-bold text-accent-teal-400 mb-1">
-                  <Hourglass className="w-6 h-6 mr-2 text-accent-teal-400" />
+                  <Hourglass className="w-6 h-6 mr-2 text-blue-400" />
                   23
                 </div>
                 <div className="text-xs text-text-cream400">Minutes Practiced</div>
@@ -534,7 +536,7 @@ const Practice: React.FC = () => {
               className={`whitespace-nowrap ${
                 practiceFilter === filter 
                   ? "button-gradient-primary text-white" 
-                  : "button-gradient-secondary"
+                  : "bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
               }`}
             >
               {filter}
@@ -549,7 +551,7 @@ const Practice: React.FC = () => {
           className="mb-8"
         >
           <h2 className="text-xl font-semibold mb-4 text-text-cream100">Continue Where You Left Off</h2>
-          <Card className="p-4 bg-gradient-to-r from-accent-teal-500/10 to-accent-teal-400/5 border-accent-teal-500/20">
+          <Card className="p-4 bg-gradient-to-r from-accent-teal-500/10 to-accent-teal-500/5 border-accent-teal-400/30">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <h3 className="font-semibold text-text-cream100">{continueSession.title}</h3>
