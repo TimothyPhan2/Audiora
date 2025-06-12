@@ -64,7 +64,7 @@ const progressData = {
   ]
 }
 
-export default function ProgressPage() {
+export default function ProgressPageComponent() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
 
