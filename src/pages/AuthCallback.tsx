@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 export function AuthCallback() {
   const navigate = useNavigate();
-  const { setSession, user, isAuthenticated } = useAuthStore();
+  const { setSession } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
