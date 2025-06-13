@@ -207,7 +207,7 @@ export function Dashboard() {
         </motion.header>
 
         {/* Dashboard Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Progress Overview */}
             <motion.div 
