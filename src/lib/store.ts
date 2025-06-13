@@ -59,8 +59,8 @@ interface RecordingState {
 
 // Configuration for retry logic
 const FETCH_USER_CONFIG = {
-  maxRetries: 5,
-  retryDelayMs: 500,
+  maxRetries: 7,
+  retryDelayMs: 750,
   backoffMultiplier: 1.5
 };
 
