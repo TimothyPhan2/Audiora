@@ -1,8 +1,11 @@
+"use client";
 import { cn } from "@/lib/utils";
-import { Link, LinkProps } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { X, Menu } from "lucide-react";
 
 interface Links {
   label: string;
@@ -45,7 +48,7 @@ export const SidebarProvider = ({
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -72,7 +75,9 @@ export const Sidebar = ({
 export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
   return (
     <>
+      {/* Desktop Sidebar */}
       <DesktopSidebar {...props} />
+      {/* Mobile Sidebar */}
       <MobileSidebar {...(props as React.ComponentProps<"div">)} />
     </>
   );
@@ -85,20 +90,22 @@ export const DesktopSidebar = ({
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
   return (
-    <motion.div
-      className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col bg-base-dark2/80 backdrop-blur-md border-r border-accent-teal-500/20 w-[280px] flex-shrink-0",
-        className
-      )}
-      animate={{
-        width: animate ? (open ? "280px" : "70px") : "280px",
-      }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
-    >
-      {children}
-    </motion.div>
+    <>
+      <motion.div
+        className={cn(
+          "h-full px-4 py-4 hidden md:flex md:flex-col bg-base-dark2 w-[300px] flex-shrink-0",
+          className
+        )}
+        animate={{
+          width: animate ? (open ? 300 : 60) : "300px",
+        }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    </>
   );
 };
 
@@ -112,46 +119,47 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-base-dark2/90 backdrop-blur-md border-b border-accent-teal-500/20 w-full"
+          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-base-dark2 w-full"
         )}
         {...props}
       >
-        <div className="flex justify-between items-center z-20 w-full">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 bg-gradient-to-r from-accent-teal-400 to-accent-mint-400 rounded-md flex-shrink-0" />
-            <span className="font-bold text-text-cream100 text-lg">Audiora</span>
-          </div>
-          <Menu
-            className="text-text-cream200 cursor-pointer h-6 w-6"
+        <div className="flex justify-end z-20 w-full">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setOpen(!open)}
-          />
+            className="text-text-cream200 hover:text-text-cream100 p-2"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
         </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn(
-                "fixed h-full w-full inset-0 bg-base-dark2/95 backdrop-blur-md p-6 z-[100] flex flex-col justify-between",
-                className
-              )}
-            >
-              <div
-                className="absolute right-6 top-6 z-50 text-text-cream200 cursor-pointer"
-                onClick={() => setOpen(!open)}
-              >
-                <X className="h-6 w-6" />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent 
+          side="left" 
+          className="bg-base-dark2 border-accent-teal-500/20 w-[280px] p-0"
+        >
+          <SheetHeader className="p-4 border-b border-accent-teal-500/20">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-text-cream100 flex items-center gap-2">
+                <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-6 w-6" />
+                Audiora
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setOpen(false)}
+                className="text-text-cream400 hover:text-text-cream200 p-1"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="p-4">
+            {children}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
@@ -166,22 +174,29 @@ export const SidebarLink = ({
   props?: LinkProps;
 }) => {
   const { open, animate } = useSidebar();
+  const location = useLocation();
+  const isActive = location.pathname === link.href;
+
   return (
     <Link
       to={link.href}
       className={cn(
-        "flex items-center justify-start gap-3 group/sidebar py-3 px-2 rounded-lg hover:bg-accent-teal-500/10 transition-all duration-200",
+        "flex items-center justify-start gap-2 group/sidebar py-2 px-3 rounded-lg transition-all duration-200",
+        isActive 
+          ? "bg-accent-teal-500/20 text-accent-teal-400 border border-accent-teal-500/30" 
+          : "text-text-cream300 hover:bg-accent-teal-500/10 hover:text-text-cream100",
         className
       )}
       {...props}
     >
       {link.icon}
+
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-text-cream200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className="text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>
