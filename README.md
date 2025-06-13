@@ -53,4 +53,3 @@ npm run dev
 ---
 
 Built with ⚡ using [Bolt.new](https://bolt.new) for the World's Largest Hackathon presented by Bolt
-[![Netlify Status](https://api.netlify.com/api/v1/badges/e65360d6-f5dd-4b00-a77a-1c23a0e7d9a0/deploy-status)](https://app.netlify.com/projects/friendly-salmiakki-3cff1a/deploys)
