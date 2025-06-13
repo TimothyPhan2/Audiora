@@ -145,14 +145,6 @@ export const MobileSidebar = ({
                 <img src="/audiora_logo_variant1.png" alt="Audiora Logo" className="h-6 w-6" />
                 Audiora
               </SheetTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setOpen(false)}
-                className="text-text-cream400 hover:text-text-cream200 p-1"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </SheetHeader>
           <div className="p-4">
