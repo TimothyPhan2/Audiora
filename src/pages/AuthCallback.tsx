@@ -156,13 +156,6 @@ export function AuthCallback() {
               <span>Setting up your account...</span>
             </div>
             <div className="text-center text-sm text-text-cream400 space-y-1">
-              <p>Please wait while we:</p>
-              <ul className="list-disc list-inside space-y-1 text-left max-w-xs mx-auto">
-                <li>Verify your authentication</li>
-                <li>Set up your user profile</li>
-                <li>Check your onboarding status</li>
-                <li>Prepare your dashboard</li>
-              </ul>
               <p className="mt-3 text-xs">This may take a few moments...</p>
             </div>
           </>
