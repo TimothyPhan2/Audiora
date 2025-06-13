@@ -89,13 +89,6 @@ export function Header() {
               Home
             </Link>
             <Link 
-              to="/lessons" 
-              className="text-muted-foreground hover:text-foreground py-2 transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Lessons
-            </Link>
-            <Link 
               to="/pricing" 
               className="text-muted-foreground hover:text-foreground py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
