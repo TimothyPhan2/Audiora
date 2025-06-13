@@ -77,7 +77,7 @@ export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
       <DesktopSidebar {...props} />
       {/* Mobile Sidebar - Hidden on desktop */}
       <div className="md:hidden">
-        <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+        <MobileSidebar {...props} />
       </div>
     </>
   );
@@ -113,7 +113,7 @@ export const MobileSidebar = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) => {
+}: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen } = useSidebar();
   return (
     <>
@@ -150,7 +150,7 @@ export const MobileSidebar = ({
               >
                 <X />
               </div>
-              {children}
+              {children as React.ReactNode}
             </motion.div>
           )}
         </AnimatePresence>
