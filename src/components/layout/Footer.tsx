@@ -10,15 +10,7 @@ export function Footer() {
             <span className="font-medium">Audiora</span>
           </Link>
           <p>
-            Learn languages through music | © {new Date().getFullYear()} | Made for the Bolt Hackathon |{' '}
-            <a 
-              href="https://github.com/TimothyPhan2/Audiora" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              GitHub
-            </a>
+            Learn languages through music | © {new Date().getFullYear()}
           </p>
         </div>
       </div>
