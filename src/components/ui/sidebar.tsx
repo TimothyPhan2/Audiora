@@ -185,6 +185,7 @@ export const SidebarLink = ({
       )}
       {...props}
     >
+      
       {link.icon}
 
       <motion.span
