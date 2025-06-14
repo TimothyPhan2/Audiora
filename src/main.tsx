@@ -11,7 +11,6 @@ createRoot(document.getElementById('root')!).render(
       options={{
         api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
         capture_exceptions: true,
-        ui_host: 'https://us.posthog.com',
         defaults: '2025-05-24',
         debug: import.meta.env.MODE === "development",
       }}
