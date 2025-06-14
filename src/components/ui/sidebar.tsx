@@ -185,8 +185,12 @@ export const SidebarLink = ({
       )}
       {...props}
     >
-      
+      <div className={cn(
+      "flex items-center justify-center flex-shrink-0",
+      !open && "w-full"
+      )}> 
       {link.icon}
+      </div>
 
       <motion.span
         animate={{
