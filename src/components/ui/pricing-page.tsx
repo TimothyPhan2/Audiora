@@ -643,7 +643,7 @@ function PricingPage() {
           title: "Still have questions?",
           description: "We're here to help you choose the right plan",
           buttonText: "Contact Support",
-          onContact: () => windows.location.href = 'mailto:support@audiora.xyz',
+          onContact: () => window.location.href = 'mailto:support@audiora.xyz',
         }}
       />
     </div>
