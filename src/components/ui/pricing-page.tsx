@@ -93,7 +93,17 @@ const displayPlanTemplates: PlanTemplate[] = [
     buttonVariant: 'default',
   },
 ];
-
+ const fadeInUp = {
+    hidden: { opacity: 0, y: 60 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8, 
+        ease: [0.23, 0.86, 0.39, 0.96] 
+      }
+    }
+  };
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
