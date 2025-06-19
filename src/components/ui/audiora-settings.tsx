@@ -1,133 +1,217 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
+  Mail, 
   Globe, 
-  Bell, 
-  Shield, 
+  BookOpen, 
+  Crown, 
   CreditCard, 
+  Shield, 
   Settings as SettingsIcon,
   Save,
   Loader2,
-  Crown,
+  ArrowLeft,
   Calendar,
-  Mail,
-  Languages,
-  GraduationCap
+  Clock,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+
+interface UserSettings {
+  username: string;
+  learning_languages: string[];
+  proficiency_level: string;
+  timezone: string;
+  subscription_tier: 'free' | 'pro';
+  role: 'user' | 'admin' | 'moderator';
+  created_at: string;
+  last_active_at: string;
+}
+
+interface SubscriptionData {
+  tier: 'free' | 'pro';
+  status: string;
+  started_at: string | null;
+  expires_at: string | null;
+  auto_renew: boolean;
+  payment_method: string | null;
+}
 
 const languageOptions = [
   { value: 'spanish', label: 'Spanish', flag: '🇪🇸' },
   { value: 'french', label: 'French', flag: '🇫🇷' },
   { value: 'italian', label: 'Italian', flag: '🇮🇹' },
   { value: 'german', label: 'German', flag: '🇩🇪' },
-  { value: 'portuguese', label: 'Portuguese', flag: '🇵🇹' },
-  { value: 'japanese', label: 'Japanese', flag: '🇯🇵' },
-  { value: 'korean', label: 'Korean', flag: '🇰🇷' },
-  { value: 'mandarin', label: 'Mandarin', flag: '🇨🇳' }
 ];
 
 const proficiencyLevels = [
-  { value: 'Beginner', label: 'Beginner', description: 'Just starting out' },
-  { value: 'Intermediate', label: 'Intermediate', description: 'Some experience' },
-  { value: 'Advanced', label: 'Advanced', description: 'Quite experienced' },
-  { value: 'Fluent', label: 'Fluent', description: 'Near-native level' }
+  { value: 'Beginner', label: 'Beginner' },
+  { value: 'Intermediate', label: 'Intermediate' },
+  { value: 'Advanced', label: 'Advanced' },
+  { value: 'Fluent', label: 'Fluent' },
+];
+
+const timezoneOptions = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
+  { value: 'Europe/Paris', label: 'Central European Time (CET)' },
+  { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' },
+  { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' },
 ];
 
 export default function AudioraSettings() {
-  const { user, updateUserPreferences, isAuthenticated } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  
-  // Form state - initialized from user data
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form state
   const [formData, setFormData] = useState({
-    selectedLanguage: '',
-    proficiencyLevel: '',
-    emailNotifications: true,
-    pushNotifications: false,
-    weeklyProgress: true,
-    achievementAlerts: true,
-    marketingEmails: false,
-    timezone: 'UTC'
+    username: '',
+    learning_languages: [] as string[],
+    proficiency_level: '',
+    timezone: '',
   });
 
-  // Initialize form data when user data is available
   useEffect(() => {
-    if (user) {
-      setFormData({
-        selectedLanguage: user.learning_languages?.[0] || '',
-        proficiencyLevel: user.proficiency_level || '',
-        emailNotifications: true, // These would come from user preferences in a real app
-        pushNotifications: false,
-        weeklyProgress: true,
-        achievementAlerts: true,
-        marketingEmails: false,
-        timezone: user.timezone || 'UTC'
-      });
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, [user]);
+    fetchUserSettings();
+  }, [isAuthenticated, navigate]);
 
-  // Track changes to enable/disable save button
-  useEffect(() => {
-    if (user) {
-      const hasLanguageChange = formData.selectedLanguage !== (user.learning_languages?.[0] || '');
-      const hasProficiencyChange = formData.proficiencyLevel !== (user.proficiency_level || '');
-      setHasChanges(hasLanguageChange || hasProficiencyChange);
-    }
-  }, [formData, user]);
+  const fetchUserSettings = async () => {
+    if (!user?.id) return;
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSaveSettings = async () => {
-    if (!user || !hasChanges) return;
-
-    setIsLoading(true);
-    
     try {
-      // Only update the fields that can be changed via updateUserPreferences
-      await updateUserPreferences({
-        userId: user.id,
-        selectedLanguage: formData.selectedLanguage as any,
-        proficiencyLevel: formData.proficiencyLevel as any
+      setIsLoading(true);
+      setError(null);
+
+      // Fetch user settings
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Fetch subscription data
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+        console.warn('Subscription fetch error:', subscriptionError);
+      }
+
+      setSettings(userData);
+      setSubscription(subscriptionData || {
+        tier: 'free',
+        status: 'active',
+        started_at: null,
+        expires_at: null,
+        auto_renew: false,
+        payment_method: null,
       });
 
-      toast.success('Settings updated successfully!', {
-        description: 'Your learning preferences have been saved.'
+      // Initialize form data
+      setFormData({
+        username: userData.username || '',
+        learning_languages: userData.learning_languages || [],
+        proficiency_level: userData.proficiency_level || '',
+        timezone: userData.timezone || 'UTC',
       });
-      
-      setHasChanges(false);
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      toast.error('Failed to update settings', {
-        description: error instanceof Error ? error.message : 'Please try again later.'
-      });
+
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
+      toast.error('Failed to load settings');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading state if user data is not available
-  if (!isAuthenticated || !user) {
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          username: formData.username,
+          learning_languages: formData.learning_languages,
+          proficiency_level: formData.proficiency_level,
+          timezone: formData.timezone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Settings saved successfully!');
+      await fetchUserSettings(); // Refresh data
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/', { replace: true });
+      toast.success('Logged out successfully');
+    } catch (err) {
+      console.error('Logout error:', err);
+      toast.error('Failed to logout');
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 flex items-center justify-center">
-        <div className="text-center">
+        <div className="frosted-glass p-8 rounded-xl border border-accent-teal-500/20 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-accent-teal-400 mx-auto mb-4" />
-          <p className="text-text-cream300">Loading settings...</p>
+          <p className="text-text-cream200">Loading settings...</p>
         </div>
       </div>
     );
@@ -135,327 +219,274 @@ export default function AudioraSettings() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
-      <div className="container-center py-8 max-w-4xl">
+      <div className="container-center py-8 space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="flex items-center justify-between"
         >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-accent-teal-500/20 rounded-lg">
-              <SettingsIcon className="h-6 w-6 text-accent-teal-400" />
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/dashboard')}
+              className="text-text-cream400 hover:text-text-cream200 p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold gradient-text">Settings</h1>
+              <p className="text-text-cream300 mt-1">Manage your account and preferences</p>
             </div>
-            <h1 className="text-3xl font-bold gradient-text">Settings</h1>
           </div>
-          <p className="text-text-cream300">Manage your account and learning preferences</p>
+          <div className="flex items-center gap-2">
+            <SettingsIcon className="h-6 w-6 text-accent-teal-400" />
+          </div>
         </motion.div>
 
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="frosted-glass p-4 rounded-xl border border-red-500/30 bg-red-500/10"
+          >
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertCircle className="h-5 w-5" />
+              <span>{error}</span>
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Settings */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Information */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-accent-teal-400" />
-                    <CardTitle className="text-text-cream100">Profile Information</CardTitle>
-                  </div>
-                  <CardDescription className="text-text-cream400">
-                    Your basic account information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username" className="text-text-cream200">Username</Label>
-                      <Input
-                        id="username"
-                        value={user.username || ''}
-                        disabled
-                        className="bg-base-dark3/50 border-accent-teal-500/30 text-text-cream300"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-text-cream200">Email</Label>
-                      <Input
-                        id="email"
-                        value={user.email || ''}
-                        disabled
-                        className="bg-base-dark3/50 border-accent-teal-500/30 text-text-cream300"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+          {/* Profile Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2"
+          >
+            <div className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-accent-teal-500/20 rounded-lg">
+                  <User className="h-5 w-5 text-accent-teal-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-text-cream100">Profile Information</h2>
+              </div>
 
-            {/* Learning Preferences */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Languages className="h-5 w-5 text-accent-teal-400" />
-                    <CardTitle className="text-text-cream100">Learning Preferences</CardTitle>
-                  </div>
-                  <CardDescription className="text-text-cream400">
-                    Customize your language learning experience
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-text-cream200">Primary Language</Label>
-                      <Select 
-                        value={formData.selectedLanguage} 
-                        onValueChange={(value) => handleInputChange('selectedLanguage', value)}
-                      >
-                        <SelectTrigger className="bg-base-dark3/50 border-accent-teal-500/30 text-text-cream100">
-                          <SelectValue placeholder="Select a language" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
-                          {languageOptions.map((lang) => (
-                            <SelectItem key={lang.value} value={lang.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
-                              <div className="flex items-center gap-2">
-                                <span>{lang.flag}</span>
-                                <span>{lang.label}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-text-cream200">Proficiency Level</Label>
-                      <Select 
-                        value={formData.proficiencyLevel} 
-                        onValueChange={(value) => handleInputChange('proficiencyLevel', value)}
-                      >
-                        <SelectTrigger className="bg-base-dark3/50 border-accent-teal-500/30 text-text-cream100">
-                          <SelectValue placeholder="Select your level" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
-                          {proficiencyLevels.map((level) => (
-                            <SelectItem key={level.value} value={level.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
-                              <div className="flex flex-col items-start">
-                                <span className="font-medium">{level.label}</span>
-                                <span className="text-xs text-text-cream400">{level.description}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+              <div className="space-y-6">
+                {/* Username */}
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-text-cream200">Username</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100"
+                    placeholder="Enter your username"
+                  />
+                </div>
 
-            {/* Notification Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-accent-teal-400" />
-                    <CardTitle className="text-text-cream100">Notifications</CardTitle>
+                {/* Email (read-only) */}
+                <div className="space-y-2">
+                  <Label className="text-text-cream200">Email</Label>
+                  <div className="flex items-center gap-3 p-3 bg-base-dark3/30 rounded-lg border border-accent-teal-500/20">
+                    <Mail className="h-4 w-4 text-accent-teal-400" />
+                    <span className="text-text-cream300">{user?.email}</span>
                   </div>
-                  <CardDescription className="text-text-cream400">
-                    Choose what notifications you'd like to receive
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-text-cream200">Email Notifications</Label>
-                      <p className="text-sm text-text-cream400">Receive lesson reminders and updates</p>
-                    </div>
-                    <Switch
-                      checked={formData.emailNotifications}
-                      onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
-                    />
-                  </div>
-                  <Separator className="bg-accent-teal-500/20" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-text-cream200">Weekly Progress Reports</Label>
-                      <p className="text-sm text-text-cream400">Get weekly summaries of your learning</p>
-                    </div>
-                    <Switch
-                      checked={formData.weeklyProgress}
-                      onCheckedChange={(checked) => handleInputChange('weeklyProgress', checked)}
-                    />
-                  </div>
-                  <Separator className="bg-accent-teal-500/20" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-text-cream200">Achievement Alerts</Label>
-                      <p className="text-sm text-text-cream400">Celebrate your milestones</p>
-                    </div>
-                    <Switch
-                      checked={formData.achievementAlerts}
-                      onCheckedChange={(checked) => handleInputChange('achievementAlerts', checked)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </div>
 
-            {/* Save Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex justify-end"
-            >
-              <Button
-                onClick={handleSaveSettings}
-                disabled={!hasChanges || isLoading}
-                className="button-gradient-primary text-white px-6 py-2 flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {isLoading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </motion.div>
-          </div>
+                {/* Learning Languages */}
+                <div className="space-y-2">
+                  <Label className="text-text-cream200">Learning Languages</Label>
+                  <Select
+                    value={formData.learning_languages[0] || ''}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, learning_languages: [value] }))}
+                  >
+                    <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
+                      <SelectValue placeholder="Select a language" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
+                      {languageOptions.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
+                          <div className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Account Status */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-accent-teal-400" />
-                    <CardTitle className="text-text-cream100">Account Status</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Subscription</span>
-                    <Badge 
-                      variant={user.subscription_tier === 'pro' ? 'default' : 'secondary'}
-                      className={user.subscription_tier === 'pro' 
-                        ? 'bg-gradient-to-r from-accent-teal-400 to-accent-mint-400 text-base-dark2' 
-                        : 'bg-base-dark3 text-text-cream300'
-                      }
-                    >
-                      {user.subscription_tier === 'pro' ? 'Pro' : 'Free'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Member since</span>
-                    <span className="text-text-cream400 text-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Last active</span>
-                    <span className="text-text-cream400 text-sm">
-                      {user.last_active_at ? new Date(user.last_active_at).toLocaleDateString() : 'Today'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                {/* Proficiency Level */}
+                <div className="space-y-2">
+                  <Label className="text-text-cream200">Proficiency Level</Label>
+                  <Select
+                    value={formData.proficiency_level}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, proficiency_level: value }))}
+                  >
+                    <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
+                      <SelectValue placeholder="Select your level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
+                      {proficiencyLevels.map((level) => (
+                        <SelectItem key={level.value} value={level.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
+                          {level.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Quick Stats */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <CardTitle className="text-text-cream100">Learning Progress</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Current Language</span>
-                    <div className="flex items-center gap-2">
-                      {formData.selectedLanguage && (
-                        <>
-                          <span>{languageOptions.find(l => l.value === formData.selectedLanguage)?.flag}</span>
-                          <span className="text-text-cream200 text-sm">
-                            {languageOptions.find(l => l.value === formData.selectedLanguage)?.label}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Level</span>
-                    <Badge variant="outline" className="border-accent-teal-500/30 text-text-cream200">
-                      {formData.proficiencyLevel || 'Not set'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-cream300">Timezone</span>
-                    <span className="text-text-cream400 text-sm">{user.timezone}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                {/* Timezone */}
+                <div className="space-y-2">
+                  <Label className="text-text-cream200">Timezone</Label>
+                  <Select
+                    value={formData.timezone}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}
+                  >
+                    <SelectTrigger className="bg-base-dark3/60 border-accent-teal-500/30 focus:border-accent-teal-400 text-text-cream100">
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-base-dark2 border-accent-teal-500/30">
+                      {timezoneOptions.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value} className="text-text-cream100 focus:bg-accent-teal-500/20">
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Account Actions */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="frosted-glass border-accent-teal-500/20">
-                <CardHeader>
-                  <CardTitle className="text-text-cream100">Account Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {user.subscription_tier === 'free' && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full bg-transparent border-accent-teal-500/30 text-accent-teal-400 hover:bg-accent-teal-500/10"
-                      onClick={() => window.location.href = '/pricing'}
-                    >
-                      <Crown className="h-4 w-4 mr-2" />
-                      Upgrade to Pro
-                    </Button>
+                {/* Save Button */}
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="button-gradient-primary text-white w-full sm:w-auto"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
                   )}
-                  <Button 
-                    variant="outline" 
-                    className="w-full bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Account Status & Subscription */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-6"
+          >
+            {/* Account Status */}
+            <div className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-accent-teal-500/20 rounded-lg">
+                  <Shield className="h-5 w-5 text-accent-teal-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-text-cream100">Account Status</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-text-cream300">Role</span>
+                  <span className="text-text-cream100 capitalize">{settings?.role}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-text-cream300">Member Since</span>
+                  <span className="text-text-cream100">{formatDate(settings?.created_at || null)}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-text-cream300">Last Active</span>
+                  <span className="text-text-cream100">{formatDate(settings?.last_active_at || null)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Subscription Info */}
+            <div className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-accent-teal-500/20 rounded-lg">
+                  {subscription?.tier === 'pro' ? (
+                    <Crown className="h-5 w-5 text-accent-teal-400" />
+                  ) : (
+                    <CreditCard className="h-5 w-5 text-accent-teal-400" />
+                  )}
+                </div>
+                <h3 className="text-lg font-semibold text-text-cream100">Subscription</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-text-cream300">Plan</span>
+                  <div className="flex items-center gap-2">
+                    {subscription?.tier === 'pro' && <Crown className="h-4 w-4 text-yellow-400" />}
+                    <span className="text-text-cream100 capitalize font-medium">
+                      {subscription?.tier || 'Free'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-text-cream300">Status</span>
+                  <div className="flex items-center gap-2">
+                    {subscription?.status === 'active' ? (
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-yellow-400" />
+                    )}
+                    <span className="text-text-cream100 capitalize">
+                      {subscription?.status || 'Active'}
+                    </span>
+                  </div>
+                </div>
+
+                {subscription?.expires_at && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-cream300">Expires</span>
+                    <span className="text-text-cream100">{formatDate(subscription.expires_at)}</span>
+                  </div>
+                )}
+
+                {subscription?.payment_method && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-cream300">Payment</span>
+                    <span className="text-text-cream100">{subscription.payment_method}</span>
+                  </div>
+                )}
+
+                {subscription?.tier === 'free' && (
+                  <Button
+                    onClick={() => navigate('/pricing')}
+                    className="button-gradient-primary text-white w-full mt-4"
                   >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Privacy Settings
+                    <Crown className="h-4 w-4 mr-2" />
+                    Upgrade to Pro
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Billing History
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+                )}
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+            >
+              Logout
+            </Button>
+          </motion.div>
         </div>
       </div>
     </div>
