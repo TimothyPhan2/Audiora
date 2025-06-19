@@ -7,7 +7,7 @@ import { stripeProducts } from '@/stripe-config';
 import { useAuthStore } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
+import { cn } from '@/lib/utils';
 // TextShimmer component with fixed motion API
 interface TextShimmerProps {
   children: string;
