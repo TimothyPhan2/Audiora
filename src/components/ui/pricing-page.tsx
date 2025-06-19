@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, ArrowRight } from 'lucide-react';
+import { Check, Zap, Crown, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createCheckoutSession } from '@/lib/stripe';
 import { stripeProducts } from '@/stripe-config';
