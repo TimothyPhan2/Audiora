@@ -24,7 +24,7 @@ const TextShimmer: React.FC<TextShimmerProps> = ({
   duration = 2,
   spread = 2,
 }) => {
-  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);Add commentMore actions
+  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
 
   const dynamicSpread = useMemo(() => {
     return children.length * spread;
