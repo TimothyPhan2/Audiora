@@ -20,6 +20,7 @@ import { PracticePage } from '@/pages/Practice';
 import { ProgressPage } from '@/pages/Progress';
 import { Settings } from '@/pages/Settings';
 import { AuthCallback } from '@/pages/AuthCallback';
+import { Success } from '@/pages/Success';
 
 function AppContent() {
   const { pathname } = useLocation();
@@ -62,6 +63,7 @@ function AppContent() {
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/success" element={<Success />} />
         </Routes>
       </main>
       {!isAuthPage && !isDashboardPage && !isPracticePage && !isProgressPage && !isSettingsPage && <Footer />}
