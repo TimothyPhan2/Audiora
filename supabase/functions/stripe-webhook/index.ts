@@ -13,6 +13,43 @@ const stripe = new Stripe(stripeSecret, {
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
+// Import product configuration to map price_id to subscription tier
+const stripeProducts = [
+  {
+    priceId: 'price_1RbaN1PB89D9FXUlcfivY8Vu',
+    tier: 'pro' as const,
+    name: 'Pro Monthly',
+  },
+  {
+    priceId: 'price_1RbaNbPB89D9FXUlRISQ7RW0',
+    tier: 'pro' as const,
+    name: 'Pro Yearly',
+  },
+];
+
+function getSubscriptionTierFromPriceId(priceId: string): 'pro' | 'free' {
+  const product = stripeProducts.find(p => p.priceId === priceId);
+  return product?.tier || 'free';
+}
+
+function mapStripeStatusToInternalStatus(stripeStatus: string): 'active' | 'expired' | 'cancelled' | 'trial' {
+  switch (stripeStatus) {
+    case 'active':
+    case 'trialing':
+      return 'active';
+    case 'past_due':
+    case 'unpaid':
+      return 'active'; // Keep active but might want to handle differently
+    case 'canceled':
+    case 'incomplete_expired':
+      return 'cancelled';
+    case 'incomplete':
+      return 'trial';
+    default:
+      return 'expired';
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     // Handle OPTIONS request for CORS preflight
@@ -135,13 +172,29 @@ async function syncCustomerFromStripe(customerId: string) {
       expand: ['data.default_payment_method'],
     });
 
-    // TODO verify if needed
+    // Get user_id from stripe_customers table
+    const { data: customerData, error: customerError } = await supabase
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .single();
+
+    if (customerError || !customerData) {
+      console.error('Error fetching customer data:', customerError);
+      throw new Error('Failed to find user for customer');
+    }
+
+    const userId = customerData.user_id;
+
+    // Handle case where no subscriptions exist
     if (subscriptions.data.length === 0) {
-      console.info(`No active subscriptions found for customer: ${customerId}`);
+      console.info(`No subscriptions found for customer: ${customerId}`);
+      
+      // Update stripe_subscriptions table
       const { error: noSubError } = await supabase.from('stripe_subscriptions').upsert(
         {
           customer_id: customerId,
-          subscription_status: 'not_started',
+          status: 'not_started',
         },
         {
           onConflict: 'customer_id',
@@ -152,12 +205,35 @@ async function syncCustomerFromStripe(customerId: string) {
         console.error('Error updating subscription status:', noSubError);
         throw new Error('Failed to update subscription status in database');
       }
+
+      // Update internal subscriptions table - set to cancelled/expired
+      const { error: internalSubError } = await supabase
+        .from('subscriptions')
+        .upsert({
+          user_id: userId,
+          tier: 'free',
+          status: 'expired',
+          started_at: new Date().toISOString(),
+          expires_at: new Date().toISOString(), // Set to now to indicate expired
+          auto_renew: false,
+          payment_method: 'stripe',
+          payment_reference: customerId,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+        });
+
+      if (internalSubError) {
+        console.error('Error updating internal subscription:', internalSubError);
+      }
+
+      return;
     }
 
     // assumes that a customer can only have a single subscription
     const subscription = subscriptions.data[0];
 
-    // store subscription state
+    // Update stripe_subscriptions table
     const { error: subError } = await supabase.from('stripe_subscriptions').upsert(
       {
         customer_id: customerId,
@@ -183,7 +259,54 @@ async function syncCustomerFromStripe(customerId: string) {
       console.error('Error syncing subscription:', subError);
       throw new Error('Failed to sync subscription in database');
     }
+
+    // Now sync with internal subscriptions table
+    const priceId = subscription.items.data[0].price.id;
+    const subscriptionTier = getSubscriptionTierFromPriceId(priceId);
+    const internalStatus = mapStripeStatusToInternalStatus(subscription.status);
+    
+    // Calculate dates
+    const startedAt = new Date(subscription.current_period_start * 1000).toISOString();
+    const expiresAt = subscription.current_period_end 
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : null;
+
+    // Determine payment method info
+    let paymentMethod = 'stripe';
+    if (subscription.default_payment_method && typeof subscription.default_payment_method !== 'string') {
+      const pm = subscription.default_payment_method;
+      if (pm.card) {
+        paymentMethod = `${pm.card.brand} ****${pm.card.last4}`;
+      }
+    }
+
+    // Update internal subscriptions table
+    const { error: internalSubError } = await supabase
+      .from('subscriptions')
+      .upsert({
+        user_id: userId,
+        tier: subscriptionTier,
+        status: internalStatus,
+        started_at: startedAt,
+        expires_at: expiresAt,
+        auto_renew: !subscription.cancel_at_period_end,
+        payment_method: paymentMethod,
+        payment_reference: subscription.id,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+      });
+
+    if (internalSubError) {
+      console.error('Error updating internal subscription:', internalSubError);
+      throw new Error('Failed to update internal subscription');
+    }
+
     console.info(`Successfully synced subscription for customer: ${customerId}`);
+    console.info(`Internal subscription updated: tier=${subscriptionTier}, status=${internalStatus}`);
+    
+    // The database trigger will automatically update users.subscription_tier
+    
   } catch (error) {
     console.error(`Failed to sync subscription for customer ${customerId}:`, error);
     throw error;
