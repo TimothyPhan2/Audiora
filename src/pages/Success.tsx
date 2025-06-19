@@ -74,8 +74,8 @@ export function Success() {
             transition={{ delay: 0.3 }}
             className="mb-8"
           >
-            <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">
-              Payment Successful! 🎉
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="gradient-text">Payment Successful!</span> 🎉
             </h1>
             <p className="text-lg text-text-cream300 mb-2">
               Welcome to Audiora Pro!
