@@ -179,24 +179,38 @@ export default function PricingPage() {
             className="text-center max-w-4xl mx-auto"
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent-teal-500/10 border border-accent-teal-500/20 rounded-full mb-6"
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-accent-teal-500/10 border border-accent-teal-500/20 mb-6"
+              whileHover={{ scale: 1.05 }}
             >
-              <Crown className="w-4 h-4 text-accent-teal-400" />
-              <span className="text-sm text-accent-teal-400 font-medium">Choose Your Learning Journey</span>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="h-4 w-4 text-accent-teal-400" />
+              </motion.div>
+              <span className="text-sm font-medium text-text-cream300">
+                ✨ Simple, Transparent Pricing
+              </span>
             </motion.div>
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              <TextShimmer className="text-4xl md:text-6xl font-bold">
-                Simple, Transparent Pricing
+            <motion.h1 
+              className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight"
+              variants={fadeInUp}
+            >
+              <TextShimmer 
+                className="bg-gradient-to-r from-accent-teal-400 to-accent-persian-500 bg-clip-text text-transparent"
+                duration={3}
+              >
+                Choose Your Plan
               </TextShimmer>
-            </h1>
+            </motion.h1>
             
-            <p className="text-xl text-text-cream300 mb-8 max-w-2xl mx-auto">
+            <motion.p 
+              className="text-lg sm:text-xl text-text-cream300 max-w-3xl mx-auto leading-relaxed mb-10"
+              variants={fadeInUp}
+            >
               Start free and scale as you grow. Learn languages through music with no hidden fees.
-            </p>
+            </motion.p>
 
             {/* Billing Toggle */}
             <motion.div
