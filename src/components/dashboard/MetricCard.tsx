@@ -21,5 +21,8 @@ export function MetricCard({
   trend, 
   className = "" 
 }: MetricCardProps) {
-        )}
+  return (
+    <div>
       </div>
+  );
+}
