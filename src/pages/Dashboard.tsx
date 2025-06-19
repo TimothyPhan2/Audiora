@@ -23,6 +23,7 @@ import {
   BarChart3,
   Mic
 } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store';
 

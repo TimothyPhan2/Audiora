@@ -10,6 +10,11 @@ import {
   Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { createCheckoutSession } from '@/lib/stripe';
+import { stripeProducts } from '@/stripe-config';
+import { useAuthStore } from '@/lib/store';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // Utils function
 function cn(...classes: (string | undefined | null | false)[]): string {
@@ -321,8 +326,38 @@ const faqItems = [
 ];
 
 function PricingPage() {
+  const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const [isYearly, setIsYearly] = useState(false);
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<number | null>(null);
+
+  const handleSubscribe = async (priceId: string) => {
+    if (!isAuthenticated) {
+      navigate('/signup');
+      return;
+    }
+
+    setLoadingPriceId(priceId);
+
+    try {
+      const { url } = await createCheckoutSession({
+        priceId,
+        mode: 'subscription',
+      });
+
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast.error('Failed to start checkout', {
+        description: error instanceof Error ? error.message : 'Please try again',
+      });
+    } finally {
+      setLoadingPriceId(null);
+    }
+  };
 
   const handlePlanSelect = (planName: string) => {
     console.log(`Selected ${planName} plan with ${isYearly ? 'yearly' : 'monthly'} billing`);
@@ -331,6 +366,42 @@ function PricingPage() {
   const calculateYearlySavings = (monthlyPrice: number, yearlyPrice: number) => {
     return Math.max(0, (monthlyPrice * 12) - yearlyPrice);
   };
+
+  // Get products from stripe config
+  const monthlyProduct = stripeProducts.find(p => p.interval === 'month');
+  const yearlyProduct = stripeProducts.find(p => p.interval === 'year');
+
+  const freePlan = {
+    name: 'Free',
+    price: 0,
+    description: 'Perfect for getting started with language learning',
+    features: [
+      'Access to 10 songs',
+      'Basic vocabulary tools',
+      'Limited quizzes',
+      'Community support',
+    ],
+    popular: false,
+    buttonText: 'Get Started',
+    buttonVariant: 'outline' as const,
+    priceId: null,
+  };
+
+  const currentProduct = isYearly ? yearlyProduct : monthlyProduct;
+  const plans = [
+    freePlan,
+    currentProduct ? {
+      name: currentProduct.name,
+      price: currentProduct.price,
+      description: currentProduct.description,
+      features: currentProduct.features,
+      popular: currentProduct.popular,
+      buttonText: 'Start Pro',
+      buttonVariant: 'default' as const,
+      priceId: currentProduct.priceId,
+      interval: currentProduct.interval,
+    } : null,
+  ].filter(Boolean);
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
@@ -513,7 +584,7 @@ function PricingPage() {
             className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20"
             variants={staggerContainer}
           >
-            {pricingPlans.map((plan, index) => (
+            {plans.map((plan, index) => plan && (
               <motion.div
                 key={plan.name}
                 className="relative"
@@ -523,7 +594,7 @@ function PricingPage() {
               >
                 <motion.div
                   className={`relative h-full p-8 rounded-2xl border backdrop-blur-sm overflow-hidden ${
-                    plan.highlight
+                    plan.popular
                       ? 'bg-gradient-to-br from-accent-teal-500/10 to-accent-persian-500/10 border-accent-teal-400/30 shadow-lg'
                       : 'bg-base-dark3/50 border-accent-teal-500/20 hover:border-accent-teal-400/40'
                   }`}
@@ -532,51 +603,43 @@ function PricingPage() {
                   whileHover="hover"
                 >
                   {/* Badge */}
-                  {plan.badge && (
+                  {plan.popular && (
                     <motion.div
                       className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-medium bg-accent-teal-500 text-text-cream100"
                       initial={{ y: -20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.2 }}
                     >
-                      {plan.badge}
+                      Most Popular
                     </motion.div>
                   )}
 
                   <div className="relative z-10">
                     {/* Icon */}
                     <motion.div
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.gradient} border border-accent-teal-500/30 flex items-center justify-center mb-6`}
+                      className={`w-12 h-12 rounded-xl bg-gradient-to-br from-accent-teal-500/20 to-accent-mint-400/20 border border-accent-teal-500/30 flex items-center justify-center mb-6`}
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <plan.icon className="w-6 h-6 text-accent-teal-400" />
+                      <Zap className="w-6 h-6 text-accent-teal-400" />
                     </motion.div>
 
                     {/* Plan Info */}
                     <h3 className="text-2xl font-bold text-text-cream100 mb-2">{plan.name}</h3>
-                    <p className="text-text-cream300 text-sm mb-4">{plan.subtitle}</p>
                     <p className="text-text-cream200 mb-6">{plan.description}</p>
 
                     {/* Price */}
                     <div className="mb-8">
                       <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-bold text-text-cream100">
-                          ${isYearly ? plan.price.yearly : plan.price.monthly}
+                          ${plan.price}
                         </span>
-                        <span className="text-text-cream400">
-                          {plan.price.monthly === 0 ? '' : `/${isYearly ? 'year' : 'month'}`}
-                        </span>
+                        {plan.price > 0 && 'interval' in plan && (
+                          <span className="text-text-cream400">
+                            /{plan.interval}
+                          </span>
+                        )}
                       </div>
-                      {isYearly && plan.price.monthly > 0 && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-green-400 text-sm mt-1"
-                        >
-                          Save ${calculateYearlySavings(plan.price.monthly, plan.price.yearly)} per year
-                        </motion.p>
-                      )}
                     </div>
 
                     {/* Features */}
@@ -599,17 +662,24 @@ function PricingPage() {
 
                     {/* CTA Button */}
                     <motion.button
-                      onClick={() => handlePlanSelect(plan.name)}
+                      onClick={() => {
+                        if (plan.priceId) {
+                          handleSubscribe(plan.priceId);
+                        } else {
+                          navigate('/signup');
+                        }
+                      }}
+                      disabled={loadingPriceId === plan.priceId}
                       className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
-                        plan.highlight
-                          ? 'button-gradient-primary text-text-cream100'
-                          : 'button-gradient-secondary text-text-cream200 border border-accent-teal-500/30'
+                        plan.buttonVariant === 'default'
+                          ? 'button-gradient-primary text-white'
+                          : 'bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10'
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <span className="flex items-center justify-center gap-2">
-                        {plan.price.monthly === 0 ? 'Get Started Free' : 'Choose Plan'}
+                        {loadingPriceId === plan.priceId ? 'Loading...' : plan.buttonText}
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </motion.button>
@@ -617,7 +687,7 @@ function PricingPage() {
 
                   {/* Hover glow effect */}
                   <AnimatePresence>
-                    {hoveredPlan === index && plan.highlight && (
+                    {hoveredPlan === index && plan.popular && (
                       <motion.div
                         className="absolute inset-0 rounded-2xl bg-accent-teal-500/5 border border-accent-teal-400/30"
                         initial={{ opacity: 0 }}
