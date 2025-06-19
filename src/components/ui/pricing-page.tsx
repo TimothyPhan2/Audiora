@@ -10,33 +10,48 @@ import { toast } from 'sonner';
 
 // TextShimmer component with fixed motion API
 interface TextShimmerProps {
-  children: React.ReactNode;
-  className?: string;
-  shimmerWidth?: number;
+  children: string;
   as?: React.ElementType;
+  className?: string;
+  duration?: number;
+  spread?: number;
 }
 
 const TextShimmer: React.FC<TextShimmerProps> = ({
   children,
-  className = '',
-  shimmerWidth = 100,
   as: Component = 'p',
+  className,
+  duration = 2,
+  spread = 2,
 }) => {
-  const MotionComponent = motion.create(Component as keyof JSX.IntrinsicElements);
+  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);Add commentMore actions
+
+  const dynamicSpread = useMemo(() => {
+    return children.length * spread;
+  }, [children, spread]);
 
   return (
     <MotionComponent
-      initial={{ backgroundPosition: '-200% 0' }}
-      animate={{ backgroundPosition: '200% 0' }}
+      className={cn(
+        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
+        'text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]',
+        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
+        'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        className
+      )}
+      initial={{ backgroundPosition: '100% center' }}
+      animate={{ backgroundPosition: '0% center' }}
       transition={{
-        duration: 3,
-        ease: 'linear',
         repeat: Infinity,
+        duration,
+        ease: 'linear',
       }}
-      className={`inline-block bg-gradient-to-r from-text-cream100 via-accent-teal-400 to-text-cream100 bg-clip-text text-transparent ${className}`}
-      style={{
-        backgroundSize: `${shimmerWidth}% 100%`,
-      }}
+      style={
+        {
+          '--spread': `${dynamicSpread}px`,
+          backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
+        } as React.CSSProperties
+      }
     >
       {children}
     </MotionComponent>
