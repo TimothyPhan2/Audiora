@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
-  Globe, 
-  BookOpen, 
   Crown, 
   CreditCard, 
   Shield, 
@@ -13,8 +11,6 @@ import {
   Save,
   Loader2,
   ArrowLeft,
-  Calendar,
-  Clock,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
