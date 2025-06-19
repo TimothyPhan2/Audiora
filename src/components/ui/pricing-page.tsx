@@ -1,14 +1,6 @@
-import React, { useState, useMemo, type JSX } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Check, 
-  Zap, 
-  Crown, 
-  ArrowRight, 
-  Sparkles, 
-  ChevronDown,
-  Mail
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Check, Zap, Crown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createCheckoutSession } from '@/lib/stripe';
 import { stripeProducts } from '@/stripe-config';
@@ -16,364 +8,58 @@ import { useAuthStore } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-// Utils function
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-// Text Shimmer Component
+// TextShimmer component with fixed motion API
 interface TextShimmerProps {
-  children: string;
-  as?: React.ElementType;
+  children: React.ReactNode;
   className?: string;
-  duration?: number;
-  spread?: number;
+  shimmerWidth?: number;
+  as?: React.ElementType;
 }
 
-function TextShimmer({
+const TextShimmer: React.FC<TextShimmerProps> = ({
   children,
+  className = '',
+  shimmerWidth = 100,
   as: Component = 'p',
-  className,
-  duration = 2,
-  spread = 2,
-}: TextShimmerProps) {
-  const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
-
-  const dynamicSpread = useMemo(() => {
-    return children.length * spread;
-  }, [children, spread]);
+}) => {
+  const MotionComponent = motion.create(Component as keyof JSX.IntrinsicElements);
 
   return (
     <MotionComponent
-      className={cn(
-        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
-        'text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]',
-        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
-        'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
-        className
-      )}
-      initial={{ backgroundPosition: '100% center' }}
-      animate={{ backgroundPosition: '0% center' }}
+      initial={{ backgroundPosition: '-200% 0' }}
+      animate={{ backgroundPosition: '200% 0' }}
       transition={{
-        repeat: Infinity,
-        duration,
+        duration: 3,
         ease: 'linear',
+        repeat: Infinity,
       }}
-      style={
-        {
-          '--spread': `${dynamicSpread}px`,
-          backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
-        } as React.CSSProperties
-      }
+      className={`inline-block bg-gradient-to-r from-text-cream100 via-accent-teal-400 to-text-cream100 bg-clip-text text-transparent ${className}`}
+      style={{
+        backgroundSize: `${shimmerWidth}% 100%`,
+      }}
     >
       {children}
     </MotionComponent>
   );
-}
+};
 
-// FAQ Section Component
-interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
-  title: string;
-  description?: string;
-  items: {
-    question: string;
-    answer: string;
-  }[];
-  contactInfo?: {
-    title: string;
-    description: string;
-    buttonText: string;
-    onContact?: () => void;
-  };
-}
-
-const FaqItem = React.forwardRef<
-  HTMLDivElement,
-  {
-    question: string;
-    answer: string;
-    index: number;
-  }
->((props, ref) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const { question, answer, index } = props;
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.1 }}
-      className={cn(
-        "group rounded-lg",
-        "transition-all duration-200 ease-in-out",
-        "border border-accent-teal-500/20",
-        isOpen
-          ? "bg-gradient-to-br from-base-dark2 via-base-dark3/50 to-base-dark2"
-          : "hover:bg-base-dark3/30"
-      )}
-    >
-      <Button
-        variant="ghost"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 h-auto justify-between hover:bg-transparent"
-      >
-        <h3
-          className={cn(
-            "text-base font-medium transition-colors duration-200 text-left",
-            "text-text-cream300",
-            isOpen && "text-text-cream100"
-          )}
-        >
-          {question}
-        </h3>
-        <motion.div
-          animate={{
-            rotate: isOpen ? 180 : 0,
-            scale: isOpen ? 1.1 : 1,
-          }}
-          transition={{ duration: 0.2 }}
-          className={cn(
-            "p-0.5 rounded-full flex-shrink-0",
-            "transition-colors duration-200",
-            isOpen ? "text-accent-teal-400" : "text-text-cream400"
-          )}
-        >
-          <ChevronDown className="h-4 w-4" />
-        </motion.div>
-      </Button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{
-              height: "auto",
-              opacity: 1,
-              transition: { duration: 0.2, ease: "easeOut" },
-            }}
-            exit={{
-              height: 0,
-              opacity: 0,
-              transition: { duration: 0.2, ease: "easeIn" },
-            }}
-          >
-            <div className="px-6 pb-4 pt-2">
-              <motion.p
-                initial={{ y: -10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -10, opacity: 0 }}
-                className="text-sm text-text-cream300 leading-relaxed"
-              >
-                {answer}
-              </motion.p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-});
-FaqItem.displayName = "FaqItem";
-
-const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
-  ({ className, title, description, items, contactInfo, ...props }, ref) => {
-    return (
-      <section
-        ref={ref}
-        className={cn(
-          "py-16 w-full bg-gradient-to-b from-transparent via-base-dark3/30 to-transparent",
-          className
-        )}
-        {...props}
-      >
-        <div className="container max-w-4xl mx-auto px-6">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl mx-auto text-center mb-12"
-          >
-            <h2 className="text-3xl font-semibold mb-3 bg-gradient-to-r from-accent-teal-400 to-accent-persian-500 bg-clip-text text-transparent">
-              {title}
-            </h2>
-            {description && (
-              <p className="text-sm text-text-cream300">{description}</p>
-            )}
-          </motion.div>
-
-          {/* FAQ Items */}
-          <div className="max-w-2xl mx-auto space-y-2">
-            {items.map((item, index) => (
-              <FaqItem
-                key={index}
-                question={item.question}
-                answer={item.answer}
-                index={index}
-              />
-            ))}
-          </div>
-
-          {/* Contact Section */}
-          {contactInfo && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="max-w-md mx-auto mt-12 p-6 rounded-lg text-center"
-            >
-              <div className="inline-flex items-center justify-center p-1.5 rounded-full mb-4">
-                <Mail className="h-4 w-4 text-accent-teal-400" />
-              </div>
-              <p className="text-sm font-medium text-text-cream100 mb-1">
-                {contactInfo.title}
-              </p>
-              <p className="text-xs text-text-cream300 mb-4">
-                {contactInfo.description}
-              </p>
-              <Button size="sm" onClick={contactInfo.onContact} className="button-gradient-primary">
-                {contactInfo.buttonText}
-              </Button>
-            </motion.div>
-          )}
-        </div>
-      </section>
-    );
-  }
-);
-FaqSection.displayName = "FaqSection";
-
-// Main Pricing Page Component
-interface PricingTier {
+// Plan template interface for static plan data
+interface PlanTemplate {
   name: string;
-  subtitle: string;
-  price: { monthly: number; yearly: number };
   description: string;
-  icon: typeof Zap;
+  features: string[];
+  icon: React.ElementType;
   gradient: string;
   borderGradient: string;
-  features: string[];
-  highlight: boolean;
-  badge: string | null;
+  badge?: string;
+  buttonText: string;
+  buttonVariant: 'default' | 'outline';
 }
 
-const pricingPlans: PricingTier[] = [
+// Static plan templates
+const displayPlanTemplates: PlanTemplate[] = [
   {
-    name: "Free",
-    subtitle: "Perfect for getting started",
-    price: { monthly: 0, yearly: 0 },
-    description: "Try Audiora with basic features",
-    icon: Zap,
-    gradient: "from-accent-teal-500/20 to-accent-mint-400/20",
-    borderGradient: "from-accent-teal-400 to-accent-mint-400",
-    features: [
-      "Access to 10 songs",
-      "Basic vocabulary tools",
-      "Limited quizzes",
-      "Community support"
-    ],
-    highlight: false,
-    badge: null
-  },
-  {
-    name: "Pro",
-    subtitle: "Most popular choice",
-    price: { monthly: 9.99, yearly: 99.99 },
-    description: "Advanced features for serious learners",
-    icon: Crown,
-    gradient: "from-accent-teal-500/20 to-accent-persian-500/20",
-    borderGradient: "from-accent-teal-400 to-accent-persian-500",
-    features: [
-      "Unlimited song access",
-      "Advanced vocabulary tools",
-      "Unlimited quizzes",
-      "Pronunciation feedback",
-      "Progress tracking",
-      "Offline mode",
-      "Priority support",
-      "Personalized learning path"
-    ],
-    highlight: true,
-    badge: "Most Popular"
-  }
-];
-
-const faqItems = [
-  {
-    question: "Can I switch plans later?",
-    answer: "Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle."
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer: "We accept all major credit cards, PayPal, and Apple Pay. For annual plans, we also offer invoice payment options."
-  },
-  {
-    question: "Is there a free trial available?",
-    answer: "Our Free plan gives you access to basic features indefinitely. You can upgrade to Pro whenever you're ready."
-  },
-  {
-    question: "Do you offer refunds?",
-    answer: "We offer a 14-day money-back guarantee if you're not satisfied with your Pro subscription."
-  },
-  {
-    question: "How many languages can I learn?",
-    answer: "You can learn multiple languages with any plan. Each language's progress is tracked separately."
-  },
-  {
-    question: "How do I cancel my subscription?",
-    answer: "You can cancel your subscription at any time from your account settings. You'll continue to have access until the end of your billing period."
-  }
-];
-
-function PricingPage() {
-  const { isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
-  const [isYearly, setIsYearly] = useState(false);
-  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
-  const [hoveredPlan, setHoveredPlan] = useState<number | null>(null);
-
-  const handleSubscribe = async (priceId: string) => {
-    if (!isAuthenticated) {
-      navigate('/signup');
-      return;
-    }
-
-    setLoadingPriceId(priceId);
-
-    try {
-      const { url } = await createCheckoutSession({
-        priceId,
-        mode: 'subscription',
-      });
-
-      if (url) {
-        window.location.href = url;
-      }
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      toast.error('Failed to start checkout', {
-        description: error instanceof Error ? error.message : 'Please try again',
-      });
-    } finally {
-      setLoadingPriceId(null);
-    }
-  };
-
-  const handlePlanSelect = (planName: string) => {
-    console.log(`Selected ${planName} plan with ${isYearly ? 'yearly' : 'monthly'} billing`);
-  };
-
-  const calculateYearlySavings = (monthlyPrice: number, yearlyPrice: number) => {
-    return Math.max(0, (monthlyPrice * 12) - yearlyPrice);
-  };
-
-  // Get products from stripe config
-  const monthlyProduct = stripeProducts.find(p => p.interval === 'month');
-  const yearlyProduct = stripeProducts.find(p => p.interval === 'year');
-
-  const freePlan = {
     name: 'Free',
-    price: 0,
     description: 'Perfect for getting started with language learning',
     features: [
       'Access to 10 songs',
@@ -381,343 +67,365 @@ function PricingPage() {
       'Limited quizzes',
       'Community support',
     ],
-    popular: false,
+    icon: Zap,
+    gradient: 'from-gray-500/20 to-gray-600/20',
+    borderGradient: 'from-gray-500/30 to-gray-600/30',
     buttonText: 'Get Started',
-    buttonVariant: 'outline' as const,
-    priceId: null,
-  };
+    buttonVariant: 'outline',
+  },
+  {
+    name: 'Pro',
+    description: 'Unlock unlimited access to all songs, advanced vocabulary tools, and personalized learning features.',
+    features: [
+      'Unlimited song access',
+      'Advanced vocabulary tools',
+      'Unlimited quizzes',
+      'Pronunciation feedback',
+      'Progress tracking',
+      'Personalized learning path',
+      'Priority support',
+    ],
+    icon: Crown,
+    gradient: 'from-accent-teal-500/20 to-accent-persian-500/20',
+    borderGradient: 'from-accent-teal-400/50 to-accent-persian-500/50',
+    badge: 'Most Popular',
+    buttonText: 'Start Pro',
+    buttonVariant: 'default',
+  },
+];
 
-  const currentProduct = isYearly ? yearlyProduct : monthlyProduct;
-  const plans = [
-    freePlan,
-    currentProduct ? {
-      name: currentProduct.name,
-      price: currentProduct.price,
-      description: currentProduct.description,
-      features: currentProduct.features,
-      popular: currentProduct.popular,
-      buttonText: 'Start Pro',
-      buttonVariant: 'default' as const,
-      priceId: currentProduct.priceId,
-      interval: currentProduct.interval,
-    } : null,
-  ].filter(Boolean);
+export default function PricingPage() {
+  const [isYearly, setIsYearly] = useState(false);
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
+  const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.8, 
-        ease: [0.23, 0.86, 0.39, 0.96] 
+  const handleSubscribe = async (priceId?: string) => {
+    if (!priceId) {
+      // Free plan - redirect to signup or dashboard
+      if (isAuthenticated) {
+        navigate('/dashboard');
+      } else {
+        navigate('/signup');
       }
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in to subscribe');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setLoadingPriceId(priceId);
+      const { url } = await createCheckoutSession({
+        priceId,
+        mode: 'subscription',
+      });
+      
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setLoadingPriceId(null);
     }
   };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const cardHover = {
-    rest: { scale: 1, y: 0 },
-    hover: { 
-      scale: 1.05, 
-      y: -10,
-      transition: {
-        duration: 0.4,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  // Floating music notes
-  const musicNotes = ['♪', '♫', '♩', '♬', '♭', '♮', '♯'];
 
   return (
-    <div className="min-h-screen bg-base-dark2">
-      {/* Pricing Section */}
-      <section className="relative py-20 bg-gradient-to-br from-base-dark2 via-base-dark3/30 to-base-dark2 overflow-hidden">
-        {/* Background Effects */}
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Background Elements */}
         <div className="absolute inset-0">
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-accent-teal-500/5 via-accent-persian-500/5 to-accent-mint-400/5"
-            animate={{
-              backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
-            }}
-            transition={{
-              duration: 40,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              backgroundSize: '400% 400%'
-            }}
-          />
-          
-          {/* Floating music notes */}
-          {[...Array(20)].map((_, i) => (
+          <div className="absolute top-20 left-10 w-72 h-72 bg-accent-teal-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-persian-500/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* Floating Music Notes */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute text-accent-teal-400/20 text-2xl md:text-4xl font-bold select-none pointer-events-none"
+              className="absolute text-accent-teal-400/20 text-4xl"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                textShadow: '0 0 20px rgba(45, 212, 191, 0.3)',
               }}
               animate={{
-                y: [0, -100, 0],
-                opacity: [0.1, 0.6, 0.1],
-                scale: [0.8, 1.2, 0.8],
-                rotate: [0, 360, 0],
+                y: [-20, -100],
+                opacity: [0, 1, 0],
+                rotate: [0, 360],
               }}
               transition={{
-                duration: 8 + Math.random() * 8,
+                duration: 8 + Math.random() * 4,
                 repeat: Infinity,
-                ease: "easeInOut",
-                delay: Math.random() * 4,
+                delay: Math.random() * 5,
               }}
             >
-              {musicNotes[Math.floor(Math.random() * musicNotes.length)]}
+              ♪
             </motion.div>
           ))}
         </div>
 
-        <motion.div 
-          className="relative z-10 max-w-6xl mx-auto px-6"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          {/* Header */}
-          <motion.div 
-            className="text-center mb-16"
-            variants={fadeInUp}
+        <div className="relative container-center py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
           >
             <motion.div
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-accent-teal-500/10 border border-accent-teal-500/20 mb-6"
-              whileHover={{ scale: 1.05 }}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-accent-teal-500/10 border border-accent-teal-500/20 rounded-full mb-6"
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="h-4 w-4 text-accent-teal-400" />
-              </motion.div>
-              <span className="text-sm font-medium text-text-cream300">
-                ✨ Simple, Transparent Pricing
-              </span>
+              <Crown className="w-4 h-4 text-accent-teal-400" />
+              <span className="text-sm text-accent-teal-400 font-medium">Choose Your Learning Journey</span>
             </motion.div>
 
-            <motion.h1 
-              className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight"
-              variants={fadeInUp}
-            >
-              <TextShimmer 
-                className="bg-gradient-to-r from-accent-teal-400 to-accent-persian-500 bg-clip-text text-transparent"
-                duration={3}
-              >
-                Choose Your Plan
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              <TextShimmer className="text-4xl md:text-6xl font-bold">
+                Simple, Transparent Pricing
               </TextShimmer>
-            </motion.h1>
+            </h1>
             
-            <motion.p 
-              className="text-lg sm:text-xl text-text-cream300 max-w-3xl mx-auto leading-relaxed mb-10"
-              variants={fadeInUp}
-            >
+            <p className="text-xl text-text-cream300 mb-8 max-w-2xl mx-auto">
               Start free and scale as you grow. Learn languages through music with no hidden fees.
-            </motion.p>
+            </p>
 
             {/* Billing Toggle */}
-            <motion.div 
-              className="flex items-center justify-center gap-4"
-              variants={fadeInUp}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center justify-center gap-4 mb-12"
             >
-              <span className={`text-sm font-medium ${!isYearly ? 'text-text-cream100' : 'text-text-cream400'}`}>
+              <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-text-cream100' : 'text-text-cream400'}`}>
                 Monthly
               </span>
-              <motion.button
+              <button
                 onClick={() => setIsYearly(!isYearly)}
-                className={`relative w-14 h-7 rounded-full border-2 transition-all ${
-                  isYearly ? 'bg-accent-teal-500 border-accent-teal-500' : 'bg-base-dark3 border-accent-teal-500/30'
+                className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+                  isYearly ? 'bg-accent-teal-500' : 'bg-base-dark3'
                 }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
                 <motion.div
-                  className="absolute top-0.5 w-5 h-5 bg-text-cream100 rounded-full shadow-lg"
-                  animate={{
-                    x: isYearly ? 26 : 2
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 30
-                  }}
+                  className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg"
+                  animate={{ x: isYearly ? 32 : 4 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
-              </motion.button>
-              <span className={`text-sm font-medium ${isYearly ? 'text-text-cream100' : 'text-text-cream400'}`}>
+              </button>
+              <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-text-cream100' : 'text-text-cream400'}`}>
                 Yearly
               </span>
               {isYearly && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400"
+                  className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full border border-green-500/30"
                 >
                   Save 17%
-                </motion.div>
+                </motion.span>
               )}
             </motion.div>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Pricing Cards */}
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20"
-            variants={staggerContainer}
-          >
-            {plans.map((plan, index) => plan && (
-              <motion.div
-                key={plan.name}
-                className="relative"
-                variants={fadeInUp}
-                onHoverStart={() => setHoveredPlan(index)}
-                onHoverEnd={() => setHoveredPlan(null)}
-              >
+      {/* Pricing Cards */}
+      <div className="container-center pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {displayPlanTemplates.map((planTemplate, index) => {
+            // For Free plan, use static data
+            if (planTemplate.name === 'Free') {
+              return (
                 <motion.div
-                  className={`relative h-full p-8 rounded-2xl border backdrop-blur-sm overflow-hidden ${
-                    plan.popular
-                      ? 'bg-gradient-to-br from-accent-teal-500/10 to-accent-persian-500/10 border-accent-teal-400/30 shadow-lg'
-                      : 'bg-base-dark3/50 border-accent-teal-500/20 hover:border-accent-teal-400/40'
-                  }`}
-                  variants={cardHover}
-                  initial="rest"
-                  whileHover="hover"
+                  key={planTemplate.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  className={`relative p-8 rounded-2xl border-2 bg-gradient-to-br ${planTemplate.gradient} border-transparent bg-clip-padding`}
+                  style={{
+                    background: `linear-gradient(135deg, ${planTemplate.gradient.replace('from-', '').replace('to-', ', ')}) padding-box, linear-gradient(135deg, ${planTemplate.borderGradient.replace('from-', '').replace('to-', ', ')}) border-box`,
+                  }}
                 >
-                  {/* Badge */}
-                  {plan.popular && (
-                    <motion.div
-                      className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-full text-xs font-medium bg-accent-teal-500 text-text-cream100"
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      Most Popular
-                    </motion.div>
-                  )}
-
-                  <div className="relative z-10">
-                    {/* Icon */}
-                    <motion.div
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-br from-accent-teal-500/20 to-accent-mint-400/20 border border-accent-teal-500/30 flex items-center justify-center mb-6`}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Zap className="w-6 h-6 text-accent-teal-400" />
-                    </motion.div>
-
-                    {/* Plan Info */}
-                    <h3 className="text-2xl font-bold text-text-cream100 mb-2">{plan.name}</h3>
-                    <p className="text-text-cream200 mb-6">{plan.description}</p>
-
-                    {/* Price */}
-                    <div className="mb-8">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-text-cream100">
-                          ${plan.price}
-                        </span>
-                        {plan.price > 0 && 'interval' in plan && (
-                          <span className="text-text-cream400">
-                            /{plan.interval}
-                          </span>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`p-3 rounded-xl bg-gradient-to-br ${planTemplate.gradient}`}>
+                      <planTemplate.icon className="w-6 h-6 text-text-cream100" />
                     </div>
-
-                    {/* Features */}
-                    <div className="mb-8">
-                      {plan.features.map((feature, featureIndex) => (
-                        <motion.div
-                          key={featureIndex}
-                          className="flex items-center gap-3 py-2"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: featureIndex * 0.1 }}
-                        >
-                          <div className="w-5 h-5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-3 h-3 text-green-400" />
-                          </div>
-                          <span className="text-text-cream200 text-sm">{feature}</span>
-                        </motion.div>
-                      ))}
+                    <div>
+                      <h3 className="text-2xl font-bold text-text-cream100">{planTemplate.name}</h3>
+                      <p className="text-text-cream300 text-sm">{planTemplate.description}</p>
                     </div>
-
-                    {/* CTA Button */}
-                    <motion.button
-                      onClick={() => {
-                        if (plan.priceId) {
-                          handleSubscribe(plan.priceId);
-                        } else {
-                          navigate('/signup');
-                        }
-                      }}
-                      disabled={loadingPriceId === plan.priceId}
-                      className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
-                        plan.buttonVariant === 'default'
-                          ? 'button-gradient-primary text-white'
-                          : 'bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10'
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        {loadingPriceId === plan.priceId ? 'Loading...' : plan.buttonText}
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </motion.button>
                   </div>
 
-                  {/* Hover glow effect */}
-                  <AnimatePresence>
-                    {hoveredPlan === index && plan.popular && (
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl bg-accent-teal-500/5 border border-accent-teal-400/30"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    )}
-                  </AnimatePresence>
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold text-text-cream100">$0</span>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {planTemplate.features.map((feature, featureIndex) => (
+                      <motion.li
+                        key={featureIndex}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.8 + featureIndex * 0.1 }}
+                        className="flex items-center gap-3"
+                      >
+                        <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        <span className="text-text-cream200">{feature}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    onClick={() => handleSubscribe()}
+                    variant={planTemplate.buttonVariant}
+                    className={`w-full py-3 font-medium transition-all duration-300 ${
+                      planTemplate.buttonVariant === 'default'
+                        ? 'button-gradient-primary text-white hover:shadow-lg'
+                        : 'bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10'
+                    }`}
+                  >
+                    {planTemplate.buttonText}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </motion.div>
+              );
+            }
+
+            // For Pro plan, find the appropriate product based on billing interval
+            const stripeProduct = stripeProducts.find(
+              product => product.name === 'Pro' && product.interval === (isYearly ? 'year' : 'month')
+            );
+
+            if (!stripeProduct) return null;
+
+            return (
+              <motion.div
+                key={`${planTemplate.name}-${isYearly ? 'yearly' : 'monthly'}`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                className={`relative p-8 rounded-2xl border-2 bg-gradient-to-br ${planTemplate.gradient} border-transparent bg-clip-padding`}
+                style={{
+                  background: `linear-gradient(135deg, ${planTemplate.gradient.replace('from-', '').replace('to-', ', ')}) padding-box, linear-gradient(135deg, ${planTemplate.borderGradient.replace('from-', '').replace('to-', ', ')}) border-box`,
+                }}
+              >
+                {planTemplate.badge && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <div className="px-4 py-1 bg-gradient-to-r from-accent-teal-500 to-accent-persian-500 text-white text-sm font-medium rounded-full">
+                      {planTemplate.badge}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${planTemplate.gradient}`}>
+                    <planTemplate.icon className="w-6 h-6 text-accent-teal-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-text-cream100">{planTemplate.name}</h3>
+                    <p className="text-text-cream300 text-sm">{stripeProduct.description}</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-text-cream100">
+                      ${stripeProduct.price}
+                    </span>
+                    <span className="text-text-cream400">
+                      / {stripeProduct.interval}
+                    </span>
+                  </div>
+                  {isYearly && (
+                    <p className="text-sm text-green-400 mt-1">
+                      Save ${((9.99 * 12) - 99.99).toFixed(2)} per year
+                    </p>
+                  )}
+                </div>
+
+                <ul className="space-y-3 mb-8">
+                  {stripeProduct.features.map((feature, featureIndex) => (
+                    <motion.li
+                      key={featureIndex}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.8 + featureIndex * 0.1 }}
+                      className="flex items-center gap-3"
+                    >
+                      <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <span className="text-text-cream200">{feature}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+
+                <Button
+                  onClick={() => handleSubscribe(stripeProduct.priceId)}
+                  disabled={loadingPriceId === stripeProduct.priceId}
+                  variant={planTemplate.buttonVariant}
+                  className={`w-full py-3 font-medium transition-all duration-300 ${
+                    planTemplate.buttonVariant === 'default'
+                      ? 'button-gradient-primary text-white hover:shadow-lg disabled:opacity-50'
+                      : 'bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10'
+                  }`}
+                >
+                  {loadingPriceId === stripeProduct.priceId ? 'Loading...' : planTemplate.buttonText}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
+            );
+          })}
+        </div>
+      </div>
 
       {/* FAQ Section */}
-      <FaqSection
-        title="Frequently Asked Questions"
-        description="Everything you need to know about our pricing and plans"
-        items={faqItems}
-        contactInfo={{
-          title: "Still have questions?",
-          description: "We're here to help you choose the right plan",
-          buttonText: "Contact Support",
-          onContact: () => window.location.href = 'mailto:support@audiora.xyz',
-        }}
-      />
+      <div className="container-center pb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="text-center max-w-3xl mx-auto"
+        >
+          <h2 className="text-3xl font-bold text-text-cream100 mb-6">
+            Frequently Asked Questions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="p-6 bg-base-dark3/30 rounded-xl border border-accent-teal-500/10">
+              <h3 className="font-semibold text-text-cream100 mb-2">Can I cancel anytime?</h3>
+              <p className="text-text-cream300 text-sm">
+                Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your billing period.
+              </p>
+            </div>
+            <div className="p-6 bg-base-dark3/30 rounded-xl border border-accent-teal-500/10">
+              <h3 className="font-semibold text-text-cream100 mb-2">What payment methods do you accept?</h3>
+              <p className="text-text-cream300 text-sm">
+                We accept all major credit cards, debit cards, and digital wallets through our secure payment processor.
+              </p>
+            </div>
+            <div className="p-6 bg-base-dark3/30 rounded-xl border border-accent-teal-500/10">
+              <h3 className="font-semibold text-text-cream100 mb-2">Is there a free trial?</h3>
+              <p className="text-text-cream300 text-sm">
+                Our free plan gives you access to 10 songs and basic features. Upgrade anytime to unlock unlimited content.
+              </p>
+            </div>
+            <div className="p-6 bg-base-dark3/30 rounded-xl border border-accent-teal-500/10">
+              <h3 className="font-semibold text-text-cream100 mb-2">Can I switch between plans?</h3>
+              <p className="text-text-cream300 text-sm">
+                Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
-
-export default PricingPage;

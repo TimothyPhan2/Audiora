@@ -15,7 +15,7 @@ export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_SWde5wGV88e8Pj',
     priceId: 'price_1RbaN1PB89D9FXUlcfivY8Vu',
-    name: 'Pro Monthly',
+    name: 'Pro',
     description: 'Unlock unlimited access to all songs, advanced vocabulary tools, and personalized learning features.',
     mode: 'subscription',
     price: 9.99,
@@ -35,7 +35,7 @@ export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_SWdezXJZvpoC6c',
     priceId: 'price_1RbaNbPB89D9FXUlRISQ7RW0',
-    name: 'Pro Yearly',
+    name: 'Pro',
     description: 'Get the best value with our annual plan. All Pro features with significant savings.',
     mode: 'subscription',
     price: 99.99,
