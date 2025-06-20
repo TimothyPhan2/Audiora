@@ -7,7 +7,7 @@ export const mockLessonsData: (Song & {
   difficulty: string;
 })[] = [
   {
-    id: 'midnight-clarity-placeholder', // Replace with actual UUID from Supabase
+    id: '2266c23c-05db-4a72-9402-1c7bce6abf50', // Replace with actual UUID from Supabase
     title: 'Midnight Clarity',
     artist: 'Suno AI',
     language: 'japanese',
