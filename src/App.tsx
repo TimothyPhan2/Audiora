@@ -21,6 +21,7 @@ import { ProgressPage } from '@/pages/Progress';
 import { Settings } from '@/pages/Settings';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { Success } from '@/pages/Success';
+import { SongDetail } from '@/pages/SongDetail';
 
 function AppContent() {
   const { pathname } = useLocation();
@@ -59,6 +60,7 @@ function AppContent() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/lessons" element={<Lessons />} />
+          <Route path="/lessons/:songId" element={<SongDetail />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/settings" element={<Settings />} />

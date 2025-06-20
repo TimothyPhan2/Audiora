@@ -7,6 +7,21 @@ export const mockLessonsData: (Song & {
   difficulty: string;
 })[] = [
   {
+    id: 'midnight-clarity-placeholder', // Replace with actual UUID from Supabase
+    title: 'Midnight Clarity',
+    artist: 'Suno AI',
+    language: 'japanese',
+    level: 'intermediate',
+    genre: 'indie rock',
+    coverUrl: 'https://jojawfigpwnawzmmfowo.supabase.co/storage/v1/object/sign/cover-images/midnightclarity.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NDQxODQwZi01OWU4LTQ3ZDAtOTVlYS02MWZjNDU0YTE2YmIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJjb3Zlci1pbWFnZXMvbWlkbmlnaHRjbGFyaXR5LmpwZWciLCJpYXQiOjE3NTA0MDA2NDIsImV4cCI6MjA2NTc2MDY0Mn0.hBesekdABk5dCH0T-60B66kxTDni8ThixbaY1zV6oIQ',
+    audioUrl: 'https://jojawfigpwnawzmmfowo.supabase.co/storage/v1/object/sign/audio-files/Midnight%20Clarity.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NDQxODQwZi01OWU4LTQ3ZDAtOTVlYS02MWZjNDU0YTE2YmIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdWRpby1maWxlcy9NaWRuaWdodCBDbGFyaXR5Lm1wMyIsImlhdCI6MTc1MDQwMDU5NiwiZXhwIjoyMDY1NzYwNTk2fQ.Cx7gdjYllN-AdIHOTVpgepYZrN49hv7kEQpX-1t4Su8',
+    popularity: 85,
+    duration: '4:20',
+    progress: 0,
+    difficulty: 'Japanese indie rock with emotional themes',
+    lyrics: []
+  },
+  {
     id: 'song-1',
     title: 'Despacito',
     artist: 'Luis Fonsi ft. Daddy Yankee',
