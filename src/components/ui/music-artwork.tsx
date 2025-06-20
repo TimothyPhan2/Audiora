@@ -19,7 +19,6 @@ const MusicArtwork: React.FC<MusicArtworkProps> = ({
   music,
   artist,
   isSong = false,
-  isPlaying = false,
   isLoading = false,
   aspectRatio = 'portrait',
   width,
