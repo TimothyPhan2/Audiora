@@ -22,15 +22,9 @@ const componentStyles = `
     }
   }
 `;
-
+import { cn } from "@/lib/utils";
+import { motion } from 'framer-motion';
 interface MusicArtworkProps {
-  artist: string;
-  music: string;
-  albumArt: string;
-  isSong: boolean;
-  isLoading?: boolean;
-}
-
 export default function MusicArtwork({
   artist,
   music,
@@ -205,26 +199,82 @@ export default function MusicArtwork({
               <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center shadow-lg">
                 {isPlaying ? (
                   <div className="flex gap-0.5">
-                    <div className="w-0.5 h-3 bg-white rounded"></div>
+  imageUrl,
+  title,
+  artist,
+  isPlaying = false,
                     <div className="w-0.5 h-3 bg-white rounded"></div>
                   </div>
                 ) : (
                   <div className="w-0 h-0 border-l-[6px] border-l-white border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-0.5"></div>
-                )}
-              </div>
+}: MusicArtworkProps) {
               {/* Text for mobile only */}
-              <div className="sm:hidden">
-                <div className="text-white text-[10px] font-medium whitespace-nowrap bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
-                  <span className="font-bold">{artist}</span> • {music}
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className={cn("space-y-4", className)}>
+      <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+        <motion.div
+          animate={isPlaying ? {
+            scale: [1, 1.02, 1],
+            rotate: [0, 0.5, 0]
+          } : {}}
+          transition={{
+            duration: 4,
+            repeat: isPlaying ? Infinity : 0,
+            ease: "easeInOut"
+          }}
+          className="relative"
+        >
+          <img
+            src={imageUrl}
+            alt={`${title} cover`}
+            width={width}
+            height={height}
+            className={cn(
+              "h-auto w-auto object-cover transition-all duration-500",
+              aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-square",
+              isPlaying ? "brightness-110" : "brightness-100"
+            )}
+          />
           
-          {/* Enhanced hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-      </div>
-    </div>
+          {/* Animated overlay when playing */}
+          {isPlaying && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/20 to-accent-mint-400/20"
+            />
+          )}
+          
+          {/* Pulse effect when playing */}
+          {isPlaying && (
+            <motion.div
+              initial={{ scale: 1, opacity: 0.8 }}
+              animate={{ scale: 1.1, opacity: 0 }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeOut"
+              }}
+              className="absolute inset-0 border-2 border-accent-teal-400 rounded-2xl"
+            />
+          )}
+        </motion.div>
+  title: string;
+      
+  artist: string;
+        <motion.h3 
+          className="font-medium leading-none text-text-cream100 text-center"
+          animate={isPlaying ? { scale: [1, 1.02, 1] } : {}}
+          transition={{ duration: 2, repeat: isPlaying ? Infinity : 0 }}
+        >
+          {title}
+        </motion.h3>
+        <p className="text-xs text-text-cream300 text-center">{artist}</p>
+  aspectRatio?: "portrait" | "square";
+  width?: number;
   );
 }

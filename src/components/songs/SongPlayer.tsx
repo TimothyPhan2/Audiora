@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Play, Pause, Volume2, VolumeX, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { MusicArtwork } from '@/components/ui/music-artwork';
 
 interface Song {
   id: string;
@@ -36,12 +37,19 @@ interface SongPlayerProps {
 
 export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const lyricsRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
+
+  // Initialize lyrics refs array
+  useEffect(() => {
+    lyricsRefs.current = lyricsRefs.current.slice(0, lyrics.length);
+  }, [lyrics.length]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -54,6 +62,22 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
+      
+      // Find active lyric based on current time
+      const currentTimeMs = audio.currentTime * 1000;
+      let newActiveLyricIndex = -1;
+      
+      for (let i = 0; i < lyrics.length; i++) {
+        const lyric = lyrics[i];
+        if (lyric.start_time_ms && lyric.end_time_ms) {
+          if (currentTimeMs >= lyric.start_time_ms && currentTimeMs <= lyric.end_time_ms) {
+            newActiveLyricIndex = i;
+            break;
+          }
+        }
+      }
+      
+      setActiveLyricIndex(newActiveLyricIndex);
     };
 
     const handleEnded = () => {
@@ -83,6 +107,16 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
       audio.removeEventListener('canplay', handleCanPlay);
     };
   }, []);
+
+  // Auto-scroll to active lyric
+  useEffect(() => {
+    if (activeLyricIndex >= 0 && lyricsRefs.current[activeLyricIndex]) {
+      lyricsRefs.current[activeLyricIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [activeLyricIndex]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -165,43 +199,63 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         className="space-y-6"
       >
         {/* Album Art */}
-        <div className="relative">
-          <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl">
-            <img
-              src={song.cover_image_url}
-              alt={`${song.title} cover`}
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="relative space-y-6">
+          <MusicArtwork
+            imageUrl={song.cover_image_url}
+            title={song.title}
+            artist={song.artist}
+            isPlaying={isPlaying}
+            aspectRatio="square"
+          />
+          
           {isLoading && (
-            <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center"
+            >
               <div className="text-white text-center">
-                <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-2"></div>
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-2"
+                />
                 <p className="text-sm">Loading audio...</p>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Song Info */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-bold text-text-cream100">{song.title}</h2>
-          <p className="text-lg text-text-cream300">{song.artist}</p>
-          <div className="flex items-center justify-center gap-4 text-sm text-text-cream400">
-            <span className="px-3 py-1 bg-accent-teal-500/20 rounded-full">
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <motion.span 
+              className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
+              whileHover={{ scale: 1.05 }}
+            >
               {song.language.charAt(0).toUpperCase() + song.language.slice(1)}
-            </span>
-            <span className="px-3 py-1 bg-accent-teal-500/20 rounded-full">
+            </motion.span>
+            <motion.span 
+              className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
+              whileHover={{ scale: 1.05 }}
+            >
               {song.difficulty_level.charAt(0).toUpperCase() + song.difficulty_level.slice(1)}
-            </span>
-            <span className="px-3 py-1 bg-accent-teal-500/20 rounded-full">
+            </motion.span>
+            <motion.span 
+              className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
+              whileHover={{ scale: 1.05 }}
+            >
               {song.genre.charAt(0).toUpperCase() + song.genre.slice(1)}
-            </span>
+            </motion.span>
           </div>
         </div>
 
         {/* Audio Controls */}
-        <div className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20 space-y-4">
+        <motion.div 
+          className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20 space-y-4"
+          whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
+          transition={{ duration: 0.3 }}
+        >
           {/* Progress Bar */}
           <div className="space-y-2">
             <Slider
@@ -220,53 +274,74 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
 
           {/* Control Buttons */}
           <div className="flex items-center justify-center gap-4">
-            <Button
-              onClick={restart}
-              variant="ghost"
-              size="sm"
-              className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
-              disabled={isLoading}
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={skipBackward}
-              variant="ghost"
-              size="sm"
-              className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
-              disabled={isLoading}
-            >
-              <SkipBack className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={togglePlayPause}
-              className="w-12 h-12 rounded-full button-gradient-primary text-white"
-              disabled={isLoading}
-            >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-            </Button>
-
-            <Button
-              onClick={skipForward}
-              variant="ghost"
-              size="sm"
-              className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
-              disabled={isLoading}
-            >
-              <SkipForward className="w-4 h-4" />
-            </Button>
-
-            <div className="flex items-center gap-2 ml-4">
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={toggleMute}
+                onClick={restart}
                 variant="ghost"
                 size="sm"
                 className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
+                disabled={isLoading}
               >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                <RotateCcw className="w-4 h-4" />
               </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={skipBackward}
+                variant="ghost"
+                size="sm"
+                className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
+                disabled={isLoading}
+              >
+                <SkipBack className="w-4 h-4" />
+              </Button>
+            </motion.div>
+
+            <motion.div 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+              animate={isPlaying ? { 
+                boxShadow: [
+                  "0 0 0 0 rgba(45, 212, 191, 0.4)",
+                  "0 0 0 10px rgba(45, 212, 191, 0)",
+                  "0 0 0 0 rgba(45, 212, 191, 0)"
+                ]
+              } : {}}
+              transition={{ duration: 1.5, repeat: isPlaying ? Infinity : 0 }}
+            >
+              <Button
+                onClick={togglePlayPause}
+                className="w-12 h-12 rounded-full button-gradient-primary text-white"
+                disabled={isLoading}
+              >
+                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+              </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={skipForward}
+                variant="ghost"
+                size="sm"
+                className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
+                disabled={isLoading}
+              >
+                <SkipForward className="w-4 h-4" />
+              </Button>
+            </motion.div>
+
+            <div className="flex items-center gap-2 ml-4">
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  onClick={toggleMute}
+                  variant="ghost"
+                  size="sm"
+                  className="text-text-cream300 hover:text-text-cream100 hover:bg-accent-teal-500/10"
+                >
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
+              </motion.div>
               <Slider
                 value={[isMuted ? 0 : volume]}
                 max={1}
@@ -276,7 +351,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
               />
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Hidden Audio Element */}
         <audio
@@ -295,32 +370,72 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
       >
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-text-cream100">Lyrics</h3>
-          <div className="text-sm text-text-cream400">
-            {lyrics.length} lines
+          <div className="flex items-center gap-3">
+            {activeLyricIndex >= 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-3 py-1 bg-accent-teal-500/20 rounded-full"
+              >
+                <div className="w-2 h-2 bg-accent-teal-400 rounded-full animate-pulse" />
+                <span className="text-xs text-accent-teal-400 font-medium">
+                  Line {activeLyricIndex + 1}
+                </span>
+              </motion.div>
+            )}
+            <div className="text-sm text-text-cream400">
+              {lyrics.length} lines
+            </div>
           </div>
         </div>
 
-        <div className="frosted-glass rounded-xl border border-accent-teal-500/20 max-h-[600px] overflow-hidden">
+        <motion.div 
+          className="frosted-glass rounded-xl border border-accent-teal-500/20 max-h-[600px] overflow-hidden"
+          whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
             {lyrics.length > 0 ? (
               lyrics.map((lyric, index) => (
                 <motion.div
+                  ref={(el) => (lyricsRefs.current[index] = el)}
                   key={lyric.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="group p-3 rounded-lg hover:bg-accent-teal-500/5 transition-colors duration-200"
+                  className={cn(
+                    "group p-3 rounded-lg transition-all duration-300",
+                    activeLyricIndex === index
+                      ? "bg-accent-teal-500/20 border border-accent-teal-400/50 shadow-lg scale-105"
+                      : "hover:bg-accent-teal-500/5"
+                  )}
+                  whileHover={{ scale: activeLyricIndex === index ? 1.05 : 1.02 }}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-xs text-text-cream400 font-mono mt-1 min-w-[2rem]">
+                    <span className={cn(
+                      "text-xs font-mono mt-1 min-w-[2rem] transition-colors duration-300",
+                      activeLyricIndex === index 
+                        ? "text-accent-teal-400 font-bold" 
+                        : "text-text-cream400"
+                    )}>
                       {lyric.line_number.toString().padStart(2, '0')}
                     </span>
                     <div className="flex-1 space-y-1">
-                      <p className="text-text-cream100 leading-relaxed">
+                      <p className={cn(
+                        "leading-relaxed transition-colors duration-300",
+                        activeLyricIndex === index 
+                          ? "text-white font-medium" 
+                          : "text-text-cream100"
+                      )}>
                         {lyric.text}
                       </p>
                       {lyric.translation && (
-                        <p className="text-text-cream300 text-sm italic">
+                        <p className={cn(
+                          "text-sm italic transition-colors duration-300",
+                          activeLyricIndex === index 
+                            ? "text-accent-teal-200" 
+                            : "text-text-cream300"
+                        )}>
                           {lyric.translation}
                         </p>
                       )}
@@ -334,7 +449,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
       <style jsx>{`
