@@ -452,23 +452,6 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           </div>
         </motion.div>
       </motion.div>
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(45, 212, 191, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(45, 212, 191, 0.3);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(45, 212, 191, 0.5);
-        }
-      `}</style>
     </div>
   );
 }
