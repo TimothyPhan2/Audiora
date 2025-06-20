@@ -1,306 +1,135 @@
-import { useState, useEffect, useRef } from 'react';
-
-// Component-specific styles
-const componentStyles = `
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Play, Pause, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MusicArtworkProps {
-  artist: string;
-  music: string;
   albumArt: string;
+  music: string;
+  artist: string;
   isSong: boolean;
+  isPlaying?: boolean;
   isLoading?: boolean;
-  className?: string;
-  imageUrl?: string;
-  title?: string;
   aspectRatio?: "portrait" | "square";
   width?: number;
   height?: number;
-  isPlaying?: boolean;
+  className?: string;
 }
 
-export default function MusicArtwork({
-  artist,
-  music,
+const MusicArtwork: React.FC<MusicArtworkProps> = ({
   albumArt,
+  music,
+  artist,
   isSong,
+  isPlaying = false,
   isLoading = false,
-  className,
-  imageUrl,
-  title,
-  aspectRatio,
+  aspectRatio = "portrait",
   width,
   height,
-  isPlaying: externalIsPlaying
-}: MusicArtworkProps) {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(externalIsPlaying || false);
+  className
+}) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [rotation, setRotation] = useState(0);
-  const vinylRef = useRef<HTMLDivElement>(null);
-  const startTimeRef = useRef<number>(0);
-
-  // Calculate spin duration based on type: songs (0.75 rev/sec) vs albums (0.55 rev/sec)
-  const spinDuration = isSong ? (1 / 0.75) : (1 / 0.55); // Convert rev/sec to seconds per revolution
-
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      // Pause: capture current rotation
-      if (vinylRef.current) {
-        const computedStyle = window.getComputedStyle(vinylRef.current);
-        const transform = computedStyle.transform;
-        if (transform && transform !== 'none') {
-          const matrix = new DOMMatrix(transform);
-          const angle = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
-          setRotation(angle < 0 ? angle + 360 : angle);
-        }
-      }
-    } else {
-      // Resume: set start time for animation
-      startTimeRef.current = Date.now();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      requestAnimationFrame(() => {
-        const tooltipWidth = 300; // Increased for more content
-        const tooltipHeight = 60; // Increased for multiple lines
-        const offset = 20;
-        
-        let x = e.clientX + offset;
-        let y = e.clientY - tooltipHeight - 10;
-        
-        // Prevent tooltip from going off right edge
-        if (x + tooltipWidth > window.innerWidth) {
-          x = e.clientX - tooltipWidth - offset;
-        }
-        
-        // Prevent tooltip from going off top edge
-        if (y < 0) {
-          y = e.clientY + offset;
-        }
-        
-        // Prevent tooltip from going off bottom edge
-        if (y + tooltipHeight > window.innerHeight) {
-          y = e.clientY - tooltipHeight - offset;
-        }
-        
-        setMousePosition({ x, y });
-      });
-    };
-
-    if (isHovered) {
-      document.addEventListener('mousemove', handleMouseMove, { passive: true });
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [isHovered]);
-
-  if (isLoading) {
-    return (
-      <div className="relative">
-        <div className="relative group">
-          {/* Loading skeleton */}
-          <div className="w-48 h-48 sm:w-64 sm:h-64 bg-neutral-200 dark:bg-neutral-800 rounded-lg animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="relative">
-      {/* Component-specific styles */}
-      <style dangerouslySetInnerHTML={{ __html: componentStyles }} />
-      
-      {/* Enhanced Tooltip that follows cursor - Desktop only */}
-      {isHovered && (
-        <div
-          className="fixed z-50 pointer-events-none hidden sm:block"
-          style={{
-            left: mousePosition.x,
-            top: mousePosition.y,
-            transform: 'translateZ(0)', // Force hardware acceleration
-          }}
-        >
-          <div className="bg-neutral-900/90 backdrop-blur-md text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-lg border border-neutral-700/50 animate-in fade-in zoom-in-95 duration-200">
-            <span className="font-bold">{artist}</span> &nbsp;•&nbsp; {music}
-          </div>
-        </div>
-      )}
-
-      {/* Main container */}
-      <div className="relative group">
-        {/* Vinyl record with enhanced animation and glow */}
-        <div
-          className={`absolute -left-16 sm:-left-24 top-1/2 -translate-y-1/2 transition-all duration-500 ease-out ${
-            isHovered
-              ? 'opacity-100 translate-x-0'
-              : 'opacity-0 translate-x-12 sm:translate-x-24'
-          }`}
-        >
-          <div className="relative w-50 h-50 sm:w-70 sm:h-70">
-           <div
-             ref={vinylRef}
-             className="w-full h-full"
-             style={{
-               transform: isPlaying ? undefined : `rotate(${rotation}deg)`,
-               animation: isPlaying ? `spin ${spinDuration}s linear infinite` : 'none',
-               animationDelay: isPlaying ? `${-rotation / (360 / spinDuration)}s` : undefined
-             }}
-           >
-             <img
-               src="https://pngimg.com/d/vinyl_PNG95.png"
-               alt="Vinyl Record"
-               width={80}
-               height={80}
-               className="w-full h-full object-contain"
-             />
-           </div>
-         </div>
-        </div>
-
-        {/* Album artwork */}
-        <div
-          className="relative overflow-hidden rounded-lg shadow-2xl transition-all duration-300 ease-out hover:scale-105 hover:shadow-3xl cursor-pointer w-48 h-48 sm:w-64 sm:h-64"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          onClick={handlePlayPause}
-        >
-          <img
-            src={albumArt}
-            alt={`${music} Cover`}
-            width={256}
-            height={256}
-            className={`w-full h-full object-cover transition-all duration-300 ease-out group-hover:scale-110 ${
-              !imageLoaded ? 'opacity-0' : 'opacity-100'
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              // Handle error with fallback image
-              setImageLoaded(true);
-            }}
-          />
-          
-          {/* Loading state overlay */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+    <div className={cn(
+      "relative flex items-center justify-center",
+      aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-square",
+      className
+    )}>
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Vinyl Record - Behind album art, 30% larger */}
+        <motion.div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center",
+            "w-[calc(100%+21%)] h-[calc(100%+21%)]",
+            isPlaying ? "opacity-90" : "opacity-70"
           )}
-          
-          {/* Play/Pause button with text on mobile */}
-          <div className={`absolute bottom-2 left-2 transition-opacity duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}>
-            <div className="flex items-center gap-2">
-              {/* Play/Pause button */}
-              <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center shadow-lg">
-                {isPlaying ? (
-                  <div className="flex gap-0.5">
-                    <div className="w-0.5 h-3 bg-white rounded"></div>
-                    <div className="w-0.5 h-3 bg-white rounded"></div>
-                  </div>
-                ) : (
-                  <div className="w-0 h-0 border-l-[6px] border-l-white border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-0.5"></div>
-                )}
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CradialGradient id='vinyl' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' style='stop-color:%23000000'/%3E%3Cstop offset='15%25' style='stop-color:%23111111'/%3E%3Cstop offset='30%25' style='stop-color:%23000000'/%3E%3Cstop offset='45%25' style='stop-color:%23222222'/%3E%3Cstop offset='60%25' style='stop-color:%23000000'/%3E%3Cstop offset='75%25' style='stop-color:%23111111'/%3E%3Cstop offset='90%25' style='stop-color:%23000000'/%3E%3Cstop offset='100%25' style='stop-color:%23333333'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='100' fill='url(%23vinyl)'/%3E%3Ccircle cx='100' cy='100' r='15' fill='%23000000'/%3E%3Ccircle cx='100' cy='100' r='8' fill='%23333333'/%3E%3C/svg%3E")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+          transition={{
+            duration: 1.8, // 33rpm simulation
+            repeat: isPlaying ? Infinity : 0,
+            ease: "linear",
+            repeatType: "loop"
+          }}
+        />
+
+        {/* Album Artwork */}
+        <motion.div
+          className={cn(
+            "relative w-full h-full rounded-lg overflow-hidden shadow-2xl",
+            "transition-all duration-200 ease-in-out",
+            isPlaying ? "opacity-100 scale-100" : "opacity-95 scale-[0.98]"
+          )}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+        >
+          {/* Loading State */}
+          {(isLoading || !imageLoaded) && !imageError && (
+            <div className="absolute inset-0 bg-base-dark3/60 backdrop-blur-sm flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-accent-teal-400 animate-spin" />
+            </div>
+          )}
+
+          {/* Album Art Image */}
+          {!imageError ? (
+            <img
+              src={albumArt}
+              alt={`${music} by ${artist}`}
+              className="w-full h-full object-cover"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              style={{
+                width: width ? `${width}px` : undefined,
+                height: height ? `${height}px` : undefined,
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-base-dark3 to-base-dark2 flex items-center justify-center">
+              <div className="text-center p-4">
+                <div className="w-16 h-16 bg-accent-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Play className="w-8 h-8 text-accent-teal-400" />
+                </div>
+                <p className="text-text-cream200 font-medium text-sm">{music}</p>
+                <p className="text-text-cream400 text-xs">{artist}</p>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Optional additional content section */}
-      {imageUrl && title && (
-        <div className={cn("space-y-4", className)}>
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+          )}
+
+          {/* Play/Pause Overlay */}
+          <motion.div
+            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
+            whileHover={{ opacity: 1 }}
+          >
             <motion.div
-              animate={isPlaying ? {
-                scale: [1, 1.02, 1],
-                rotate: [0, 0.5, 0]
-              } : {}}
-              transition={{
-                duration: 4,
-                repeat: isPlaying ? Infinity : 0,
-                ease: "easeInOut"
-              }}
-              className="relative"
+              className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <img
-                src={imageUrl}
-                alt={`${title} cover`}
-                width={width}
-                height={height}
-                className={cn(
-                  "h-auto w-auto object-cover transition-all duration-500",
-                  aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-square",
-                  isPlaying ? "brightness-110" : "brightness-100"
-                )}
-              />
-              
-              {/* Animated overlay when playing */}
-              {isPlaying && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.3, 0] }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/20 to-accent-mint-400/20"
-                />
-              )}
-              
-              {/* Pulse effect when playing */}
-              {isPlaying && (
-                <motion.div
-                  initial={{ scale: 1, opacity: 0.8 }}
-                  animate={{ scale: 1.1, opacity: 0 }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeOut"
-                  }}
-                  className="absolute inset-0 border-2 border-accent-teal-400 rounded-2xl"
-                />
+              {isPlaying ? (
+                <Pause className="w-8 h-8 text-white" />
+              ) : (
+                <Play className="w-8 h-8 text-white ml-1" />
               )}
             </motion.div>
-            
-            <motion.h3 
-              className="font-medium leading-none text-text-cream100 text-center"
-              animate={isPlaying ? { scale: [1, 1.02, 1] } : {}}
-              transition={{ duration: 2, repeat: isPlaying ? Infinity : 0 }}
-            >
-              {title}
-            </motion.h3>
-            <p className="text-xs text-text-cream300 text-center">{artist}</p>
+          </motion.div>
+
+          {/* Song Info Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
+            <h3 className="text-white font-semibold text-lg leading-tight mb-1 truncate">
+              {music}
+            </h3>
+            <p className="text-white/80 text-sm truncate">{artist}</p>
           </div>
-        </div>
-      )}
+        </motion.div>
+      </div>
     </div>
   );
-}
+};
+
+export default MusicArtwork;
