@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Play, Pause, Volume2, VolumeX, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { MusicArtwork } from '@/components/ui/music-artwork';
+import MusicArtwork from '@/components/ui/music-artwork';
+import { cn } from '@/lib/utils';
 
 interface Song {
   id: string;
