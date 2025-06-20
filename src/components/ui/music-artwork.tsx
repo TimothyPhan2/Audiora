@@ -5,7 +5,6 @@ interface MusicArtworkProps {
   music: string;
   artist: string;
   isSong?: boolean;
-  isPlaying?: boolean;
   isLoading?: boolean;
   aspectRatio?: 'portrait' | 'square';
   width?: number;
