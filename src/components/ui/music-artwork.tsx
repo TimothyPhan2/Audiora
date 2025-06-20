@@ -160,7 +160,7 @@ export default function MusicArtwork({
 
         {/* Album artwork */}
         <div
-          className={`absolute -left-32 sm:-left-40 top-1/2 transform -translate-y-1/2 w-64 h-64 sm:w-72 sm:h-72 ${
+          className={`relative overflow-hidden rounded-lg shadow-2xl transition-all duration-300 ease-out hover:scale-105 hover:shadow-3xl cursor-pointer ${
             aspectRatio === 'square' ? 'w-48 h-48 sm:w-64 sm:h-64' : 'w-full aspect-video'
           }`}
           onMouseEnter={() => setIsHovered(true)}
