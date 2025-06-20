@@ -205,7 +205,6 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
             albumArt={song.cover_image_url}
             music={song.title}
             artist={song.artist}
-            isSong={true}
             isPlaying={isPlaying}
             isLoading={isLoading}
             aspectRatio="square"
