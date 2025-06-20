@@ -200,7 +200,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         className="space-y-6"
       >
         {/* Album Art */}
-        <div className="relative space-y-6">
+        <div className="relative space-y-6 flex justify-center">
           <MusicArtwork
             albumArt={song.cover_image_url}
             music={song.title}
