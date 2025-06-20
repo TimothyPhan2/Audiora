@@ -117,7 +117,7 @@ export default function MusicArtwork({
   return (
     <div className="relative">
       {/* Component-specific styles */}
-      <style jsx>{componentStyles}</style>
+      <style>{componentStyles}</style>
       
       {/* Enhanced Tooltip that follows cursor - Desktop only */}
       {isHovered && (
