@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-
+import React, {useState, useEffect, useRef} from 'react';
+import { Play, Pause, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 interface MusicArtworkProps {
   albumArt: string;
   music: string;
