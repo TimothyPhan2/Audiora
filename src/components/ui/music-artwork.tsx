@@ -138,8 +138,8 @@ export default function MusicArtwork({
       {/* Main container */}
       <div className="relative group">
         {/* Vinyl record with enhanced animation and glow - Always visible */}
-         <div className="absolute -left-12 sm:-left-16 top-0 h-full flex items-center transition-all duration-500 ease-out z-0">
-          <div className="relative w-32 h-32 sm:w-44 sm:h-44">
+        <div className="absolute -left-16 sm:-left-20 top-0 h-full flex items-center transition-all duration-500 ease-out z-0">
+          <div className={`relative ${aspectRatio === 'square' ? 'w-48 h-48 sm:w-64 sm:h-64' : 'w-full aspect-video'}`}>
             <div
               ref={vinylRef}
               className="w-full h-full"
