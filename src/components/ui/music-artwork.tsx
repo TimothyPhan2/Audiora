@@ -26,13 +26,17 @@ import { cn } from "@/lib/utils";
 import { motion } from 'framer-motion';
 
 interface MusicArtworkProps {
-  imageUrl: string;
-  title: string;
   artist: string;
+  music: string;
+  albumArt: string;
+  isSong: boolean;
+  isLoading?: boolean;
+  className?: string;
+  imageUrl?: string;
+  title?: string;
   aspectRatio?: "portrait" | "square";
   width?: number;
   height?: number;
-  className?: string;
   isPlaying?: boolean;
 }
 
@@ -41,11 +45,18 @@ export default function MusicArtwork({
   music,
   albumArt,
   isSong,
-  isLoading = false
+  isLoading = false,
+  className,
+  imageUrl,
+  title,
+  aspectRatio,
+  width,
+  height,
+  isPlaying: externalIsPlaying
 }: MusicArtworkProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(externalIsPlaying || false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [rotation, setRotation] = useState(0);
   const vinylRef = useRef<HTMLDivElement>(null);
@@ -222,71 +233,74 @@ export default function MusicArtwork({
         </div>
       </div>
       
-      <div className={cn("space-y-4", className)}>
-        <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-          <motion.div
-            animate={isPlaying ? {
-              scale: [1, 1.02, 1],
-              rotate: [0, 0.5, 0]
-            } : {}}
-            transition={{
-              duration: 4,
-              repeat: isPlaying ? Infinity : 0,
-              ease: "easeInOut"
-            }}
-            className="relative"
-          >
-            <img
-              src={imageUrl}
-              alt={`${title} cover`}
-              width={width}
-              height={height}
-              className={cn(
-                "h-auto w-auto object-cover transition-all duration-500",
-                aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-square",
-                isPlaying ? "brightness-110" : "brightness-100"
+      {/* Optional additional content section */}
+      {imageUrl && title && (
+        <div className={cn("space-y-4", className)}>
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+            <motion.div
+              animate={isPlaying ? {
+                scale: [1, 1.02, 1],
+                rotate: [0, 0.5, 0]
+              } : {}}
+              transition={{
+                duration: 4,
+                repeat: isPlaying ? Infinity : 0,
+                ease: "easeInOut"
+              }}
+              className="relative"
+            >
+              <img
+                src={imageUrl}
+                alt={`${title} cover`}
+                width={width}
+                height={height}
+                className={cn(
+                  "h-auto w-auto object-cover transition-all duration-500",
+                  aspectRatio === "portrait" ? "aspect-[3/4]" : "aspect-square",
+                  isPlaying ? "brightness-110" : "brightness-100"
+                )}
+              />
+              
+              {/* Animated overlay when playing */}
+              {isPlaying && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.3, 0] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/20 to-accent-mint-400/20"
+                />
               )}
-            />
+              
+              {/* Pulse effect when playing */}
+              {isPlaying && (
+                <motion.div
+                  initial={{ scale: 1, opacity: 0.8 }}
+                  animate={{ scale: 1.1, opacity: 0 }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeOut"
+                  }}
+                  className="absolute inset-0 border-2 border-accent-teal-400 rounded-2xl"
+                />
+              )}
+            </motion.div>
             
-            {/* Animated overlay when playing */}
-            {isPlaying && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.3, 0] }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 bg-gradient-to-br from-accent-teal-400/20 to-accent-mint-400/20"
-              />
-            )}
-            
-            {/* Pulse effect when playing */}
-            {isPlaying && (
-              <motion.div
-                initial={{ scale: 1, opacity: 0.8 }}
-                animate={{ scale: 1.1, opacity: 0 }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeOut"
-                }}
-                className="absolute inset-0 border-2 border-accent-teal-400 rounded-2xl"
-              />
-            )}
-          </motion.div>
-          
-          <motion.h3 
-            className="font-medium leading-none text-text-cream100 text-center"
-            animate={isPlaying ? { scale: [1, 1.02, 1] } : {}}
-            transition={{ duration: 2, repeat: isPlaying ? Infinity : 0 }}
-          >
-            {title}
-          </motion.h3>
-          <p className="text-xs text-text-cream300 text-center">{artist}</p>
+            <motion.h3 
+              className="font-medium leading-none text-text-cream100 text-center"
+              animate={isPlaying ? { scale: [1, 1.02, 1] } : {}}
+              transition={{ duration: 2, repeat: isPlaying ? Infinity : 0 }}
+            >
+              {title}
+            </motion.h3>
+            <p className="text-xs text-text-cream300 text-center">{artist}</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
