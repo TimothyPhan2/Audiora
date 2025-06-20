@@ -202,29 +202,14 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         {/* Album Art */}
         <div className="relative space-y-6">
           <MusicArtwork
-            imageUrl={song.cover_image_url}
-            title={song.title}
+            albumArt={song.cover_image_url}
+            music={song.title}
             artist={song.artist}
+            isSong={true}
             isPlaying={isPlaying}
+            isLoading={isLoading}
             aspectRatio="square"
           />
-          
-          {isLoading && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center"
-            >
-              <div className="text-white text-center">
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-2"
-                />
-                <p className="text-sm">Loading audio...</p>
-              </div>
-            </motion.div>
-          )}
         </div>
 
         {/* Song Info */}
