@@ -168,4 +168,46 @@
     animation-duration: 17s;
     animation-delay: -5s;
   }
+
+  /* Custom scrollbar for lyrics */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(45, 212, 191, 0.3) rgba(45, 212, 191, 0.1);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(45, 212, 191, 0.1);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(45, 212, 191, 0.3);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(45, 212, 191, 0.5);
+  }
+
+  /* Vinyl record rotation animation */
+  @keyframes vinyl-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .vinyl-spinning {
+    animation: vinyl-spin 2s linear infinite;
+  }
+
+  .vinyl-paused {
+    animation-play-state: paused;
+  }
 }
