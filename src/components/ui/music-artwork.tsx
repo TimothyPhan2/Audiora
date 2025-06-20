@@ -1,113 +1,218 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef } from 'react';
+
+// Component-specific styles
+const componentStyles = `
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
 
 interface MusicArtworkProps {
-  albumArt: string;
-  music: string;
   artist: string;
+  music: string;
+  albumArt: string;
   isPlaying?: boolean;
   isLoading?: boolean;
-  aspectRatio?: 'portrait' | 'square';
-  className?: string;
+  aspectRatio?: 'square' | 'video';
 }
 
-const MusicArtwork: React.FC<MusicArtworkProps> = ({
-  albumArt,
-  music,
+export default function MusicArtwork({
   artist,
+  music,
+  albumArt,
   isPlaying = false,
   isLoading = false,
-  aspectRatio = 'portrait',
-  className,
-}) => {
-  return (
-    <div className={cn('space-y-3', className)}>
-      <div className="overflow-hidden rounded-md">
-        <div
-          className={cn(
-            'relative flex items-center justify-center',
-            aspectRatio === 'portrait' ? 'aspect-[3/4]' : 'aspect-square'
-          )}
-        >
-          {/* Vinyl Record Background */}
-          <div 
-            className={cn(
-              'absolute inset-0 rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black shadow-2xl',
-              isPlaying && !isLoading ? 'vinyl-spinning' : 'vinyl-paused'
-            )}
-            style={{
-              background: `
-                radial-gradient(circle at center, 
-                  #1a1a1a 15%, 
-                  #2a2a2a 15.5%, 
-                  #1a1a1a 16%, 
-                  #2a2a2a 25%, 
-                  #1a1a1a 25.5%, 
-                  #2a2a2a 35%, 
-                  #1a1a1a 35.5%, 
-                  #2a2a2a 45%, 
-                  #1a1a1a 45.5%, 
-                  #000000 100%
-                )
-              `
-            }}
-          >
-            {/* Center hole */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gray-900 rounded-full border border-gray-700" />
-            
-            {/* Vinyl grooves effect */}
-            <div className="absolute inset-2 rounded-full border border-gray-700/30" />
-            <div className="absolute inset-4 rounded-full border border-gray-700/20" />
-            <div className="absolute inset-6 rounded-full border border-gray-700/10" />
-          </div>
+  aspectRatio = 'square'
+}: MusicArtworkProps) {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const vinylRef = useRef<HTMLDivElement>(null);
 
-          {/* Album Art - positioned on top of vinyl */}
-          <div className="relative z-10 w-3/5 h-3/5 rounded-lg overflow-hidden shadow-xl">
-            <img
-              src={albumArt}
-              alt={`${music} by ${artist}`}
-              className={cn(
-                'w-full h-full object-cover transition-all duration-300',
-                isLoading && 'opacity-50 blur-sm'
-              )}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/white_circle_360x360.png';
-              }}
-            />
-            
-            {/* Loading overlay */}
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              </div>
-            )}
-            
-            {/* Playing indicator */}
-            {isPlaying && !isLoading && (
-              <div className="absolute top-2 right-2">
-                <div className="flex items-center space-x-1">
-                  <div className="w-1 h-3 bg-accent-teal-400 rounded-full animate-pulse" />
-                  <div className="w-1 h-4 bg-accent-teal-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-                  <div className="w-1 h-2 bg-accent-teal-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                </div>
-              </div>
-            )}
-          </div>
+  // Calculate spin duration: 0.75 rev/sec for songs
+  const spinDuration = 1 / 0.75; // Convert rev/sec to seconds per revolution
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      requestAnimationFrame(() => {
+        const tooltipWidth = 300;
+        const tooltipHeight = 60;
+        const offset = 20;
+        
+        let x = e.clientX + offset;
+        let y = e.clientY - tooltipHeight - 10;
+        
+        // Prevent tooltip from going off right edge
+        if (x + tooltipWidth > window.innerWidth) {
+          x = e.clientX - tooltipWidth - offset;
+        }
+        
+        // Prevent tooltip from going off top edge
+        if (y < 0) {
+          y = e.clientY + offset;
+        }
+        
+        // Prevent tooltip from going off bottom edge
+        if (y + tooltipHeight > window.innerHeight) {
+          y = e.clientY - tooltipHeight - offset;
+        }
+        
+        setMousePosition({ x, y });
+      });
+    };
+
+    if (isHovered) {
+      document.addEventListener('mousemove', handleMouseMove, { passive: true });
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isHovered]);
+
+  // Handle play/pause state changes for vinyl rotation
+  useEffect(() => {
+    if (!isPlaying && vinylRef.current) {
+      // Pause: capture current rotation
+      const computedStyle = window.getComputedStyle(vinylRef.current);
+      const transform = computedStyle.transform;
+      if (transform && transform !== 'none') {
+        const matrix = new DOMMatrix(transform);
+        const angle = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
+        setRotation(angle < 0 ? angle + 360 : angle);
+      }
+    }
+  }, [isPlaying]);
+
+  if (isLoading) {
+    return (
+      <div className="relative">
+        <div className="relative group">
+          {/* Loading skeleton */}
+          <div className={`bg-neutral-200 dark:bg-neutral-800 rounded-lg animate-pulse ${
+            aspectRatio === 'square' ? 'w-48 h-48 sm:w-64 sm:h-64' : 'w-full aspect-video'
+          }`} />
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {/* Component-specific styles */}
+      <style jsx>{componentStyles}</style>
       
-      {/* Song Info */}
-      <div className="space-y-1 text-center">
-        <h3 className="font-medium leading-none text-text-cream100 truncate">
-          {music}
-        </h3>
-        <p className="text-sm text-text-cream300 truncate">
-          {artist}
-        </p>
+      {/* Enhanced Tooltip that follows cursor - Desktop only */}
+      {isHovered && (
+        <div
+          className="fixed z-50 pointer-events-none hidden sm:block"
+          style={{
+            left: mousePosition.x,
+            top: mousePosition.y,
+            transform: 'translateZ(0)', // Force hardware acceleration
+          }}
+        >
+          <div className="bg-neutral-900/90 backdrop-blur-md text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-lg border border-neutral-700/50 animate-in fade-in zoom-in-95 duration-200">
+            <span className="font-bold">{artist}</span> &nbsp;•&nbsp; {music}
+          </div>
+        </div>
+      )}
+
+      {/* Main container */}
+      <div className="relative group">
+        {/* Vinyl record with enhanced animation and glow - Always visible */}
+        <div className="absolute -left-16 sm:-left-24 top-1/2 -translate-y-1/2 opacity-100 translate-x-0 transition-all duration-500 ease-out">
+          <div className="relative w-20 h-20 sm:w-28 sm:h-28">
+            <div
+              ref={vinylRef}
+              className="w-full h-full"
+              style={{
+                transform: isPlaying ? undefined : `rotate(${rotation}deg)`,
+                animation: isPlaying ? `spin ${spinDuration}s linear infinite` : 'none',
+                animationDelay: isPlaying ? `${-rotation / (360 / spinDuration)}s` : undefined
+              }}
+            >
+              <img
+                src="https://pngimg.com/d/vinyl_PNG95.png"
+                alt="Vinyl Record"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Album artwork */}
+        <div
+          className={`relative overflow-hidden rounded-lg shadow-2xl transition-all duration-300 ease-out hover:scale-105 hover:shadow-3xl cursor-pointer ${
+            aspectRatio === 'square' ? 'w-48 h-48 sm:w-64 sm:h-64' : 'w-full aspect-video'
+          }`}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <img
+            src={albumArt}
+            alt={`${music} Cover`}
+            className={`w-full h-full object-cover transition-all duration-300 ease-out group-hover:scale-110 ${
+              !imageLoaded ? 'opacity-0' : 'opacity-100'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              // Handle error with fallback image
+              setImageLoaded(true);
+            }}
+          />
+          
+          {/* Loading state overlay */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+          )}
+          
+          {/* Play/Pause indicator with text on mobile */}
+          <div className={`absolute bottom-2 left-2 transition-opacity duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`}>
+            <div className="flex items-center gap-2">
+              {/* Play/Pause indicator */}
+              <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center shadow-lg">
+                {isPlaying ? (
+                  <div className="flex gap-0.5">
+                    <div className="w-0.5 h-3 bg-white rounded"></div>
+                    <div className="w-0.5 h-3 bg-white rounded"></div>
+                  </div>
+                ) : (
+                  <div className="w-0 h-0 border-l-[6px] border-l-white border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ml-0.5"></div>
+                )}
+              </div>
+              {/* Text for mobile only */}
+              <div className="sm:hidden">
+                <div className="text-white text-[10px] font-medium whitespace-nowrap bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
+                  <span className="font-bold">{artist}</span> • {music}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Enhanced hover overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
       </div>
     </div>
   );
-};
-
-export default MusicArtwork;
+}
