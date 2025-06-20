@@ -138,8 +138,8 @@ export default function MusicArtwork({
       {/* Main container */}
       <div className="relative group">
         {/* Vinyl record with enhanced animation and glow - Always visible */}
-        <div className="absolute -left-16 sm:-left-24 top-1/2 -translate-y-1/2 opacity-100 translate-x-0 transition-all duration-500 ease-out">
-          <div className="relative w-20 h-20 sm:w-28 sm:h-28">
+         <div className="absolute -left-12 sm:-left-16 top-0 h-full flex items-center transition-all duration-500 ease-out z-0">
+          <div className="relative w-32 h-32 sm:w-44 sm:h-44">
             <div
               ref={vinylRef}
               className="w-full h-full"
