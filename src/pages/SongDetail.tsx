@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { SongPlayer } from '@/components/songs/SongPlayer';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store';
+import { batchTranslateLyrics } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface Song {
   id: string;
@@ -40,6 +42,7 @@ export function SongDetail() {
   const [lyrics, setLyrics] = useState<Lyric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -56,6 +59,47 @@ export function SongDetail() {
     fetchSongData();
   }, [songId, isAuthenticated, navigate]);
 
+  const fetchMissingTranslations = async (songData: Song, missingLyrics: Lyric[]) => {
+    try {
+      setIsTranslating(true);
+      
+      const linesToTranslate = missingLyrics.map(lyric => lyric.text);
+      const translations = await batchTranslateLyrics(linesToTranslate, songData.language);
+      
+      // Update lyrics in database
+      const updatePromises = missingLyrics.map(async (lyric, index) => {
+        const translation = translations[index];
+        if (translation) {
+          const { error } = await supabase
+            .from('lyrics')
+            .update({ translation })
+            .eq('id', lyric.id);
+          
+          if (error) {
+            console.error('Failed to update lyric translation:', error);
+          }
+          
+          return { ...lyric, translation };
+        }
+        return lyric;
+      });
+      
+      const updatedLyrics = await Promise.all(updatePromises);
+      
+      // Update local state with translations
+      setLyrics(prevLyrics => {
+        const updatedMap = new Map(updatedLyrics.map(lyric => [lyric.id, lyric]));
+        return prevLyrics.map(lyric => updatedMap.get(lyric.id) || lyric);
+      });
+      
+      toast.success('Translations loaded successfully!');
+    } catch (error) {
+      console.error('Failed to fetch translations:', error);
+      toast.error('Failed to load translations. You can still enjoy the original lyrics!');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
   const fetchSongData = async () => {
     try {
       setIsLoading(true);
@@ -91,6 +135,14 @@ export function SongDetail() {
       }
 
       setLyrics(lyricsData || []);
+
+      // Check if translations are missing and fetch them
+      if (songData && lyricsData && lyricsData.length > 0) {
+        const missingTranslations = lyricsData.filter(lyric => !lyric.translation);
+        if (missingTranslations.length > 0) {
+          await fetchMissingTranslations(songData, missingTranslations);
+        }
+      }
     } catch (err) {
       console.error('Error fetching song data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load song');
@@ -170,6 +222,12 @@ export function SongDetail() {
             <p className="text-text-cream300 text-sm sm:text-base">
               by {song.artist} • {song.language.charAt(0).toUpperCase() + song.language.slice(1)} • {song.difficulty_level.charAt(0).toUpperCase() + song.difficulty_level.slice(1)}
             </p>
+            {isTranslating && (
+              <div className="flex items-center gap-2 mt-2 text-accent-teal-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading translations...</span>
+              </div>
+            )}
           </div>
         </div>
       </motion.header>
