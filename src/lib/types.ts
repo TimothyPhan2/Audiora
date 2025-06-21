@@ -49,6 +49,9 @@ export interface VocabularyItem {
   context: string;
   language: string;
   songId?: string;
+  difficulty_level?: string;
+  mastery_score?: number;
+  times_practiced?: number;
 }
 
 // Quiz types

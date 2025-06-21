@@ -11,6 +11,7 @@ import {
   VocabularyItem 
 } from './types';
 import { mockSongs } from './mockData';
+import { getUserVocabulary, removeWordFromVocabulary } from './api';
 
 interface AuthState {
   user: User | null;
@@ -46,6 +47,7 @@ interface VocabularyState {
   addWord: (word: VocabularyItem) => void;
   removeWord: (wordId: string) => void;
   fetchWords: () => Promise<void>;
+  refreshWords: () => Promise<void>;
 }
 
 interface RecordingState {
@@ -516,28 +518,44 @@ export const useVocabularyStore = create<VocabularyState>()((set, get) => ({
   },
   
   removeWord: (wordId: string) => {
-    const { savedWords } = get();
-    set({ savedWords: savedWords.filter(w => w.id !== wordId) });
+    const removeWordAsync = async () => {
+      try {
+        await removeWordFromVocabulary(wordId);
+        await get().fetchWords(); // Refresh the list
+      } catch (error) {
+        console.error('Failed to remove word:', error);
+      }
+    };
+    removeWordAsync();
   },
   
   fetchWords: async () => {
     set({ isLoading: true, error: null });
     
     try {
-      // TODO: Fetch from Supabase
-      const user = useAuthStore.getState().user;
+      const vocabularyData = await getUserVocabulary();
       
-      if (user && user.savedVocabulary.length > 0) {
-        set({ savedWords: user.savedVocabulary, isLoading: false });
-      } else {
-        set({ isLoading: false });
-      }
+      // Transform the data to match VocabularyItem interface
+      const savedWords: VocabularyItem[] = vocabularyData.map(item => ({
+        id: item.vocabulary.id,
+        original: item.vocabulary.word,
+        translation: item.vocabulary.translation,
+        context: '', // Context not stored in current schema
+        language: item.vocabulary.language,
+        songId: item.learned_from_song_id,
+      }));
+      
+      set({ savedWords, isLoading: false });
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to fetch vocabulary', 
         isLoading: false 
       });
     }
+  },
+
+  refreshWords: async () => {
+    await get().fetchWords();
   },
 }));
 

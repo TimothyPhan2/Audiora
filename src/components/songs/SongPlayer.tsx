@@ -4,6 +4,7 @@ import { Play, Pause, Volume2, VolumeX, RotateCcw, SkipBack, SkipForward } from 
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import MusicArtwork from '@/components/ui/music-artwork';
+import { WordTooltip } from './WordTooltip';
 import { cn } from '@/lib/utils';
 
 interface Song {
@@ -46,6 +47,11 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
+  const [hoveredWord, setHoveredWord] = useState<{
+    word: string;
+    context: string;
+    position: { x: number; y: number };
+  } | null>(null);
 
   // Initialize lyrics refs array
   useEffect(() => {
@@ -191,8 +197,48 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const handleWordHover = (word: string, context: string, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoveredWord({
+      word: word.replace(/[.,!?;:]$/, ''), // Remove punctuation
+      context,
+      position: {
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      },
+    });
+  };
+
+  const handleWordLeave = () => {
+    setHoveredWord(null);
+  };
+
+  const renderInteractiveText = (text: string, isTranslation: boolean = false) => {
+    if (isTranslation) {
+      return <span className="italic">{text}</span>;
+    }
+
+    const words = text.split(' ');
+    return (
+      <span>
+        {words.map((word, wordIndex) => (
+          <span key={wordIndex}>
+            <span
+              className="hover:bg-accent-teal-500/20 hover:text-accent-teal-300 cursor-pointer rounded px-1 transition-all duration-200"
+              onMouseEnter={(e) => handleWordHover(word, text, e)}
+              onMouseLeave={handleWordLeave}
+            >
+              {word}
+            </span>
+            {wordIndex < words.length - 1 && ' '}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-7xl mx-auto">
       {/* Audio Player Section */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -353,8 +399,10 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         transition={{ delay: 0.2 }}
         className="space-y-4"
       >
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-text-cream100">Lyrics</h3>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-xl font-semibold text-text-cream100">
+            Lyrics & Translation
+          </h3>
           <div className="flex items-center gap-3">
             {activeLyricIndex >= 0 && (
               <motion.div
@@ -379,7 +427,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
           transition={{ duration: 0.3 }}
         >
-          <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+          <div className="p-4 sm:p-6 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
             {lyrics.length > 0 ? (
               lyrics.map((lyric, index) => (
                 <motion.div
@@ -389,14 +437,14 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "group p-3 rounded-lg transition-all duration-300",
+                    "group p-3 rounded-lg transition-all duration-300 space-y-2",
                     activeLyricIndex === index
                       ? "bg-accent-teal-500/20 border border-accent-teal-400/50 shadow-lg scale-105"
                       : "hover:bg-accent-teal-500/5"
                   )}
                   whileHover={{ scale: activeLyricIndex === index ? 1.05 : 1.02 }}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 mb-2">
                     <span className={cn(
                       "text-xs font-mono mt-1 min-w-[2rem] transition-colors duration-300",
                       activeLyricIndex === index 
@@ -405,27 +453,32 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
                     )}>
                       {lyric.line_number.toString().padStart(2, '0')}
                     </span>
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1">
+                      {/* Original Text */}
                       <p className={cn(
                         "leading-relaxed transition-colors duration-300",
                         activeLyricIndex === index 
                           ? "text-white font-medium" 
                           : "text-text-cream100"
                       )}>
-                        {lyric.text}
+                        {renderInteractiveText(lyric.text)}
                       </p>
-                      {lyric.translation && (
-                        <p className={cn(
-                          "text-sm italic transition-colors duration-300",
-                          activeLyricIndex === index 
-                            ? "text-accent-teal-200" 
-                            : "text-text-cream300"
-                        )}>
-                          {lyric.translation}
-                        </p>
-                      )}
                     </div>
                   </div>
+                  
+                  {/* Translation */}
+                  {lyric.translation && (
+                    <div className="ml-8 pl-3 border-l-2 border-accent-teal-500/30">
+                      <p className={cn(
+                        "text-sm transition-colors duration-300",
+                        activeLyricIndex === index 
+                          ? "text-accent-teal-200" 
+                          : "text-text-cream300"
+                      )}>
+                        {renderInteractiveText(lyric.translation, true)}
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               ))
             ) : (
@@ -436,6 +489,19 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Word Tooltip */}
+      {hoveredWord && (
+        <WordTooltip
+          word={hoveredWord.word}
+          context={hoveredWord.context}
+          language={song.language}
+          songId={song.id}
+          position={hoveredWord.position}
+          isVisible={!!hoveredWord}
+          onClose={() => setHoveredWord(null)}
+        />
+      )}
     </div>
   );
 }
