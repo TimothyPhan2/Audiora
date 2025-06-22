@@ -205,7 +205,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
       clearTimeout(parseInt(element.dataset.hoverTimeout));
     }
     
-    // Add delay before showing tooltip to prevent rapid flickering
+    // Reduced delay for faster tooltip appearance
     const timeoutId = setTimeout(() => {
       const rect = element.getBoundingClientRect();
       
@@ -223,20 +223,23 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         word: cleanWord,
         context: properContext, // ✅ Proper context, not entire line
         position: {
-          x: rect.left + rect.width / 2,
-          y: rect.top,
+          x: rect.left + rect.width / 2, // Center of word
+          y: rect.top, // Top of word
         },
       });
-    }, 500); // 500ms delay before showing tooltip
+    }, 300); // Reduced to 300ms for faster response
     
     element.dataset.hoverTimeout = timeoutId.toString();
   };
 
-  const handleWordLeave = () => {
-    // Add grace period before hiding tooltip
-    setTimeout(() => {
-      setHoveredWord(null);
-    }, 200); // 200ms grace period
+  const handleWordLeave = (event: React.MouseEvent) => {
+    // Clear hover timeout if word is left before tooltip appears
+    const element = event.currentTarget as HTMLElement;
+    if (element.dataset.hoverTimeout) {
+      clearTimeout(parseInt(element.dataset.hoverTimeout));
+      delete element.dataset.hoverTimeout;
+    }
+    // Note: Auto-hide is now managed by WordTooltip component
   };
 
   const renderInteractiveText = (text: string, isTranslation: boolean = false) => {

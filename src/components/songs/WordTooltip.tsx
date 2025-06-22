@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Check } from 'lucide-react';
@@ -50,8 +50,73 @@ export function WordTooltip({
   const [error, setError] = useState<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
   
+  // Timer refs for auto-hide functionality
+  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const gracePeriodTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Debounce the word to reduce API calls - increased delay for better UX
   const debouncedWord = useDebounce(word, 1000);
+
+  // Clear all timers function
+  const clearAllTimers = useCallback(() => {
+    console.log('🧹 Clearing all tooltip timers');
+    if (autoHideTimerRef.current) {
+      clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
+    }
+    if (gracePeriodTimerRef.current) {
+      clearTimeout(gracePeriodTimerRef.current);
+      gracePeriodTimerRef.current = null;
+    }
+  }, []);
+
+  // Start auto-hide timer (7 seconds)
+  const startAutoHideTimer = useCallback(() => {
+    console.log('⏰ Starting auto-hide timer (7 seconds)');
+    clearAllTimers();
+    autoHideTimerRef.current = setTimeout(() => {
+      console.log('🕐 Auto-hide timer expired - closing tooltip');
+      onClose();
+    }, 7000);
+  }, [onClose, clearAllTimers]);
+
+  // Start grace period timer (3 seconds)
+  const startGracePeriodTimer = useCallback(() => {
+    console.log('⏳ Starting grace period timer (3 seconds)');
+    clearAllTimers();
+    gracePeriodTimerRef.current = setTimeout(() => {
+      console.log('🕒 Grace period expired - closing tooltip');
+      onClose();
+    }, 3000);
+  }, [onClose, clearAllTimers]);
+
+  // Handle tooltip mouse enter (pause auto-hide)
+  const handleTooltipMouseEnter = useCallback(() => {
+    console.log('🖱️ Mouse entered tooltip - pausing timers');
+    clearAllTimers();
+  }, [clearAllTimers]);
+
+  // Handle tooltip mouse leave (start grace period)
+  const handleTooltipMouseLeave = useCallback(() => {
+    console.log('🖱️ Mouse left tooltip - starting grace period');
+    startGracePeriodTimer();
+  }, [startGracePeriodTimer]);
+
+  // Auto-hide functionality
+  useEffect(() => {
+    if (isVisible) {
+      console.log('👁️ Tooltip became visible - starting auto-hide timer');
+      startAutoHideTimer();
+    } else {
+      console.log('👁️ Tooltip became hidden - clearing all timers');
+      clearAllTimers();
+    }
+
+    // Cleanup on unmount or visibility change
+    return () => {
+      clearAllTimers();
+    };
+  }, [isVisible, startAutoHideTimer, clearAllTimers]);
 
   useEffect(() => {
     if (isVisible && debouncedWord && debouncedWord === word) {
@@ -108,6 +173,9 @@ export function WordTooltip({
   const handleAddToVocabulary = async () => {
     if (!translation || isAdding) return;
 
+    // Clear timers when user takes action
+    clearAllTimers();
+
     setIsAdding(true);
     try {
       // ✅ This is the ONLY place where words should be saved to database
@@ -133,6 +201,7 @@ export function WordTooltip({
     const tooltipWidth = 320;
     const tooltipHeight = 200;
     const padding = 16;
+    const arrowSize = 8;
 
     // Get container bounds if available, otherwise use viewport
     let containerBounds = {
@@ -152,29 +221,48 @@ export function WordTooltip({
       };
     }
 
-    let left = position.x + 15;
-    let top = position.y - 130;
+    // Calculate initial position (centered above the word)
+    let left = position.x - (tooltipWidth / 2);
+    let top = position.y - tooltipHeight - arrowSize - 10;
+    let arrowPosition = 'bottom'; // Arrow points down to word
+    let arrowLeft = tooltipWidth / 2; // Center arrow horizontally
 
     // Constrain horizontally
     if (left + tooltipWidth > containerBounds.right - padding) {
+      const overflow = (left + tooltipWidth) - (containerBounds.right - padding);
       left = containerBounds.right - tooltipWidth - padding;
+      arrowLeft = (tooltipWidth / 2) + overflow; // Adjust arrow position
     }
     if (left < containerBounds.left + padding) {
+      const underflow = (containerBounds.left + padding) - left;
       left = containerBounds.left + padding;
+      arrowLeft = (tooltipWidth / 2) - underflow; // Adjust arrow position
     }
 
     // Constrain vertically
     if (top < containerBounds.top + padding) {
-      top = position.y + 20; // Position below cursor instead
+      top = position.y + 20; // Position below word instead
+      arrowPosition = 'top'; // Arrow points up to word
     }
     if (top + tooltipHeight > containerBounds.bottom - padding) {
       top = containerBounds.bottom - tooltipHeight - padding;
     }
 
-    return { left, top };
+    // Ensure arrow stays within tooltip bounds
+    arrowLeft = Math.max(arrowSize, Math.min(tooltipWidth - arrowSize, arrowLeft));
+
+    console.log('📍 Tooltip positioning:', {
+      wordPosition: position,
+      tooltipPosition: { left, top },
+      arrowPosition,
+      arrowLeft,
+      containerBounds
+    });
+
+    return { left, top, arrowPosition, arrowLeft };
   };
 
-  const tooltipStyle = getConstrainedPosition();
+  const { left, top, arrowPosition, arrowLeft } = getConstrainedPosition();
 
   return (
     <AnimatePresence>
@@ -184,11 +272,29 @@ export function WordTooltip({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 10 }}
           transition={{ duration: 0.2 }}
-          className="fixed z-50 bg-base-dark2 border border-accent-teal-500/30 rounded-lg shadow-xl p-4 max-w-xs pointer-events-auto"
-          style={tooltipStyle}
+          className="fixed bg-base-dark2 border border-accent-teal-500/30 rounded-lg shadow-xl p-4 max-w-xs pointer-events-auto"
+          style={{ 
+            left, 
+            top, 
+            zIndex: 9999 
+          }}
+          data-x={left}
+          data-y={top}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
         >
-          {/* Arrow pointing down */}
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-base-dark2 border-r border-b border-accent-teal-500/30 rotate-45" />
+          {/* Dynamic arrow pointing to word */}
+          <div 
+            className={`absolute w-4 h-4 bg-base-dark2 border border-accent-teal-500/30 rotate-45 ${
+              arrowPosition === 'bottom' 
+                ? '-bottom-2 border-t-0 border-l-0' 
+                : '-top-2 border-b-0 border-r-0'
+            }`}
+            style={{ 
+              left: `${arrowLeft}px`,
+              transform: 'translateX(-50%) rotate(45deg)'
+            }}
+          />
           
           <div className="space-y-3">
             {/* Word */}
