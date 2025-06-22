@@ -82,7 +82,13 @@ export function SongDetail() {
       setIsTranslating(true);
       
       const linesToTranslate = missingLyrics.map(lyric => lyric.text);
-      const translations = await batchTranslateLyrics(linesToTranslate, songData.language, abortControllerRef.current);
+      const lyricIds = missingLyrics.map(lyric => lyric.id);
+      const translations = await batchTranslateLyrics(
+        linesToTranslate, 
+        songData.language, 
+        lyricIds, 
+        abortControllerRef.current
+      );
       
       // Update lyrics in database
       const updatePromises = missingLyrics.map(async (lyric, index) => {

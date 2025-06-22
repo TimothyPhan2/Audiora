@@ -66,7 +66,7 @@ async function callTranslationAPI(type: string, content: string, language: strin
   const maxRetries = 3;
   const initialDelay = 1000;
   const maxDelay = 8000;
-  let lastError: Error;
+  let lastError: Error = new Error('Translation failed');
 
   // Enhanced request headers with proper content negotiation
   const headers = {
@@ -281,7 +281,7 @@ export async function translateLyricLine(text: string, language: string, abortCo
   }
 }
 
-export async function translateWord(word: string, context: string = '', language: string, abortController?: AbortController): Promise<string> {
+export async function translateWord(word: string, _context: string = '', language: string, abortController?: AbortController): Promise<string> {
   const cacheKey = getCacheKey('word', word, language);
   
   // Check memory cache first
@@ -452,7 +452,7 @@ export async function addWordToVocabulary(word: string, translation: string, lan
     }, {
       onConflict: 'word,language'
     })
-    .select('id')
+    .select('id, usage_count')
     .single();
 
   if (vocabError) {
@@ -478,9 +478,10 @@ export async function addWordToVocabulary(word: string, translation: string, lan
   }
 
   // Update usage count
+  const currentUsageCount = vocabularyItem.usage_count || 0;
   await supabase
     .from('vocabulary')
-    .update({ usage_count: vocabularyItem.usage_count + 1 })
+    .update({ usage_count: currentUsageCount + 1 })
     .eq('id', vocabularyItem.id);
 }
 
