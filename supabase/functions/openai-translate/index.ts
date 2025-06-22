@@ -12,6 +12,18 @@ if (!openaiApiKey) {
   throw new Error('OPENAI_API_KEY is not set');
 }
 
+// OpenAI Configuration with performance optimizations
+const OPENAI_CONFIG = {
+  model: 'gpt-4o-mini',
+  max_tokens: 500,
+  temperature: 0.1,
+  retryConfig: {
+    maxRetries: 3,
+    initialDelay: 1000,
+    maxDelay: 8000
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -28,37 +40,74 @@ interface TranslateRequest {
   targetLanguage?: string;
 }
 
-async function callOpenAI(prompt: string): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a professional translator specializing in song lyrics and poetry. Provide natural, contextually appropriate translations that maintain the emotional tone and meaning of the original text.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.3,
-    }),
-  });
+// Helper function to wait for a specified duration
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+// Enhanced OpenAI API call with retry logic and exponential backoff
+async function callOpenAI(prompt: string): Promise<string> {
+  const { maxRetries, initialDelay, maxDelay } = OPENAI_CONFIG.retryConfig;
+  let lastError: Error;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: OPENAI_CONFIG.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a professional translator specializing in song lyrics and poetry. Provide natural, contextually appropriate translations that maintain the emotional tone and meaning of the original text.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: OPENAI_CONFIG.max_tokens,
+          temperature: OPENAI_CONFIG.temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0]?.message?.content?.trim() || '';
+      }
+
+      // Handle rate limiting and other retryable errors
+      if (response.status === 429 || response.status >= 500) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        lastError = new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+        
+        if (attempt < maxRetries) {
+          // Calculate exponential backoff delay
+          const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
+          console.log(`Retrying OpenAI request in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+          await wait(delay);
+          continue;
+        }
+      } else {
+        // Non-retryable error
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error occurred');
+      
+      if (attempt < maxRetries) {
+        const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
+        console.log(`Retrying OpenAI request in ${delay}ms due to error: ${lastError.message}`);
+        await wait(delay);
+        continue;
+      }
+    }
   }
 
-  const data = await response.json();
-  return data.choices[0]?.message?.content?.trim() || '';
+  throw lastError;
 }
 
 async function translateLyricLine(text: string, language: string, targetLanguage: string = 'english'): Promise<string> {
@@ -166,9 +215,26 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Translation error:', error);
+    
+    // Return appropriate error status based on error type
+    let status = 500;
+    let message = 'Translation failed';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('429')) {
+        status = 429;
+        message = 'Rate limit exceeded. Please try again later.';
+      } else if (error.message.includes('401') || error.message.includes('403')) {
+        status = 401;
+        message = 'Authentication failed with translation service.';
+      } else {
+        message = error.message;
+      }
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message || 'Translation failed' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: message }),
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
