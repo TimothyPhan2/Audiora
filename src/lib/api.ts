@@ -75,6 +75,7 @@ async function callTranslationAPI(type: string, content: string, language: strin
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(payload),
         signal: abortController?.signal,
