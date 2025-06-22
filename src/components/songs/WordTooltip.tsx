@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Check } from 'lucide-react';
-import { translateWord, addWordToVocabulary } from '@/lib/api';
+import { translateWordDebounced, addWordToVocabulary } from '@/lib/api';
 import { toast } from 'sonner';
 
 // Debounce hook for translation requests
@@ -48,8 +48,8 @@ export function WordTooltip({
   const [error, setError] = useState<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Debounce the word to reduce API calls
-  const debouncedWord = useDebounce(word, 800);
+  // Debounce the word to reduce API calls - increased delay for better UX
+  const debouncedWord = useDebounce(word, 1000);
 
   useEffect(() => {
     if (isVisible && debouncedWord && debouncedWord === word) {
@@ -74,19 +74,12 @@ export function WordTooltip({
   }, [isVisible]);
 
   const fetchTranslation = async () => {
-    // Cancel any existing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-    
     setIsLoading(true);
     setError('');
     
     try {
-      const result = await translateWord(word, context, language, abortControllerRef.current);
+      // Use debounced translation to prevent rapid API calls
+      const result = await translateWordDebounced(word, context, language, 500);
       setTranslation(result);
     } catch (err) {
       console.error('Translation error:', err);
@@ -107,7 +100,6 @@ export function WordTooltip({
       }
     } finally {
       setIsLoading(false);
-      abortControllerRef.current = null;
     }
   };
 
@@ -135,8 +127,8 @@ export function WordTooltip({
 
   // Calculate tooltip position to avoid going off-screen
   const tooltipStyle = {
-    left: Math.min(position.x, window.innerWidth - 280),
-    top: position.y - 120,
+    left: Math.min(position.x + 15, window.innerWidth - 300), // Offset from cursor
+    top: position.y - 130, // Position above cursor
   };
 
   return (
@@ -147,7 +139,7 @@ export function WordTooltip({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 10 }}
           transition={{ duration: 0.2 }}
-          className="fixed z-50 bg-base-dark2 border border-accent-teal-500/30 rounded-lg shadow-xl p-4 max-w-xs"
+          className="fixed z-50 bg-base-dark2 border border-accent-teal-500/30 rounded-lg shadow-xl p-4 max-w-xs pointer-events-auto"
           style={tooltipStyle}
         >
           {/* Arrow pointing down */}

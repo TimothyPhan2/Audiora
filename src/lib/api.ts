@@ -123,6 +123,67 @@ async function callTranslationAPI(type: string, content: string, language: strin
   throw lastError;
 }
 
+// Add database persistence function for lyrics translations
+export async function saveLyricsTranslations(lyrics: Array<{id: string, translation: string}>): Promise<void> {
+  console.log('💾 Saving lyrics translations to database...');
+  
+  for (const lyric of lyrics) {
+    const { error } = await supabase
+      .from('lyrics')
+      .update({ translation: lyric.translation })
+      .eq('id', lyric.id);
+      
+    if (error) {
+      console.error('❌ Failed to save lyric translation:', lyric.id, error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    } else {
+      console.log('✅ Saved lyric translation:', lyric.id);
+    }
+  }
+}
+
+// Debouncing for word hover tooltips
+const wordTranslationDebounce = new Map<string, NodeJS.Timeout>();
+
+export async function translateWordDebounced(
+  word: string, 
+  context: string = '', 
+  language: string, 
+  delay: number = 800
+): Promise<string> {
+  const cacheKey = getCacheKey('word', word, language);
+  
+  // Check cache first (immediate)
+  if (translationCache.has(cacheKey)) {
+    console.log('🎯 Cache HIT for debounced word:', word);
+    return translationCache.get(cacheKey)!;
+  }
+  
+  // Debounce API calls
+  return new Promise((resolve) => {
+    const debounceKey = `${word}_${language}`;
+    
+    // Clear existing timeout
+    if (wordTranslationDebounce.has(debounceKey)) {
+      clearTimeout(wordTranslationDebounce.get(debounceKey)!);
+    }
+    
+    // Set new timeout
+    const timeoutId = setTimeout(async () => {
+      try {
+        const result = await translateWord(word, context, language);
+        resolve(result);
+      } catch (error) {
+        console.error('Debounced translation failed:', error);
+        resolve(word); // Fallback
+      }
+      wordTranslationDebounce.delete(debounceKey);
+    }, delay);
+    
+    wordTranslationDebounce.set(debounceKey, timeoutId);
+  });
+}
+
 export async function translateLyricLine(text: string, language: string, abortController?: AbortController): Promise<string> {
   const cacheKey = getCacheKey('line', text, language);
   
@@ -178,8 +239,8 @@ export async function translateWord(word: string, context: string = '', language
     // Cache the result
     translationCache.set(cacheKey, translation);
     
-    // Store in database (non-blocking)
-    supabase.from('vocabulary').upsert({
+    // Store in database with proper error handling
+    const { error } = await supabase.from('vocabulary').upsert({
       word: word.toLowerCase(),
       translation: translation,
       language: language,
@@ -187,7 +248,14 @@ export async function translateWord(word: string, context: string = '', language
       is_premium: false,
     }, {
       onConflict: 'word,language'
-    }).catch(err => console.warn('Failed to cache word:', err));
+    });
+    
+    if (error) {
+      console.error('❌ DATABASE SAVE FAILED for word:', word, 'Error:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    } else {
+      console.log('✅ Successfully saved word to database:', word);
+    }
     
     return translation;
   } catch (error) {
@@ -196,7 +264,7 @@ export async function translateWord(word: string, context: string = '', language
   }
 }
 
-export async function batchTranslateLyrics(lyrics: string[], language: string, abortController?: AbortController): Promise<string[]> {
+export async function batchTranslateLyrics(lyrics: string[], language: string, lyricIds?: string[], abortController?: AbortController): Promise<string[]> {
   console.log('🚀 Starting batch translation for', lyrics.length, 'lines');
   
   const results = await Promise.all(lyrics.map(async (line, index) => {
@@ -218,8 +286,77 @@ export async function batchTranslateLyrics(lyrics: string[], language: string, a
     }
   }));
   
+  // Save translations to database if lyric IDs provided
+  if (lyricIds && lyricIds.length === results.length) {
+    const lyricsToSave = results.map((translation, index) => ({
+      id: lyricIds[index],
+      translation
+    }));
+    
+    try {
+      await saveLyricsTranslations(lyricsToSave);
+    } catch (error) {
+      console.error('❌ Failed to save lyrics batch to database:', error);
+    }
+  }
+  
   logTranslationStats(); // Show usage stats
   return results;
+}
+
+// Database persistence test function
+export async function testDatabasePersistence(): Promise<void> {
+  console.log('🧪 Testing database persistence...');
+  
+  // Test vocabulary table
+  const testWord = 'テスト' + Date.now();
+  const testTranslation = 'test_' + Date.now();
+  
+  console.log('1. Testing vocabulary table insert...');
+  const { data: vocabResult, error: vocabError } = await supabase
+    .from('vocabulary')
+    .insert({
+      word: testWord,
+      language: 'japanese',
+      translation: testTranslation,
+      difficulty_level: 'beginner',
+      is_premium: false
+    })
+    .select()
+    .single();
+    
+  if (vocabError) {
+    console.error('❌ Vocabulary insert FAILED:', vocabError);
+    console.error('❌ Error details:', JSON.stringify(vocabError, null, 2));
+  } else {
+    console.log('✅ Vocabulary insert SUCCESS:', vocabResult);
+  }
+  
+  // Test lyrics table update (get first available lyric)
+  console.log('2. Testing lyrics table update...');
+  const { data: firstLyric } = await supabase
+    .from('lyrics')
+    .select('id')
+    .limit(1)
+    .single();
+    
+  if (firstLyric) {
+    const { error: lyricsError } = await supabase
+      .from('lyrics')
+      .update({ translation: 'Test translation ' + Date.now() })
+      .eq('id', firstLyric.id);
+      
+    if (lyricsError) {
+      console.error('❌ Lyrics update FAILED:', lyricsError);
+      console.error('❌ Error details:', JSON.stringify(lyricsError, null, 2));
+    } else {
+      console.log('✅ Lyrics update SUCCESS');
+    }
+  } else {
+    console.log('⚠️ No lyrics found to test update');
+  }
+  
+  console.log('🧪 Database persistence test complete!');
 }
 
 // Test function - call this from console to verify caching

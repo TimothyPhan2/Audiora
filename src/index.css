@@ -210,4 +210,36 @@
   .vinyl-paused {
     animation-play-state: paused;
   }
+
+  /* Word tooltip and hover improvements */
+  .word-tooltip {
+    pointer-events: none; /* Prevent tooltip from interfering with hover */
+    position: absolute;
+    z-index: 1000;
+    transform: translate(10px, -100%); /* Offset from cursor */
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .hoverable-word {
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    padding: 1px 3px;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+  }
+
+  .hoverable-word:hover {
+    background-color: rgba(45, 212, 191, 0.15);
+    color: rgba(45, 212, 191, 0.9);
+    transform: translateY(-1px);
+  }
+
+  /* Prevent text selection on hoverable words to improve UX */
+  .hoverable-word {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
 }

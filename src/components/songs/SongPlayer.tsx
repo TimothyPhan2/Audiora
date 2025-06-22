@@ -198,19 +198,33 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   };
 
   const handleWordHover = (word: string, context: string, event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setHoveredWord({
-      word: word.replace(/[.,!?;:]$/, ''), // Remove punctuation
-      context,
-      position: {
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-      },
-    });
+    // Clear any existing timeout
+    const element = event.currentTarget as HTMLElement;
+    if (element.dataset.hoverTimeout) {
+      clearTimeout(parseInt(element.dataset.hoverTimeout));
+    }
+    
+    // Add delay before showing tooltip to prevent rapid flickering
+    const timeoutId = setTimeout(() => {
+      const rect = element.getBoundingClientRect();
+      setHoveredWord({
+        word: word.replace(/[.,!?;:]$/, ''), // Remove punctuation
+        context,
+        position: {
+          x: rect.left + rect.width / 2,
+          y: rect.top,
+        },
+      });
+    }, 500); // 500ms delay before showing tooltip
+    
+    element.dataset.hoverTimeout = timeoutId.toString();
   };
 
   const handleWordLeave = () => {
-    setHoveredWord(null);
+    // Add grace period before hiding tooltip
+    setTimeout(() => {
+      setHoveredWord(null);
+    }, 200); // 200ms grace period
   };
 
   const renderInteractiveText = (text: string, isTranslation: boolean = false) => {
@@ -224,7 +238,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         {words.map((word, wordIndex) => (
           <span key={wordIndex}>
             <span
-              className="hover:bg-accent-teal-500/20 hover:text-accent-teal-300 cursor-pointer rounded px-1 transition-all duration-200"
+              className="hoverable-word hover:bg-accent-teal-500/20 hover:text-accent-teal-300 cursor-pointer rounded px-1 py-0.5 transition-all duration-200"
               onMouseEnter={(e) => handleWordHover(word, text, e)}
               onMouseLeave={handleWordLeave}
             >
