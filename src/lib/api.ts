@@ -6,100 +6,38 @@ interface TranslationResponse {
   error?: string;
 }
 
-interface CachedTranslation {
-  translation: string;
-  timestamp: number;
-  expiresAt: number;
+// Debug function to track API usage
+let apiCallCount = 0;
+export function logTranslationStats() {
+  console.log(`🔍 Translation Stats:
+    - API Calls Made: ${apiCallCount}
+    - Cache Size: ${translationCache.size}
+    - Cache Keys: ${Array.from(translationCache.keys()).slice(0, 5).join(', ')}...
+  `);
 }
 
-interface QueuedRequest {
-  resolve: (value: any) => void;
-  reject: (error: any) => void;
-  payload: any;
-  abortController: AbortController;
-}
-
-// Cache configuration
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const CACHE_KEY_PREFIX = 'audiora_translation_';
-
-// Rate limiting configuration
-const REQUEST_DELAY = 200; // 200ms between requests (5 requests per second)
-const MAX_CONCURRENT_REQUESTS = 3;
-
-// Request queue and rate limiting
-let requestQueue: QueuedRequest[] = [];
-let activeRequests = 0;
-let lastRequestTime = 0;
+// In-memory cache for translations
+const translationCache = new Map<string, string>();
 
 const TRANSLATION_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-translate`;
 
-// Client-side caching functions
+// Unicode-safe cache key generation
 function getCacheKey(type: string, content: string, language: string): string {
-  return `${CACHE_KEY_PREFIX}${type}_${language}_${btoa(content).slice(0, 50)}`;
-}
-
-function setCachedTranslation(key: string, translation: string): void {
-  try {
-    const cached: CachedTranslation = {
-      translation,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + CACHE_DURATION
-    };
-    localStorage.setItem(key, JSON.stringify(cached));
-  } catch (error) {
-    console.warn('Failed to cache translation:', error);
+  // Create a simple hash from the content for cache key
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
   }
+  return `translation_${type}_${language}_${Math.abs(hash).toString(36).slice(0, 10)}`;
 }
 
-function getCachedTranslation(key: string): string | null {
-  try {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
+// Enhanced API call with retry logic and request cancellation
+async function callTranslationAPI(type: string, content: string, language: string, abortController?: AbortController): Promise<string> {
+  apiCallCount++; // Increment counter
+  console.log(`🔥 API CALL #${apiCallCount} - Type: ${type}, Content: ${content.slice(0, 20)}...`);
 
-    const parsedCache: CachedTranslation = JSON.parse(cached);
-    
-    // Check if cache has expired
-    if (Date.now() > parsedCache.expiresAt) {
-      localStorage.removeItem(key);
-      return null;
-    }
-
-    return parsedCache.translation;
-  } catch (error) {
-    console.warn('Failed to retrieve cached translation:', error);
-    return null;
-  }
-}
-
-function clearExpiredCache(): void {
-  try {
-    const keys = Object.keys(localStorage);
-    const now = Date.now();
-    
-    keys.forEach(key => {
-      if (key.startsWith(CACHE_KEY_PREFIX)) {
-        try {
-          const cached = JSON.parse(localStorage.getItem(key) || '');
-          if (now > cached.expiresAt) {
-            localStorage.removeItem(key);
-          }
-        } catch {
-          // Remove invalid cache entries
-          localStorage.removeItem(key);
-        }
-      }
-    });
-  } catch (error) {
-    console.warn('Failed to clear expired cache:', error);
-  }
-}
-
-// Clear expired cache on module load
-clearExpiredCache();
-
-// Enhanced API call with retry logic, rate limiting, and offline handling
-async function callTranslationAPI(payload: any, abortController?: AbortController): Promise<TranslationResponse> {
   // Check if online
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     throw new Error('You appear to be offline. Please check your internet connection and try again.');
@@ -109,6 +47,19 @@ async function callTranslationAPI(payload: any, abortController?: AbortControlle
   
   if (!session?.access_token) {
     throw new Error('Authentication required for translation');
+  }
+
+  // Prepare payload based on type
+  let payload: any;
+  switch (type) {
+    case 'word':
+      payload = { type: 'word', word: content, language };
+      break;
+    case 'line':
+      payload = { type: 'line', text: content, language };
+      break;
+    default:
+      throw new Error(`Unsupported translation type: ${type}`);
   }
 
   // Implement exponential backoff for retries
@@ -130,7 +81,11 @@ async function callTranslationAPI(payload: any, abortController?: AbortControlle
       });
 
       if (response.ok) {
-        return await response.json();
+        const result: TranslationResponse = await response.json();
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        return result.translation || '';
       }
 
       // Handle rate limiting and server errors with retry
@@ -168,197 +123,119 @@ async function callTranslationAPI(payload: any, abortController?: AbortControlle
   throw lastError;
 }
 
-// Request queue processor with rate limiting
-async function processRequestQueue(): Promise<void> {
-  if (requestQueue.length === 0 || activeRequests >= MAX_CONCURRENT_REQUESTS) {
-    return;
-  }
-
-  // Ensure minimum delay between requests
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < REQUEST_DELAY) {
-    setTimeout(processRequestQueue, REQUEST_DELAY - timeSinceLastRequest);
-    return;
-  }
-
-  const request = requestQueue.shift();
-  if (!request) return;
-
-  activeRequests++;
-  lastRequestTime = Date.now();
-
-  try {
-    const result = await callTranslationAPI(request.payload, request.abortController);
-    request.resolve(result);
-  } catch (error) {
-    request.reject(error);
-  } finally {
-    activeRequests--;
-    // Process next request after delay
-    setTimeout(processRequestQueue, REQUEST_DELAY);
-  }
-}
-
-// Queued API call function
-function queueTranslationRequest(payload: any, abortController?: AbortController): Promise<TranslationResponse> {
-  return new Promise((resolve, reject) => {
-    const queuedRequest: QueuedRequest = {
-      resolve,
-      reject,
-      payload,
-      abortController: abortController || new AbortController()
-    };
-
-    requestQueue.push(queuedRequest);
-    processRequestQueue();
-  });
-}
-
 export async function translateLyricLine(text: string, language: string, abortController?: AbortController): Promise<string> {
   const cacheKey = getCacheKey('line', text, language);
-  const cached = getCachedTranslation(cacheKey);
   
-  if (cached) {
-    return cached;
+  // Check memory cache first
+  if (translationCache.has(cacheKey)) {
+    console.log('🎯 Cache HIT for line:', text.slice(0, 30) + '...');
+    return translationCache.get(cacheKey)!;
   }
 
-  const response = await queueTranslationRequest({
-    type: 'line',
-    text,
-    language,
-  }, abortController);
-
-  if (response.error) {
-    throw new Error(response.error);
+  // Call API only if not cached
+  console.log('🔥 API CALL for line:', text.slice(0, 30) + '...');
+  try {
+    const translation = await callTranslationAPI('line', text, language, abortController);
+    
+    // Cache the result
+    translationCache.set(cacheKey, translation);
+    
+    return translation;
+  } catch (error) {
+    console.error('Translation failed for line:', text.slice(0, 30), error);
+    return text; // Return original text as fallback
   }
-
-  const translation = response.translation || '';
-  
-  // Cache the result
-  if (translation) {
-    setCachedTranslation(cacheKey, translation);
-  }
-
-  return translation;
 }
 
 export async function translateWord(word: string, context: string = '', language: string, abortController?: AbortController): Promise<string> {
-  // First check if word already exists in vocabulary table
-  const { data: existingWord } = await supabase
+  const cacheKey = getCacheKey('word', word, language);
+  
+  // Check memory cache first
+  if (translationCache.has(cacheKey)) {
+    console.log('🎯 Cache HIT for word:', word);
+    return translationCache.get(cacheKey)!;
+  }
+
+  // Check database cache
+  const { data: cached } = await supabase
     .from('vocabulary')
     .select('translation')
     .eq('word', word.toLowerCase())
     .eq('language', language)
     .single();
 
-  if (existingWord?.translation) {
-    return existingWord.translation;
+  if (cached?.translation) {
+    console.log('💾 DB Cache HIT for word:', word);
+    translationCache.set(cacheKey, cached.translation);
+    return cached.translation;
   }
 
-  // Check client-side cache
-  const cacheKey = getCacheKey('word', `${word}_${context}`, language);
-  const cached = getCachedTranslation(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-
-  // If not found, translate using API
-  const response = await queueTranslationRequest({
-    type: 'word',
-    word,
-    context,
-    language,
-  }, abortController);
-
-  if (response.error) {
-    throw new Error(response.error);
-  }
-
-  const translation = response.translation || '';
-
-  // Cache the translation both client-side and in database
-  if (translation) {
-    setCachedTranslation(cacheKey, translation);
+  // Call API only if not cached
+  console.log('🔥 API CALL for word:', word);
+  try {
+    const translation = await callTranslationAPI('word', word, language, abortController);
     
-    // Cache in vocabulary table (don't await to avoid blocking)
-    supabase
-      .from('vocabulary')
-      .upsert({
-        word: word.toLowerCase(),
-        language,
-        translation,
-        difficulty_level: 'intermediate',
-        is_premium: false,
-      }, {
-        onConflict: 'word,language'
-      })
-      .catch(error => console.warn('Failed to cache word in database:', error));
+    // Cache the result
+    translationCache.set(cacheKey, translation);
+    
+    // Store in database (non-blocking)
+    supabase.from('vocabulary').upsert({
+      word: word.toLowerCase(),
+      translation: translation,
+      language: language,
+      difficulty_level: 'intermediate',
+      is_premium: false,
+    }, {
+      onConflict: 'word,language'
+    }).catch(err => console.warn('Failed to cache word:', err));
+    
+    return translation;
+  } catch (error) {
+    console.error('Translation failed for word:', word, error);
+    return word; // Return original word as fallback
   }
-
-  return translation;
 }
 
-export async function batchTranslateLyrics(lines: string[], language: string, abortController?: AbortController): Promise<string[]> {
-  // Check cache for each line first
-  const cachedTranslations: (string | null)[] = lines.map(line => {
-    const cacheKey = getCacheKey('line', line, language);
-    return getCachedTranslation(cacheKey);
-  });
-
-  // Find lines that need translation
-  const linesToTranslate: string[] = [];
-  const lineIndices: number[] = [];
+export async function batchTranslateLyrics(lyrics: string[], language: string, abortController?: AbortController): Promise<string[]> {
+  console.log('🚀 Starting batch translation for', lyrics.length, 'lines');
   
-  lines.forEach((line, index) => {
-    if (!cachedTranslations[index]) {
-      linesToTranslate.push(line);
-      lineIndices.push(index);
+  const results = await Promise.all(lyrics.map(async (line, index) => {
+    const cacheKey = getCacheKey('line', line, language);
+    
+    if (translationCache.has(cacheKey)) {
+      console.log(`✅ Line ${index + 1} cached`);
+      return translationCache.get(cacheKey)!;
     }
-  });
 
-  // If all lines are cached, return cached results
-  if (linesToTranslate.length === 0) {
-    return cachedTranslations as string[];
-  }
-
-  // Translate missing lines
-  const response = await queueTranslationRequest({
-    type: 'batch',
-    lines: linesToTranslate,
-    language,
-  }, abortController);
-
-  if (response.error) {
-    throw new Error(response.error);
-  }
-
-  const newTranslations = response.translations || [];
-
-  // Cache new translations
-  newTranslations.forEach((translation, index) => {
-    if (translation && lineIndices[index] !== undefined) {
-      const originalLine = linesToTranslate[index];
-      const cacheKey = getCacheKey('line', originalLine, language);
-      setCachedTranslation(cacheKey, translation);
+    console.log(`🔥 Line ${index + 1} needs API call`);
+    try {
+      const translated = await callTranslationAPI('line', line, language, abortController);
+      translationCache.set(cacheKey, translated);
+      return translated;
+    } catch (error) {
+      console.error(`Failed to translate line ${index + 1}:`, error);
+      return line; // Fallback to original
     }
-  });
+  }));
+  
+  logTranslationStats(); // Show usage stats
+  return results;
+}
 
-  // Merge cached and new translations
-  const result: string[] = [];
-  let newTranslationIndex = 0;
-
-  lines.forEach((line, index) => {
-    if (cachedTranslations[index]) {
-      result[index] = cachedTranslations[index]!;
-    } else {
-      result[index] = newTranslations[newTranslationIndex] || '';
-      newTranslationIndex++;
-    }
-  });
-
-  return result;
+// Test function - call this from console to verify caching
+export async function testTranslationCaching() {
+  console.log('🧪 Testing translation caching...');
+  
+  // Test Japanese word
+  const word = 'こんにちは';
+  console.log('First call (should hit API):');
+  const result1 = await translateWord(word, '', 'japanese');
+  
+  console.log('Second call (should hit cache):');
+  const result2 = await translateWord(word, '', 'japanese');
+  
+  console.log('Results match:', result1 === result2);
+  logTranslationStats();
 }
 
 export async function addWordToVocabulary(word: string, translation: string, language: string, songId?: string): Promise<void> {
@@ -461,27 +338,4 @@ export async function getUserVocabulary(): Promise<any[]> {
   }
 
   return data || [];
-}
-
-// Utility function to cancel all pending requests
-export function cancelAllTranslationRequests(): void {
-  requestQueue.forEach(request => {
-    request.abortController.abort();
-    request.reject(new Error('Translation request was cancelled'));
-  });
-  requestQueue = [];
-}
-
-// Utility function to clear translation cache
-export function clearTranslationCache(): void {
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith(CACHE_KEY_PREFIX)) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (error) {
-    console.warn('Failed to clear translation cache:', error);
-  }
 }
