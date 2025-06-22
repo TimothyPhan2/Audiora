@@ -40,6 +40,7 @@ interface SongPlayerProps {
 export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricsRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -197,7 +198,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleWordHover = (word: string, context: string, event: React.MouseEvent) => {
+  const handleWordHover = (word: string, fullText: string, event: React.MouseEvent) => {
     // Clear any existing timeout
     const element = event.currentTarget as HTMLElement;
     if (element.dataset.hoverTimeout) {
@@ -207,9 +208,20 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     // Add delay before showing tooltip to prevent rapid flickering
     const timeoutId = setTimeout(() => {
       const rect = element.getBoundingClientRect();
+      
+      // ✅ FIX: Extract proper context (2-3 surrounding words)
+      const words = fullText.split(' ');
+      const cleanWord = word.replace(/[.,!?;:]$/, '');
+      const wordIndex = words.findIndex(w => w.replace(/[.,!?;:]$/, '') === cleanWord);
+      
+      const contextStart = Math.max(0, wordIndex - 2);
+      const contextEnd = Math.min(words.length, wordIndex + 3);
+      const contextWords = words.slice(contextStart, contextEnd);
+      const properContext = contextWords.join(' ');
+      
       setHoveredWord({
-        word: word.replace(/[.,!?;:]$/, ''), // Remove punctuation
-        context,
+        word: cleanWord,
+        context: properContext, // ✅ Proper context, not entire line
         position: {
           x: rect.left + rect.width / 2,
           y: rect.top,
@@ -437,6 +449,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         </div>
 
         <motion.div 
+          ref={lyricsContainerRef}
           className="frosted-glass rounded-xl border border-accent-teal-500/20 max-h-[600px] overflow-hidden"
           whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
           transition={{ duration: 0.3 }}
@@ -514,6 +527,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           position={hoveredWord.position}
           isVisible={!!hoveredWord}
           onClose={() => setHoveredWord(null)}
+          containerRef={lyricsContainerRef}
         />
       )}
     </div>

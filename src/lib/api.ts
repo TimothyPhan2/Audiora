@@ -239,23 +239,8 @@ export async function translateWord(word: string, context: string = '', language
     // Cache the result
     translationCache.set(cacheKey, translation);
     
-    // Store in database with proper error handling
-    const { error } = await supabase.from('vocabulary').upsert({
-      word: word.toLowerCase(),
-      translation: translation,
-      language: language,
-      difficulty_level: 'intermediate',
-      is_premium: false,
-    }, {
-      onConflict: 'word,language'
-    });
-    
-    if (error) {
-      console.error('❌ DATABASE SAVE FAILED for word:', word, 'Error:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
-    } else {
-      console.log('✅ Successfully saved word to database:', word);
-    }
+    // Only cache the translation, NO automatic database save
+    // Database saves only happen when user explicitly clicks "Add to Vocab"
     
     return translation;
   } catch (error) {

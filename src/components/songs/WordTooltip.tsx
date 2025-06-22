@@ -30,6 +30,7 @@ interface WordTooltipProps {
   position: { x: number; y: number };
   isVisible: boolean;
   onClose: () => void;
+  containerRef?: React.RefObject<HTMLElement>;
 }
 
 export function WordTooltip({ 
@@ -39,7 +40,8 @@ export function WordTooltip({
   songId, 
   position, 
   isVisible, 
-  onClose 
+  onClose,
+  containerRef
 }: WordTooltipProps) {
   const [translation, setTranslation] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +110,7 @@ export function WordTooltip({
 
     setIsAdding(true);
     try {
+      // ✅ This is the ONLY place where words should be saved to database
       await addWordToVocabulary(word, translation, language, songId);
       setIsAdded(true);
       toast.success('Word added to vocabulary!');
@@ -125,11 +128,53 @@ export function WordTooltip({
     }
   };
 
-  // Calculate tooltip position to avoid going off-screen
-  const tooltipStyle = {
-    left: Math.min(position.x + 15, window.innerWidth - 300), // Offset from cursor
-    top: position.y - 130, // Position above cursor
+  // ✅ FIX: Constrained positioning within lyrics container
+  const getConstrainedPosition = () => {
+    const tooltipWidth = 320;
+    const tooltipHeight = 200;
+    const padding = 16;
+
+    // Get container bounds if available, otherwise use viewport
+    let containerBounds = {
+      left: 0, 
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight
+    };
+
+    if (containerRef?.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      containerBounds = {
+        left: rect.left, 
+        top: rect.top,
+        right: rect.right, 
+        bottom: rect.bottom
+      };
+    }
+
+    let left = position.x + 15;
+    let top = position.y - 130;
+
+    // Constrain horizontally
+    if (left + tooltipWidth > containerBounds.right - padding) {
+      left = containerBounds.right - tooltipWidth - padding;
+    }
+    if (left < containerBounds.left + padding) {
+      left = containerBounds.left + padding;
+    }
+
+    // Constrain vertically
+    if (top < containerBounds.top + padding) {
+      top = position.y + 20; // Position below cursor instead
+    }
+    if (top + tooltipHeight > containerBounds.bottom - padding) {
+      top = containerBounds.bottom - tooltipHeight - padding;
+    }
+
+    return { left, top };
   };
+
+  const tooltipStyle = getConstrainedPosition();
 
   return (
     <AnimatePresence>
