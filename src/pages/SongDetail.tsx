@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store';
 import { batchTranslateLyrics } from '@/lib/api';
 import { toast } from 'sonner';
+import { useRef } from 'react';
 
 interface Song {
   id: string;
@@ -43,6 +44,7 @@ export function SongDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -57,14 +59,30 @@ export function SongDetail() {
     }
 
     fetchSongData();
+    
+    // Cleanup function to cancel pending requests
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [songId, isAuthenticated, navigate]);
 
   const fetchMissingTranslations = async (songData: Song, missingLyrics: Lyric[]) => {
+    // Cancel any existing translation request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
       setIsTranslating(true);
       
       const linesToTranslate = missingLyrics.map(lyric => lyric.text);
-      const translations = await batchTranslateLyrics(linesToTranslate, songData.language);
+      const translations = await batchTranslateLyrics(linesToTranslate, songData.language, abortControllerRef.current);
       
       // Update lyrics in database
       const updatePromises = missingLyrics.map(async (lyric, index) => {
@@ -95,9 +113,24 @@ export function SongDetail() {
       toast.success('Translations loaded successfully!');
     } catch (error) {
       console.error('Failed to fetch translations:', error);
-      toast.error('Failed to load translations. You can still enjoy the original lyrics!');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('cancelled')) {
+          // Request was cancelled, don't show error
+          return;
+        } else if (error.message.includes('offline')) {
+          toast.error('You appear to be offline. Translations will load when connection is restored.');
+        } else if (error.message.includes('Rate limit')) {
+          toast.error('Too many translation requests. Please wait a moment and refresh the page.');
+        } else {
+          toast.error('Failed to load translations. You can still enjoy the original lyrics!');
+        }
+      } else {
+        toast.error('Failed to load translations. You can still enjoy the original lyrics!');
+      }
     } finally {
       setIsTranslating(false);
+      abortControllerRef.current = null;
     }
   };
   const fetchSongData = async () => {
@@ -225,7 +258,7 @@ export function SongDetail() {
             {isTranslating && (
               <div className="flex items-center gap-2 mt-2 text-accent-teal-400 text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Loading translations...</span>
+                <span>Loading translations... This may take a moment.</span>
               </div>
             )}
           </div>

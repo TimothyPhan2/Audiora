@@ -1,9 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Check } from 'lucide-react';
 import { translateWord, addWordToVocabulary } from '@/lib/api';
 import { toast } from 'sonner';
+
+// Debounce hook for translation requests
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface WordTooltipProps {
   word: string;
@@ -29,25 +46,68 @@ export function WordTooltip({
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [error, setError] = useState<string>('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Debounce the word to reduce API calls
+  const debouncedWord = useDebounce(word, 800);
 
   useEffect(() => {
-    if (isVisible && word) {
+    if (isVisible && debouncedWord && debouncedWord === word) {
       fetchTranslation();
     }
-  }, [isVisible, word, context, language]);
+    
+    // Cleanup function to cancel pending requests
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [isVisible, debouncedWord, word, context, language]);
+
+  // Cancel requests when component unmounts or tooltip closes
+  useEffect(() => {
+    if (!isVisible) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    }
+  }, [isVisible]);
 
   const fetchTranslation = async () => {
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     setIsLoading(true);
     setError('');
     
     try {
-      const result = await translateWord(word, context, language);
+      const result = await translateWord(word, context, language, abortControllerRef.current);
       setTranslation(result);
     } catch (err) {
       console.error('Translation error:', err);
-      setError('Failed to translate word');
+      
+      if (err instanceof Error) {
+        if (err.message.includes('cancelled')) {
+          // Request was cancelled, don't show error
+          return;
+        } else if (err.message.includes('offline')) {
+          setError('You appear to be offline');
+        } else if (err.message.includes('Rate limit')) {
+          setError('Too many requests. Please wait a moment.');
+        } else {
+          setError('Failed to translate word');
+        }
+      } else {
+        setError('Failed to translate word');
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -104,10 +164,19 @@ export function WordTooltip({
               {isLoading ? (
                 <div className="flex items-center gap-2 text-text-cream300">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Translating...</span>
+                  <span className="text-sm">
+                    {debouncedWord !== word ? 'Waiting...' : 'Translating...'}
+                  </span>
                 </div>
               ) : error ? (
-                <div className="text-red-400 text-sm">{error}</div>
+                <div className="text-red-400 text-sm">
+                  {error}
+                  {error.includes('offline') && (
+                    <div className="text-xs mt-1 text-text-cream400">
+                      Check your connection and try again
+                    </div>
+                  )}
+                </div>
               ) : translation ? (
                 <div className="text-text-cream100 text-sm font-medium">
                   {translation}
