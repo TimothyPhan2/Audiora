@@ -1,3 +1,5 @@
 src/components/ui/*
 hooks/use-toast.ts
 node_modules
+.bolt/Summary.txt
+.bolt/Summary copy.txt
