@@ -186,14 +186,25 @@ Deno.serve(async (req) => {
         if (!text) {
           return new Response('Text parameter is required for line translation', { status: 400, headers: corsHeaders });
         }
-        result = { translation: await translateLyricLine(text, language, targetLanguage) };
+        const lineTranslation = await translateLyricLine(text, language, targetLanguage);
+        result = { 
+          translation: lineTranslation,
+          type: 'line',
+          timestamp: new Date().toISOString()
+        };
         break;
 
       case 'word':
         if (!word) {
           return new Response('Word parameter is required for word translation', { status: 400, headers: corsHeaders });
         }
-        result = { translation: await translateWord(word, context || '', language, targetLanguage) };
+        const wordTranslation = await translateWord(word, context || '', language, targetLanguage);
+        result = { 
+          translation: wordTranslation,
+          type: 'word',
+          timestamp: new Date().toISOString(),
+          ...(context && { context })
+        };
         break;
 
       case 'batch':
@@ -201,16 +212,27 @@ Deno.serve(async (req) => {
           return new Response('Lines array is required for batch translation', { status: 400, headers: corsHeaders });
         }
         const translations = await batchTranslateLyrics(lines, language, targetLanguage);
-        result = { translations };
+        result = { 
+          translations,
+          type: 'batch',
+          timestamp: new Date().toISOString()
+        };
         break;
 
       default:
         return new Response('Invalid translation type', { status: 400, headers: corsHeaders });
     }
 
+    // Ensure consistent response format with proper headers
     return new Response(JSON.stringify(result), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
     });
 
   } catch (error) {
@@ -232,9 +254,20 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Ensure error responses also have proper content type
     return new Response(
-      JSON.stringify({ error: message }),
-      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: message,
+        timestamp: new Date().toISOString(),
+        status
+      }),
+      { 
+        status, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json; charset=utf-8' 
+        } 
+      }
     );
   }
 });

@@ -68,31 +68,97 @@ async function callTranslationAPI(type: string, content: string, language: strin
   const maxDelay = 8000;
   let lastError: Error;
 
+  // Enhanced request headers with proper content negotiation
+  const headers = {
+    'Authorization': `Bearer ${session.access_token}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'User-Agent': 'Audiora/1.0'
+  };
+
+  console.log('📤 Request Headers:', headers);
+  console.log('📤 Request Payload:', JSON.stringify(payload, null, 2));
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Create timeout controller for this attempt
+    const controller = abortController || new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Request timeout after 30 seconds');
+      controller.abort();
+    }, 30000); // 30 second timeout
+
     try {
       const response = await fetch(TRANSLATION_API_URL, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers,
         body: JSON.stringify(payload),
-        signal: abortController?.signal,
+        signal: controller.signal,
       });
 
-      if (response.ok) {
-        const result: TranslationResponse = await response.json();
-        if (result.error) {
-          throw new Error(result.error);
+      clearTimeout(timeoutId);
+
+      // Enhanced response debugging
+      console.log('🔍 Response Debug:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        ok: response.ok,
+        url: response.url
+      });
+
+      // Clone response for debugging before consuming it
+      const responseClone = response.clone();
+      const responseText = await responseClone.text();
+      console.log('📄 Raw Response Body:', responseText);
+
+      // Enhanced response validation
+      if (response.status >= 200 && response.status < 300) {
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('❌ Unexpected content type:', contentType);
+          throw new Error(`Expected JSON response, got: ${contentType}. Response: ${responseText.slice(0, 200)}`);
         }
-        return result.translation || '';
+
+        try {
+          const result: TranslationResponse = await response.json();
+          console.log('✅ Parsed JSON Result:', result);
+          
+          if (result.error) {
+            console.error('❌ API returned error in JSON:', result.error);
+            throw new Error(result.error);
+          }
+          
+          if (!result.translation) {
+            console.warn('⚠️ No translation in response:', result);
+            return '';
+          }
+          
+          return result.translation;
+        } catch (jsonError) {
+          console.error('❌ JSON parsing failed:', jsonError);
+          console.error('❌ Response text was:', responseText);
+          throw new Error(`Failed to parse translation response: ${jsonError instanceof Error ? jsonError.message : 'Unknown JSON error'}`);
+        }
+      }
+
+      // Specific handling for 406 errors
+      if (response.status === 406) {
+        console.error('❌ 406 Not Acceptable - Check Accept headers');
+        console.error('❌ 406 Response body:', responseText);
+        throw new Error(`Server cannot produce acceptable response format. Response: ${responseText}`);
       }
 
       // Handle rate limiting and server errors with retry
       if (response.status === 429 || response.status >= 500) {
-        const errorData = await response.json().catch(() => ({}));
-        lastError = new Error(errorData.error || `API error: ${response.status}`);
+        try {
+          const errorData = await response.json();
+          lastError = new Error(errorData.error || `API error: ${response.status}`);
+        } catch {
+          lastError = new Error(`API error: ${response.status} - ${responseText}`);
+        }
         
         if (attempt < maxRetries) {
           const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
@@ -102,10 +168,16 @@ async function callTranslationAPI(type: string, content: string, language: strin
         }
       } else {
         // Non-retryable error
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Translation API error: ${response.status}`);
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Translation API error: ${response.status}`);
+        } catch {
+          throw new Error(`Translation API error: ${response.status} - ${responseText}`);
+        }
       }
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Translation request was cancelled');
       }
