@@ -1,2 +1,3 @@
 src/components/ui/*
 hooks/use-toast.ts
+node_modules
