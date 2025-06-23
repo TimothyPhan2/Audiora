@@ -459,6 +459,9 @@ export async function addWordToVocabulary(word: string, translation: string, lan
     throw new Error('Failed to add word to vocabulary: ' + vocabError.message);
   }
 
+  if (!vocabularyItem) {
+    throw new Error('Failed to create vocabulary item');
+  }
   // Then add to user's personal vocabulary
   const { error: userVocabError } = await supabase
     .from('user_vocabulary')
