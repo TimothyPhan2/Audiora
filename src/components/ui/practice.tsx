@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { QuizCard } from '@/components/ui/quiz-card'
 
 interface PracticeTypeCardProps {
   icon: React.ReactNode
@@ -262,55 +263,40 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
 
   const renderQuizSession = () => {
     const item = sessionData.items[currentIndex]
+    
+    // Transform current question to QuizCard format
+    const quizCardQuestion = {
+      id: currentIndex.toString(),
+      question: item.question,
+      options: item.options.map((option: string, index: number) => ({
+        id: String.fromCharCode(97 + index), // 'a', 'b', 'c', 'd'
+        text: option,
+        isCorrect: index === 0 // Assuming first option is correct for mock data
+      })),
+      explanation: item.explanation,
+      difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+      category: 'Quiz'
+    };
+
+    const handleQuizAnswer = (optionId: string, isCorrect: boolean) => {
+      const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
+      setSelectedAnswer(item.options[answerIndex]);
+      setShowResult(true);
+    };
+
+    const handleNextQuestion = () => {
+      handleNext();
+    };
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Card className="p-6 mb-6 frosted-glass border-accent-teal-500/20 max-w-lg w-full">
-          <h3 className="text-xl font-semibold mb-6 text-center text-text-cream100">{item.question}</h3>
-          <div className="space-y-3">
-            {item.options.map((option: string, index: number) => (
-              <Button
-                key={index}
-                variant={selectedAnswer === option ? "default" : "outline"}
-                className={`w-full justify-start text-left h-auto p-4 ${
-                  selectedAnswer === option 
-                    ? "button-gradient-primary text-white" 
-                    : "button-gradient-secondary"
-                }`}
-                onClick={() => {
-                  setSelectedAnswer(option)
-                  setShowResult(true)
-                }}
-              >
-                <span className="mr-3 font-semibold">{String.fromCharCode(65 + index)}.</span>
-                {option}
-              </Button>
-            ))}
-          </div>
-          {showResult && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-3 rounded-lg bg-green-500/20 border border-green-500/30"
-            >
-              <div className="flex items-center gap-2 text-green-400">
-                <Check className="w-4 h-4" />
-                <span className="text-sm">Correct! {item.explanation}</span>
-              </div>
-            </motion.div>
-          )}
-        </Card>
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
-            Skip
-          </Button>
-          <Button 
-            onClick={handleNext} 
-            className="button-gradient-primary text-white"
-            disabled={!selectedAnswer}
-          >
-            {currentIndex === sessionData.items.length - 1 ? "Finish" : "Next"}
-          </Button>
-        </div>
+        <QuizCard
+          question={quizCardQuestion}
+          onAnswer={handleQuizAnswer}
+          onNext={handleNextQuestion}
+          showResult={showResult}
+          selectedOption={selectedAnswer ? String.fromCharCode(97 + item.options.indexOf(selectedAnswer)) : ''}
+        />
       </div>
     )
   }
