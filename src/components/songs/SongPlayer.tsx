@@ -7,6 +7,70 @@ import MusicArtwork from '@/components/ui/music-artwork';
 import { WordTooltip } from './WordTooltip';
 import { cn } from '@/lib/utils';
 
+// Language-aware text splitting function
+const splitTextForLanguage = (text: string, language: string): string[] => {
+  switch (language.toLowerCase()) {
+    case 'japanese':
+    case 'japanese-kanji':
+    case 'japanese-hiragana': 
+    case 'japanese-katakana':
+      // Split by character groups: kanji clusters, hiragana words, katakana words
+      return text.match(/[\u4e00-\u9faf]+|[\u3040-\u309f]+|[\u30a0-\u30ff]+|[a-zA-Z0-9]+|[^\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff\w]/g) || [text];
+    
+    case 'chinese':
+    case 'mandarin':
+      // Individual characters for Chinese
+      return text.split('').filter(char => char.trim() !== '');
+    
+    case 'korean':
+      // Korean uses spaces but for language learning, split by syllable blocks for finer granularity
+      return text.match(/[\uac00-\ud7af]+|[a-zA-Z0-9]+|[^\s\uac00-\ud7af\w]/g) || text.split(/\s+/);
+    
+    default:
+      // Space-separated languages (English, Spanish, French, etc.)
+      return text.split(/\s+/);
+  }
+};
+
+// Enhanced context extraction for different languages
+const extractContext = (word: string, fullText: string, language: string): string => {
+  if (['japanese', 'chinese', 'mandarin'].includes(language.toLowerCase())) {
+    // Character-based context for CJK languages
+    const cleanWord = word.replace(/[.,!?;:]$/, '');
+    const wordIndex = fullText.indexOf(cleanWord);
+    
+    if (wordIndex !== -1) {
+      const contextStart = Math.max(0, wordIndex - 3);
+      const contextEnd = Math.min(fullText.length, wordIndex + cleanWord.length + 3);
+      return fullText.slice(contextStart, contextEnd);
+    }
+    return fullText;
+  } else if (language.toLowerCase() === 'korean') {
+    // Syllable-based context for Korean
+    const cleanWord = word.replace(/[.,!?;:]$/, '');
+    const wordIndex = fullText.indexOf(cleanWord);
+    
+    if (wordIndex !== -1) {
+      const contextStart = Math.max(0, wordIndex - 2);
+      const contextEnd = Math.min(fullText.length, wordIndex + cleanWord.length + 2);
+      return fullText.slice(contextStart, contextEnd);
+    }
+    return fullText;
+  } else {
+    // Word-based context for space-separated languages
+    const words = fullText.split(' ');
+    const cleanWord = word.replace(/[.,!?;:]$/, '');
+    const wordIndex = words.findIndex(w => w.replace(/[.,!?;:]$/, '') === cleanWord);
+    
+    if (wordIndex !== -1) {
+      const contextStart = Math.max(0, wordIndex - 2);
+      const contextEnd = Math.min(words.length, wordIndex + 3);
+      return words.slice(contextStart, contextEnd).join(' ');
+    }
+    return fullText;
+  }
+};
+
 interface Song {
   id: string;
   title: string;
@@ -209,19 +273,12 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     const timeoutId = setTimeout(() => {
       const rect = element.getBoundingClientRect();
       
-      // ✅ FIX: Extract proper context (2-3 surrounding words)
-      const words = fullText.split(' ');
-      const cleanWord = word.replace(/[.,!?;:]$/, '');
-      const wordIndex = words.findIndex(w => w.replace(/[.,!?;:]$/, '') === cleanWord);
-      
-      const contextStart = Math.max(0, wordIndex - 2);
-      const contextEnd = Math.min(words.length, wordIndex + 3);
-      const contextWords = words.slice(contextStart, contextEnd);
-      const properContext = contextWords.join(' ');
+      // Use language-aware context extraction
+      const properContext = extractContext(word, fullText, song.language);
       
       setHoveredWord({
-        word: cleanWord,
-        context: properContext, // ✅ Proper context, not entire line
+        word: word.replace(/[.,!?;:]$/, ''),
+        context: properContext,
         position: {
           x: rect.left + rect.width / 2, // Center of word
           y: rect.top, // Top of word
@@ -247,19 +304,23 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
       return <span className="italic">{text}</span>;
     }
 
-    const words = text.split(' ');
+    // Use language-aware text splitting
+    const words = splitTextForLanguage(text, song.language);
+    
     return (
       <span>
         {words.map((word, wordIndex) => (
           <span key={wordIndex}>
             <span
-              className="hoverable-word hover:bg-accent-teal-500/20 hover:text-accent-teal-300 cursor-pointer rounded px-1 py-0.5 transition-all duration-200"
+              className="hoverable-word hover:bg-accent-teal-500/20 hover:text-accent-teal-300 cursor-pointer rounded px-1 py-0.5 transition-all duration-200 inline-block"
               onMouseEnter={(e) => handleWordHover(word, text, e)}
               onMouseLeave={handleWordLeave}
             >
               {word}
             </span>
-            {wordIndex < words.length - 1 && ' '}
+            {/* Only add spaces for languages that naturally use spaces between words */}
+            {wordIndex < words.length - 1 && 
+             !['japanese', 'chinese', 'mandarin', 'korean'].includes(song.language.toLowerCase()) && ' '}
           </span>
         ))}
       </span>
