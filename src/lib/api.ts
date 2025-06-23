@@ -296,7 +296,7 @@ export async function translateWord(word: string, _context: string = '', languag
     .select('translation')
     .eq('word', word.toLowerCase())
     .eq('language', language)
-    .single();
+    .maybeSingle();
 
   if (cached?.translation) {
     console.log('💾 DB Cache HIT for word:', word);
