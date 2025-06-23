@@ -453,7 +453,7 @@ export async function addWordToVocabulary(word: string, translation: string, lan
       onConflict: 'word,language'
     })
     .select('id, usage_count')
-    .single();
+    .maybeSingle();
 
   if (vocabError) {
     throw new Error('Failed to add word to vocabulary: ' + vocabError.message);
