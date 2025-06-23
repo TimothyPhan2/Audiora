@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, Clock, Brain, RotateCcw } from 'lucide-react';
