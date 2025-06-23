@@ -8,7 +8,6 @@ import {
   Target, 
   Play, 
   Pause, 
-  Check, 
   X, 
   ChevronRight,
   Clock,
