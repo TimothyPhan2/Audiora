@@ -440,6 +440,45 @@ export async function addWordToVocabulary(word: string, translation: string, lan
     throw new Error('User must be authenticated to add vocabulary');
   }
 
+  // Calculate difficulty level based on word characteristics
+  const calculateDifficultyLevel = (word: string, language: string): 'beginner' | 'intermediate' | 'advanced' | 'fluent' => {
+    const cleanWord = word.toLowerCase().trim();
+    const wordLength = cleanWord.length;
+    
+    // Common beginner words (manually curated for major languages)
+    const beginnerWords = {
+      spanish: ['el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'es', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para', 'al', 'del', 'los', 'las', 'una', 'pero', 'todo', 'bien', 'más', 'muy', 'aquí', 'ahora', 'casa', 'agua', 'amor', 'vida', 'tiempo', 'día', 'año', 'hola', 'adiós', 'sí', 'gracias'],
+      french: ['le', 'de', 'et', 'à', 'un', 'il', 'être', 'et', 'en', 'avoir', 'que', 'pour', 'dans', 'ce', 'son', 'une', 'sur', 'avec', 'ne', 'se', 'pas', 'tout', 'plus', 'par', 'grand', 'en', 'une', 'être', 'et', 'en', 'avoir', 'que', 'pour', 'bonjour', 'merci', 'oui', 'non', 'eau', 'pain', 'maison', 'temps', 'jour', 'année'],
+      italian: ['il', 'di', 'che', 'e', 'la', 'per', 'un', 'in', 'con', 'del', 'da', 'a', 'al', 'le', 'si', 'dei', 'sul', 'una', 'su', 'per', 'tra', 'nel', 'da', 'casa', 'acqua', 'pane', 'tempo', 'giorno', 'anno', 'ciao', 'grazie', 'sì', 'no'],
+      german: ['der', 'die', 'und', 'in', 'den', 'von', 'zu', 'das', 'mit', 'sich', 'des', 'auf', 'für', 'ist', 'im', 'dem', 'nicht', 'ein', 'eine', 'als', 'auch', 'es', 'an', 'werden', 'aus', 'er', 'hat', 'dass', 'sie', 'nach', 'wird', 'bei', 'einer', 'um', 'am', 'sind', 'noch', 'wie', 'einem', 'über', 'einen', 'so', 'zum', 'war', 'haben', 'nur', 'oder', 'aber', 'vor', 'zur', 'bis', 'mehr', 'durch', 'man', 'sein', 'wurde', 'sei', 'in', 'hallo', 'danke', 'ja', 'nein', 'wasser', 'haus', 'zeit', 'tag', 'jahr'],
+      japanese: ['は', 'の', 'が', 'を', 'に', 'で', 'と', 'から', 'まで', 'より', 'こんにちは', 'ありがとう', 'はい', 'いいえ', 'みず', 'いえ', 'じかん', 'ひ', 'とし', 'わたし', 'あなた', 'これ', 'それ', 'あれ', 'ここ', 'そこ', 'あそこ', 'いま', 'きょう', 'あした', 'きのう']
+    };
+    
+    const langBeginnerWords = beginnerWords[language.toLowerCase() as keyof typeof beginnerWords] || [];
+    
+    // Check if it's a common beginner word
+    if (langBeginnerWords.includes(cleanWord)) {
+      return 'beginner';
+    }
+    
+    // Length-based classification with language-specific adjustments
+    if (language.toLowerCase() === 'japanese' || language.toLowerCase() === 'chinese' || language.toLowerCase() === 'mandarin') {
+      // For character-based languages, use character count
+      if (wordLength <= 2) return 'beginner';
+      if (wordLength <= 4) return 'intermediate';
+      if (wordLength <= 6) return 'advanced';
+      return 'fluent';
+    } else {
+      // For alphabetic languages, use letter count
+      if (wordLength <= 3) return 'beginner';
+      if (wordLength <= 6) return 'intermediate';
+      if (wordLength <= 9) return 'advanced';
+      return 'fluent';
+    }
+  };
+
+  const difficultyLevel = calculateDifficultyLevel(word, language);
+
   // First ensure the word exists in the vocabulary table
   const { data: vocabularyItem, error: vocabError } = await supabase
     .from('vocabulary')
@@ -447,7 +486,7 @@ export async function addWordToVocabulary(word: string, translation: string, lan
       word: word.toLowerCase(),
       language,
       translation,
-      difficulty_level: 'intermediate',
+      difficulty_level: difficultyLevel,
       is_premium: false,
     }, {
       onConflict: 'word,language'
