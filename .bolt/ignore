@@ -23,7 +23,6 @@ src/components/ui/pricing-page.tsx
 src/components/ui/progress-bar.tsx
 src/components/ui/progress-page.tsx
 src/components/ui/progress.tsx
-src/components/ui/quiz-card.tsx
 src/components/ui/radio-group.tsx
 src/components/ui/resizable.tsx
 src/components/ui/scroll-area.tsx
