@@ -38,11 +38,6 @@ const sidebarLinks = [
     icon: <BookOpen className="text-text-cream200 h-5 w-5 flex-shrink-0" />
   },
   {
-    label: "Practice",
-    href: "/practice",
-    icon: <Target className="text-text-cream200 h-5 w-5 flex-shrink-0" />
-  },
-  {
     label: "Progress",
     href: "/progress",
     icon: <TrendingUp className="text-text-cream200 h-5 w-5 flex-shrink-0" />
