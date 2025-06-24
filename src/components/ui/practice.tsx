@@ -1,3 +1,5 @@
+import * as React from "react"
+import { useState, useEffect} from "react"
 import { motion } from "framer-motion"
 import { 
   Mic, 
@@ -19,11 +21,12 @@ import {
   Volume2,
   Star,
   Trophy,
+  Zap
 } from "lucide-react"
-import { useState, useRef, useEffect } from 'react'
-import { Play, Pause, Mic, MicOff, VolumeX, ArrowLeft, RotateCcw, CheckCircle, XCircle } from 'lucide-react'
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { QuizCard } from '@/components/ui/quiz-card'
 import { useAuthStore } from '@/lib/store';
 import { useVocabularyStore } from '@/lib/store';
@@ -53,7 +56,7 @@ interface PracticeProps {
   practiceType?: string;
   onExit?: () => void;
 }
-const mockVocabularyData: any[] = [
+
 interface PracticeTypeCardProps {
   icon: React.ReactNode
   title: string
@@ -98,7 +101,7 @@ const PracticeTypeCard: React.FC<PracticeTypeCardProps> = ({
 
 interface PracticeRecommendationProps {
   title: string
-const mockQuizData: any[] = [
+  description: string
   duration: string
   difficulty: "Easy" | "Medium" | "Hard"
   onStart: () => void
