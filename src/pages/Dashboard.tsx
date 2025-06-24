@@ -10,7 +10,6 @@ import { AchievementShowcase } from '@/components/dashboard/AchievementShowcase'
 import { 
   LayoutDashboard, 
   BookOpen, 
-  Target, 
   TrendingUp, 
   Settings, 
   User,
