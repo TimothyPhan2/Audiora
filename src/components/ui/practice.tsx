@@ -111,7 +111,7 @@ export function Practice({
           <Button variant="outline" onClick={onNext} className="button-gradient-secondary">
             Skip
           </Button>
-          <Button onClick={handleNext} className="button-gradient-primary text-white">
+          <Button onClick={onNext} className="button-gradient-primary text-white">
             {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
