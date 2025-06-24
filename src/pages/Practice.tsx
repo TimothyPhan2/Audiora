@@ -105,12 +105,6 @@ export default function PracticePage() {
         throw new Error('User must be logged in to generate quizzes');
       }
 
-      // Get user session token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('User must be logged in to generate quizzes');
-      }
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
         method: 'POST',
