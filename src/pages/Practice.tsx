@@ -47,7 +47,7 @@ export default function PracticePage() {
   const [timeTaken, setTimeTaken] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
 
-  console.log('➡️ PracticePage state:', { currentIndex, selectedAnswer, showResult });
+  
   useEffect(() => {
     if (songData?.song && practiceType === 'quiz') {
       generatePracticeContent();
