@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState} from "react"
+import { useState, useEffect} from "react"
 import { motion } from "framer-motion"
 import { 
   Mic, 
@@ -12,12 +12,50 @@ import {
   ChevronRight,
   Clock,
   Flame,
-  Hourglass
+  Hourglass,
+  ArrowLeft,
+  Brain,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  Volume2,
+  Star,
+  Trophy,
+  Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { QuizCard } from '@/components/ui/quiz-card'
+import { useAuthStore } from '@/lib/store';
+import { useVocabularyStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+
+// Types for practice content
+interface VocabularyItem {
+  word: string;
+  translation: string;
+  example_sentence: string;
+  difficulty_level: string;
+  part_of_speech: string;
+}
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  difficulty_level: string;
+  question_type: string;
+}
+
+interface PracticeProps {
+  songId?: string;
+  songData?: any;
+  practiceType?: string;
+  onExit?: () => void;
+}
 
 interface PracticeTypeCardProps {
   icon: React.ReactNode
@@ -348,12 +386,89 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
   )
 }
 
-const Practice: React.FC = () => {
-  const [activeSession, setActiveSession] = useState<{
-    type: "vocabulary" | "pronunciation" | "listening" | "quiz"
-    data: any
-  } | null>(null)
+const Practice: React.FC<PracticeProps> = ({ 
+  songId, 
+  songData, 
+  practiceType: initialPracticeType,
+  onExit 
+}) => {
+  const [activeSession, setActiveSession] = useState<'menu' | 'vocabulary' | 'quiz'>('menu');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+  const [showResult, setShowResult] = useState(false);
+  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [sessionComplete, setSessionComplete] = useState(false);
+  const [vocabularyData, setVocabularyData] = useState<VocabularyItem[]>([]);
+  const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  
+  const { user } = useAuthStore();
+  const { savedWords } = useVocabularyStore();
+
   const [practiceFilter, setPracticeFilter] = useState<string>("All")
+
+  // Generate practice content using Gemini API
+  const generatePracticeContent = async (type: 'vocabulary' | 'quiz') => {
+    if (!songId || !songData) {
+      setApiError('Song data not available');
+      return null;
+    }
+
+    setIsLoading(true);
+    setApiError(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
+      // Prepare lyrics text
+      const lyrics = songData.lyrics?.map((l: any) => l.text).join('\n') || '';
+      
+      // Prepare user vocabulary for context
+      const userVocabulary = savedWords.map(word => ({
+        word: word.original,
+        translation: word.translation,
+        mastery_score: word.mastery_score || 0
+      }));
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          songId,
+          practiceType: type,
+          userProficiencyLevel: user?.proficiency_level || 'Intermediate',
+          targetLanguage: songData.language || 'spanish',
+          lyrics,
+          userVocabulary
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to generate practice content:', error);
+      setApiError(error instanceof Error ? error.message : 'Failed to generate practice content');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Mock data
   const mockSessionData = {
@@ -391,6 +506,39 @@ const Practice: React.FC = () => {
       ]
     }
   }
+
+  // Mock data fallback
+  const mockVocabularyData: VocabularyItem[] = [
+    {
+      word: "corazón",
+      translation: "heart",
+      example_sentence: "Mi corazón late por ti",
+      difficulty_level: "intermediate",
+      part_of_speech: "noun"
+    },
+    // ... rest of mock data
+  ];
+
+  const mockQuizData: QuizQuestion[] = [
+    {
+      question: "What does 'corazón' mean in English?",
+      options: ["Heart", "Soul", "Mind", "Love"],
+      correct_answer: "Heart",
+      explanation: "'Corazón' is the Spanish word for heart, both literally and metaphorically.",
+      difficulty_level: "beginner",
+      question_type: "vocabulary"
+    },
+    // ... rest of mock data
+  ];
+
+  // Initialize practice type from URL parameter
+  useEffect(() => {
+    if (initialPracticeType === 'vocabulary') {
+      handleStartVocabulary();
+    } else if (initialPracticeType === 'quiz') {
+      handleStartQuiz();
+    }
+  }, [initialPracticeType, songId]);
 
   const practiceTypes = [
     {
@@ -452,6 +600,48 @@ const Practice: React.FC = () => {
 
   const filters = ["All", "Vocabulary", "Pronunciation", "Listening", "Quizzes"]
 
+  const handleStartVocabulary = async () => {
+    if (songId && songData) {
+      const content = await generatePracticeContent('vocabulary');
+      if (content?.vocabulary) {
+        setVocabularyData(content.vocabulary);
+      } else {
+        // Fallback to mock data
+        setVocabularyData(mockVocabularyData);
+      }
+    } else {
+      // Use mock data if no song data
+      setVocabularyData(mockVocabularyData);
+    }
+    setActiveSession('vocabulary');
+    setCurrentIndex(0);
+    setScore(0);
+    setAnswers([]);
+    setSessionComplete(false);
+  };
+
+  const handleStartQuiz = async () => {
+    if (songId && songData) {
+      const content = await generatePracticeContent('quiz');
+      if (content?.questions) {
+        setQuizData(content.questions);
+      } else {
+        // Fallback to mock data
+        setQuizData(mockQuizData);
+      }
+    } else {
+      // Use mock data if no song data
+      setQuizData(mockQuizData);
+    }
+    setActiveSession('quiz');
+    setCurrentIndex(0);
+    setScore(0);
+    setAnswers([]);
+    setSessionComplete(false);
+    setSelectedAnswer('');
+    setShowResult(false);
+  };
+
   const startPractice = (type: "vocabulary" | "pronunciation" | "listening" | "quiz") => {
     setActiveSession({
       type,
@@ -459,18 +649,197 @@ const Practice: React.FC = () => {
     })
   }
 
+  const handleBackToMenu = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setActiveSession('menu');
+    setCurrentIndex(0);
+    setScore(0);
+    setAnswers([]);
+    setSessionComplete(false);
+    setSelectedAnswer('');
+    setShowResult(false);
+    setApiError(null);
+  };
+
   const exitSession = () => {
-    setActiveSession(null)
+    setActiveSession('menu')
   }
 
-  if (activeSession) {
+  const renderMainMenu = () => (
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl w-full"
+      >
+        {/* Header */}
+        <div className="text-center mb-12">
+          {(onExit || songData) && (
+            <Button
+              onClick={handleBackToMenu}
+              variant="ghost"
+              className="absolute top-6 left-6 text-text-cream300 hover:text-cream100"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </Button>
+          )}
+         
+         <motion.div
+           initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <div className="w-20 h-20 bg-gradient-to-r from-accent-teal-500 to-accent-persian-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Target className="w-10 h-10 text-white" />
+          </div>
+          {songData ? (
+            <>
+              <h1 className="text-4xl md:text-5xl font-bold text-text-cream100 mb-4">
+                Practice with "{songData.song.title}"
+              </h1>
+              <p className="text-xl text-text-cream300 max-w-2xl mx-auto">
+                by {songData.song.artist} • {songData.song.language.charAt(0).toUpperCase() + songData.song.language.slice(1)}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl md:text-5xl font-bold text-text-cream100 mb-4">
+                Practice Session
+              </h1>
+              <p className="text-xl text-text-cream300 max-w-2xl mx-auto">
+                Choose your practice mode and start improving your language skills
+              </p>
+            </>
+          )}
+        </motion.div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center mb-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-teal-400 mx-auto mb-4"></div>
+              <p className="text-text-cream200">Generating practice content...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {apiError && (
+          <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+            <p className="text-red-400 text-center">{apiError}</p>
+            <p className="text-red-300 text-sm text-center mt-2">
+              Don't worry! We'll use practice content to keep you learning.
+            </p>
+          </div>
+        )}
+
+        {/* Practice Mode Cards */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto" style={{ opacity: isLoading ? 0.5 : 1 }}>
+          {/* Vocabulary Practice */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="card-gradient hover:border-accent-teal-400/50 transition-all duration-300 group cursor-pointer h-full"
+                  onClick={isLoading ? undefined : handleStartVocabulary}>
+              <CardContent className="p-8 text-center h-full flex flex-col justify-between">
+                <div>
+                  <div className="w-16 h-16 bg-accent-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-accent-teal-500/30 transition-colors">
+                    <BookOpen className="w-8 h-8 text-accent-teal-400" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-text-cream100 mb-4">
+                    Vocabulary Drill
+                  </h3>
+                  <p className="text-text-cream300 mb-6">
+                    {songData ? 
+                      'Learn vocabulary from this song with AI-generated flashcards' :
+                      'Learn new words and phrases with interactive flashcards'
+                    }
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm text-text-cream400">
+                  <div className="flex items-center justify-center gap-2">
+                    <Star className="w-4 h-4" />
+                    <span>{songData ? 'Song-specific vocabulary' : '8-12 vocabulary cards'}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    <span>5-10 minutes</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Quiz Practice */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="card-gradient hover:border-accent-teal-400/50 transition-all duration-300 group cursor-pointer h-full"
+                  onClick={isLoading ? undefined : handleStartQuiz}>
+              <CardContent className="p-8 text-center h-full flex flex-col justify-between">
+                <div>
+                  <div className="w-16 h-16 bg-accent-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-accent-teal-500/30 transition-colors">
+                    <Brain className="w-8 h-8 text-accent-teal-400" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-text-cream100 mb-4">
+                    Quick Quiz
+                  </h3>
+                  <p className="text-text-cream300 mb-6">
+                    {songData ? 
+                      'Test your understanding with questions about this song' :
+                      'Test your knowledge with multiple choice questions'
+                    }
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm text-text-cream400">
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    <span>5 questions</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    <span>3-5 minutes</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  if (activeSession === 'vocabulary') {
     return (
       <SessionInterface
-        type={activeSession.type}
+        type="vocabulary"
         onExit={exitSession}
-        sessionData={activeSession.data}
+        sessionData={mockSessionData.vocabulary}
       />
     )
+  }
+
+  if (activeSession === 'quiz') {
+    return (
+      <SessionInterface
+        type="quiz"
+        onExit={exitSession}
+        sessionData={mockSessionData.quiz}
+      />
+    )
+  }
+
+  if (songData || onExit) {
+    return renderMainMenu();
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Play, Clock, Globe, BarChart3, Users, BookOpen, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongPlayer } from '@/components/songs/SongPlayer';
 import { supabase } from '@/lib/supabase';
@@ -265,6 +265,33 @@ export function SongDetail() {
               <div className="flex items-center gap-2 mt-2 text-accent-teal-400 text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Loading translations... This may take a moment.</span>
+          {/* Practice CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <div className="frosted-glass rounded-xl border border-accent-teal-500/20 p-6">
+              <h3 className="text-xl font-semibold text-text-cream100 mb-4">Practice with this Song</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link 
+                  to={`/practice/${songId}?type=vocabulary`}
+                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  Vocabulary Drill
+                </Link>
+                <Link 
+                  to={`/practice/${songId}?type=quiz`}
+                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+                >
+                  <Brain className="w-5 h-5" />
+                  Quick Quiz
+                </Link>
+              </div>
+            </div>
+          </motion.div>
               </div>
             )}
           </div>
