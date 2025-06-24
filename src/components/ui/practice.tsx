@@ -1,6 +1,3 @@
-Here's the fixed version with all missing closing brackets and proper structure:
-
-```typescript
 import * as React from "react"
 import { useState, useEffect} from "react"
 import { motion } from "framer-motion"
@@ -423,4 +420,3 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({
 }
 
 export default Practice
-```
