@@ -194,10 +194,6 @@ export default function PracticePage() {
       totalAnswered: newCorrectAnswers.filter(a => a !== undefined).length
     });
     
-    // Track the actual answer selected
-    const newUserAnswers = [...userAnswers];
-    newUserAnswers[currentIndex] = answer;
-    setUserAnswers(newUserAnswers);
   };
   
   const handleNext = () => {
