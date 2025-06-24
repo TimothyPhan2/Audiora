@@ -613,7 +613,7 @@ const Practice: React.FC<PracticeProps> = ({
       // Use mock data if no song data
       setVocabularyData(mockVocabularyData);
     }
-    setActiveSession('vocabulary');
+    setActiveSession({ type: 'vocabulary', data: content?.vocabulary || mockVocabularyData });
     setCurrentIndex(0);
     setScore(0);
     setAnswers([]);
@@ -633,7 +633,7 @@ const Practice: React.FC<PracticeProps> = ({
       // Use mock data if no song data
       setQuizData(mockQuizData);
     }
-    setActiveSession('quiz');
+    setActiveSession({ type: 'quiz', data: content?.questions || mockQuizData });
     setCurrentIndex(0);
     setScore(0);
     setAnswers([]);
