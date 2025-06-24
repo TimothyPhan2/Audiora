@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Brain, Volume2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
-import { PracticeInterface } from '@/components/ui/practice';
+import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
 
 interface PracticeQuestion {
@@ -44,6 +44,7 @@ export default function PracticePage() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
 
   useEffect(() => {
     if (songData?.song && practiceType === 'quiz') {
@@ -102,11 +103,11 @@ export default function PracticePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          songId: songData.song.id,
+          songId: songData?.song.id,
           practiceType: 'quiz',
           userProficiencyLevel: 'Intermediate',
-          targetLanguage: songData.song.language,
-          lyrics: songData.lyrics.map(l => l.text).join('\n')
+          targetLanguage: songData?.song.language,
+          lyrics: songData?.lyrics.map(l => l.text).join('\n')
         }),
       });
 
@@ -124,8 +125,8 @@ export default function PracticePage() {
       try {
         console.log('💾 Saving quiz to database...');
         const savedQuizId = await saveGeneratedQuizToDatabase({
-          title: `Practice Quiz: ${songData.song.title}`,
-          description: `Interactive quiz for ${songData.song.title} by ${songData.song.artist}`,
+          title: `Practice Quiz: ${songData?.song.title}`,
+          description: `Interactive quiz for ${songData?.song.title} by ${songData?.song.artist}`,
           quiz_type: 'mixed',
           passing_score: 70,
           max_attempts: 3,
@@ -138,7 +139,7 @@ export default function PracticePage() {
             points: 1,
             order_index: index
           }))
-        }, songData.song);
+        }, songData?.song);
         
         setQuizId(savedQuizId);
         console.log('✅ Quiz saved with ID:', savedQuizId);
@@ -167,6 +168,11 @@ export default function PracticePage() {
     const newCorrectAnswers = [...correctAnswers];
     newCorrectAnswers[currentIndex] = isCorrect;
     setCorrectAnswers(newCorrectAnswers);
+    
+    // Track the actual answer selected
+    const newUserAnswers = [...userAnswers];
+    newUserAnswers[currentIndex] = answer;
+    setUserAnswers(newUserAnswers);
   };
   
   const handleNext = () => {
@@ -421,7 +427,7 @@ export default function PracticePage() {
             </Button>
           </Card>
         ) : practiceData ? (
-          <PracticeInterface 
+          <Practice 
             practiceData={practiceData}
             songData={songData}
             currentIndex={currentIndex}
