@@ -8,3 +8,4 @@ src/components/dashboard/*
 src/components/layout/*
 src/pages/*
 supabase/migrations
+public/*
