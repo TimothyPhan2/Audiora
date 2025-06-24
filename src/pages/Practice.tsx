@@ -1,11 +1,10 @@
-import React from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Practice from '@/components/ui/practice';
 import { useSongData, useUserProfile } from '@/lib/hooks';
 
-const PracticePage: React.FC = () => {
+export function PracticePage () => {
   const { songId } = useParams<{ songId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -112,4 +111,3 @@ const PracticePage: React.FC = () => {
   );
 };
 
-export default PracticePage;
