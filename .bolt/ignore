@@ -7,4 +7,3 @@ src/components/auth/*
 src/components/dashboard/*
 src/components/layout/*
 src/pages/*
-public/
