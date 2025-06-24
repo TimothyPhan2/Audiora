@@ -61,7 +61,7 @@ function AppContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/lessons" element={<Lessons />} />
           <Route path="/lessons/:songId" element={<SongDetail />} />
-          <Route path="/practice" element={<PracticePage />} />
+          <Route path="/practice/:songId" element={<PracticePage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
