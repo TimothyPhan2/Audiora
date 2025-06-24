@@ -58,7 +58,6 @@ export function Practice({
   onShowResult
 }: PracticeProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Call onQuizStart when quiz session begins
   useEffect(() => {
@@ -153,14 +152,11 @@ export function Practice({
     };
 
     const handleQuizAnswer = async (optionId: string, isCorrect: boolean) => {
-      setIsSubmitting(true);
       const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
       const selectedOptionText = quizItem.options[answerIndex];
       onAnswerSelect(selectedOptionText);
       onShowResult(true);
       onQuizAnswer(selectedOptionText, isCorrect);
-      
-      setTimeout(() => setIsSubmitting(false), 500); // Brief delay for visual feedback
     };
 
     const handleNextQuestion = () => {
@@ -174,26 +170,13 @@ export function Practice({
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        {/* Progress indicator */}
-        <div className="mb-4 p-4 bg-base-dark1 rounded-lg w-full max-w-md">
-          <div className="flex justify-between items-center text-sm text-text-cream300">
-            <span>Question {currentIndex + 1} of {practiceData?.questions?.length || 0}</span>
-            <span>Score: {correctAnswers.filter(Boolean).length} / {correctAnswers.length}</span>
-          </div>
-          <div className="w-full bg-base-dark2 rounded-full h-2 mt-2">
-            <div 
-              className="bg-accent-teal-400 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentIndex + 1) / (practiceData?.questions?.length || 1)) * 100}%` }}
-            />
-          </div>
-        </div>
         <QuizCard
           key={currentIndex}
           question={quizCardQuestion}
+          selectedAnswer={selectedAnswer}
+          showResult={showResult}
           onAnswer={handleQuizAnswer}
           onNext={handleNextQuestion}
-          showResult={showResult}
-          selectedOption={selectedAnswer ? String.fromCharCode(97 + quizItem.options.indexOf(selectedAnswer)) : ''}
         />
       </div>
     );
