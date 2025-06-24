@@ -58,7 +58,7 @@ export function Practice({
   onShowResult
 }: PracticeProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-
+  console.log('🎯 Practice component props:', { currentIndex, selectedAnswer, showResult });
   // Call onQuizStart when quiz session begins
   useEffect(() => {
     if (practiceData.practiceType === 'quiz' && currentIndex === 0) {
