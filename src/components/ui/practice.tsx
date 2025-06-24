@@ -419,7 +419,5 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({
   )
 }
 
-export default Practice
 
-// Export the PracticeInterface for other components to use
-export const PracticeInterface = SessionInterface
+
