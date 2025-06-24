@@ -194,8 +194,12 @@ export default function PracticePage() {
   };
   
   const handleNext = () => {
+     console.log('🚀 handleNext called, currentIndex:', currentIndex);
     if (currentIndex < (practiceData?.questions.length || 0) - 1) {
-      setCurrentIndex(prev => prev + 1);
+       setCurrentIndex(prev => {
+      console.log('📈 setCurrentIndex: prev =', prev, 'new =', prev + 1);
+      return prev + 1;
+    });
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
