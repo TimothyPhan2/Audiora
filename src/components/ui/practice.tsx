@@ -15,10 +15,6 @@ import {
   Hourglass,
   ArrowLeft,
   Brain,
-  CheckCircle,
-  XCircle,
-  RotateCcw,
-  Volume2,
   Star,
   Trophy,
   Zap
@@ -173,13 +169,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({
   selectedAnswer,
   setSelectedAnswer,
   showResult,
-  setShowResult,
-  score,
-  setScore,
-  answers,
-  setAnswers,
-  sessionComplete,
-  setSessionComplete
+  setShowResult
 }) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -684,10 +674,12 @@ const Practice: React.FC<PracticeProps> = ({
   };
 
   const startPractice = (type: "vocabulary" | "pronunciation" | "listening" | "quiz") => {
-    setActiveSession({
-      type,
-      data: mockSessionData[type]
-    })
+     if (type === 'vocabulary') {
+      handleStartVocabulary();
+    } else if (type === 'quiz') {
+      handleStartQuiz();
+    }
+    // Note: pronunciation and listening not implemented yet
   }
 
   const handleBackToMenu = () => {
@@ -866,7 +858,7 @@ const Practice: React.FC<PracticeProps> = ({
         type="vocabulary"
         onExit={exitSession}
         vocabularyData={vocabularyData}
-        quizData={null}
+        quizData={[]}
         currentIndex={currentIndex}
         setCurrentIndex={setCurrentIndex}
         selectedAnswer={selectedAnswer}
@@ -888,7 +880,7 @@ const Practice: React.FC<PracticeProps> = ({
       <SessionInterface
         type="quiz"
         onExit={exitSession}
-        vocabularyData={null}
+        vocabularyData={[]}
         quizData={quizData}
         currentIndex={currentIndex}
         setCurrentIndex={setCurrentIndex}
