@@ -21,12 +21,11 @@ import {
   Volume2,
   Star,
   Trophy,
-  Zap
+import { useState, useRef, useEffect } from 'react'
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Play, Pause, Mic, MicOff, VolumeX, ArrowLeft, RotateCcw, CheckCircle, XCircle } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { QuizCard } from '@/components/ui/quiz-card'
 import { useAuthStore } from '@/lib/store';
 import { useVocabularyStore } from '@/lib/store';
@@ -56,7 +55,7 @@ interface PracticeProps {
   practiceType?: string;
   onExit?: () => void;
 }
-
+const mockVocabularyData: any[] = [
 interface PracticeTypeCardProps {
   icon: React.ReactNode
   title: string
@@ -101,7 +100,7 @@ const PracticeTypeCard: React.FC<PracticeTypeCardProps> = ({
 
 interface PracticeRecommendationProps {
   title: string
-  description: string
+const mockQuizData: any[] = [
   duration: string
   difficulty: "Easy" | "Medium" | "Hard"
   onStart: () => void
