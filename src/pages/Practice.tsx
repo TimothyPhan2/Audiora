@@ -195,7 +195,7 @@ export default function PracticePage() {
   };
   
   const handleNext = () => {
-     console.log('🚀 handleNext called, currentIndex:', currentIndex);
+      console.log('🚀 handleNext called, currentIndex (before update):', currentIndex);
     if (currentIndex < (practiceData?.questions.length || 0) - 1) {
        setCurrentIndex(prev => {
       console.log('📈 setCurrentIndex: prev =', prev, 'new =', prev + 1);
