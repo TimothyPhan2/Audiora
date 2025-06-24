@@ -159,24 +159,16 @@ export function Practice({
       onQuizAnswer(selectedOptionText, isCorrect);
     };
 
-    const handleNextQuestion = () => {
-      // Reset state before calling parent's handleNext to prevent state carryover
-      onShowResult(false);       // Hide result immediately
-      onAnswerSelect(null);      // Clear selected answer
-      setTimeout(() => {         // Use timeout to ensure UI updates before transition
-        handleNext();            // Then call parent's handleNext
-      }, 10);
-    };
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <QuizCard
           key={currentIndex}
           question={quizCardQuestion}
-          selectedAnswer={selectedAnswer}
+          selectedOption={selectedAnswer ?? ""}
           showResult={showResult}
           onAnswer={handleQuizAnswer}
-          onNext={handleNextQuestion}
+          onNext={handleNext}
         />
       </div>
     );
