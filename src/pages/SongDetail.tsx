@@ -111,8 +111,8 @@ export function SongDetail() {
       
       // Update local state with translations
       setLyrics((prevLyrics: Lyric[]) => {
-        const updatedMap = new Map(updatedLyrics.map(lyric: Lyric => [lyric.id, lyric]));
-        return prevLyrics.map(lyric: Lyric => updatedMap.get(lyric.id) || lyric);
+        const updatedMap = new Map(updatedLyrics.map((lyric: Lyric) => [lyric.id, lyric]));
+        return prevLyrics.map((lyric: Lyric) => updatedMap.get(lyric.id) || lyric);
       });
       
       toast.success('Translations loaded successfully!');
