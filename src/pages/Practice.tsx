@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import Practice from '@/components/ui/practice';
 import { useSongData, useUserProfile } from '@/lib/hooks';
 
-export function PracticePage () => {
+export function PracticePage () {
   const { songId } = useParams<{ songId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
