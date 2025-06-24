@@ -51,32 +51,14 @@ export function QuizCard({
   selectedOption = '',
   className,
 }: QuizCardProps) {
-  
-  console.log('🃏 QuizCard render:', {
-    questionId: question.id,
-    showResult,
-    selectedOption,
-    questionPreview: question.question.substring(0, 50) + '...'
-  });
-
-  const [isAnswered, setIsAnswered] = useState(showResult);
-  const [selectedAnswer, setSelectedAnswer] = useState(selectedOption);
 
   const handleOptionSelect = (optionId: string) => {
-    if (isAnswered) return;
-    
-    setSelectedAnswer(optionId);
-    setIsAnswered(true);
+    if (showResult) return;
     
     const option = question.options.find(opt => opt.id === optionId);
     if (option) {
       onAnswer(optionId, option.isCorrect);
     }
-  };
-
-  const handleReset = () => {
-    setIsAnswered(false);
-    setSelectedAnswer('');
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -93,7 +75,7 @@ export function QuizCard({
   };
 
   const correctOption = question.options.find(opt => opt.isCorrect);
-  const selectedOptionData = question.options.find(opt => opt.id === selectedAnswer);
+  const selectedOptionData = question.options.find(opt => opt.id === selectedOption);
   const isCorrect = selectedOptionData?.isCorrect || false;
 
   return (
@@ -137,10 +119,10 @@ export function QuizCard({
       <div className="p-6 space-y-3">
         <AnimatePresence mode="wait">
           {question.options.map((option, index) => {
-            const isSelected = selectedAnswer === option.id;
+            const isSelected = selectedOption === option.id;
             const isCorrectOption = option.isCorrect;
-            const showCorrect = isAnswered && isCorrectOption;
-            const showIncorrect = isAnswered && isSelected && !isCorrectOption;
+            const showCorrect = showResult && isCorrectOption;
+            const showIncorrect = showResult && isSelected && !isCorrectOption;
 
             return (
               <motion.button
@@ -149,25 +131,25 @@ export function QuizCard({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => handleOptionSelect(option.id)}
-                disabled={isAnswered}
+                disabled={showResult}
                 className={cn(
                   'w-full p-4 text-left rounded-xl border-2 transition-all duration-300 group',
                   'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-accent-teal-400/20',
-                  !isAnswered && 'hover:border-accent-teal-400/50 hover:bg-accent-teal-500/5',
-                  isSelected && !isAnswered && 'border-accent-teal-400 bg-accent-teal-500/10',
+                  !showResult && 'hover:border-accent-teal-400/50 hover:bg-accent-teal-500/5',
+                  isSelected && !showResult && 'border-accent-teal-400 bg-accent-teal-500/10',
                   showCorrect && 'border-green-500 bg-green-500/10',
                   showIncorrect && 'border-red-500 bg-red-500/10',
-                  !isSelected && !showCorrect && isAnswered && 'opacity-60',
-                  !isAnswered && 'cursor-pointer border-accent-teal-500/20',
-                  isAnswered && 'cursor-default'
+                  !isSelected && !showCorrect && showResult && 'opacity-60',
+                  !showResult && 'cursor-pointer border-accent-teal-500/20',
+                  showResult && 'cursor-default'
                 )}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       'w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors',
-                      !isAnswered && 'border-text-cream400/30 text-text-cream400 group-hover:border-accent-teal-400 group-hover:text-accent-teal-400',
-                      isSelected && !isAnswered && 'border-accent-teal-400 text-accent-teal-400 bg-accent-teal-500/10',
+                      !showResult && 'border-text-cream400/30 text-text-cream400 group-hover:border-accent-teal-400 group-hover:text-accent-teal-400',
+                      isSelected && !showResult && 'border-accent-teal-400 text-accent-teal-400 bg-accent-teal-500/10',
                       showCorrect && 'border-green-500 text-green-400 bg-green-500/20',
                       showIncorrect && 'border-red-500 text-red-400 bg-red-500/20'
                     )}>
@@ -213,7 +195,7 @@ export function QuizCard({
 
       {/* Result Section */}
       <AnimatePresence>
-        {isAnswered && (
+        {showResult && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -254,17 +236,8 @@ export function QuizCard({
               )}
 
               <div className="flex gap-3">
-                <Button onClick={() => {
-                        console.log('🔴 Next button clicked in QuizCard');
-                        console.log('🔴 onNext function:', typeof onNext, onNext);
-                        onNext();
-                  }}  
-                  className="flex-1 button-gradient-primary">
+                <Button onClick={onNext} className="flex-1 button-gradient-primary">
                   Next Question
-                </Button>
-                <Button variant="outline" onClick={handleReset} className="button-gradient-secondary">
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Try Again
                 </Button>
               </div>
             </div>
@@ -273,7 +246,7 @@ export function QuizCard({
       </AnimatePresence>
 
       {/* Progress indicator */}
-      {!isAnswered && (
+      {!showResult && (
         <div className="px-6 pb-6">
           <div className="flex items-center gap-2 text-sm text-text-cream300">
             <Clock className="w-4 h-4" />
