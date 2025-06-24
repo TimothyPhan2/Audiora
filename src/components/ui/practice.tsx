@@ -1,8 +1,32 @@
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import * as React from "react"
+import { useState, useEffect} from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { 
+  Mic, 
+  BookOpen, 
+  Headphones, 
+  Target, 
+  Play, 
+  Pause, 
+  X, 
+  ChevronRight,
+  Clock,
+  Flame,
+  Hourglass,
+  ArrowLeft,
+  Brain,
+  Star,
+  Trophy,
+  Zap,
+  Loader2
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { QuizCard } from '@/components/ui/quiz-card'
+import { useAuthStore } from '@/lib/store';
+import { useVocabularyStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 
 // Types for practice content
 interface VocabularyItem {
@@ -22,76 +46,170 @@ interface QuizQuestion {
   question_type: string;
 }
 
-interface PracticeData {
-  questions?: QuizQuestion[];
-  vocabulary?: VocabularyItem[];
-  songId: string;
-  practiceType: string;
-  timestamp: string;
-}
-
 interface PracticeProps {
-  practiceData: PracticeData;
-  songData: any;
-  currentIndex: number;
-  selectedAnswer: string | null;
-  showResult: boolean;
-  correctAnswers: boolean[];
-  onQuizStart: () => void;
-  onQuizAnswer: (answer: string, isCorrect: boolean) => void;
-  onNext: () => void;
-  onAnswerSelect: (answer: string | null) => void;
-  onShowResult: (show: boolean) => void;
+  songId?: string;
+  songData?: any;
+  practiceType?: string;
+  onExit?: () => void;
 }
 
-export function Practice({
-  practiceData,
-  songData,
+interface PracticeTypeCardProps {
+  icon: React.ReactNode
+  title: string
+  description: string
+  emoji: string
+  onClick: () => void
+  className?: string
+}
+
+const PracticeTypeCard: React.FC<PracticeTypeCardProps> = ({
+  icon,
+  title,
+  description,
+  emoji,
+  onClick,
+  className = ""
+}) => {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      className={`cursor-pointer ${className}`}
+      onClick={onClick}
+    >
+      <Card className="p-6 h-full card-gradient border-accent-teal-500/20 hover:border-accent-teal-400/30 transition-all duration-300 group">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="text-4xl">{emoji}</div>
+          <div className="text-accent-teal-400 group-hover:scale-105 transition-transform">
+            {icon}
+          </div>
+        </div>
+        <h3 className="text-xl font-bold text-text-cream100 mb-2">{title}</h3>
+        <p className="text-text-cream300 text-sm">{description}</p>
+        <div className="mt-4 flex items-center text-text-cream400 text-sm">
+          <span>Start practicing</span>
+          <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </Card>
+    </motion.div>
+  )
+}
+
+interface PracticeRecommendationProps {
+  title: string
+  description: string
+  duration: string
+  difficulty: "Easy" | "Medium" | "Hard"
+  onStart: () => void
+}
+
+const PracticeRecommendation: React.FC<PracticeRecommendationProps> = ({
+  title,
+  description,
+  duration,
+  difficulty,
+  onStart
+}) => {
+  const difficultyColors = {
+    Easy: "bg-green-500/20 text-green-400 border-green-500/30",
+    Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    Hard: "bg-red-500/20 text-red-400 border-red-500/30"
+  }
+
+  return (
+    <Card className="p-4 frosted-glass border-accent-teal-500/20 hover:border-accent-teal-400/30 transition-all duration-300">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <h4 className="font-semibold text-text-cream100 mb-1">{title}</h4>
+          <p className="text-sm text-text-cream300">{description}</p>
+        </div>
+        <Badge className={`ml-3 ${difficultyColors[difficulty]}`}>
+          {difficulty}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-text-cream400">
+          <Clock className="w-4 h-4" />
+          <span>{duration}</span>
+        </div>
+        <Button size="sm" onClick={onStart} className="button-gradient-primary text-white">
+          Start Drill
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+interface SessionInterfaceProps {
+  type: "vocabulary" | "pronunciation" | "listening" | "quiz"
+  onExit: () => void
+  vocabularyData?: any[]
+  quizData?: any[]
+  currentIndex: number
+  setCurrentIndex: (index: number) => void
+  selectedAnswer: string | null
+  setSelectedAnswer: (answer: string | null) => void
+  showResult: boolean
+  setShowResult: (show: boolean) => void
+  score: number
+  setScore: (score: number) => void
+  answers: boolean[]
+  setAnswers: (answers: boolean[]) => void
+  sessionComplete: boolean
+  setSessionComplete: (complete: boolean) => void
+  onNext: () => void
+  onAnswerSelect: (answer: string | null) => void
+  onShowResult: (show: boolean) => void
+  onQuizAnswer: (answer: string, isCorrect: boolean) => void
+}
+
+const SessionInterface: React.FC<SessionInterfaceProps> = ({
+  type,
+  onExit,
+  vocabularyData,
+  quizData,
   currentIndex,
   selectedAnswer,
   showResult,
-  correctAnswers,
-  onQuizStart,
-  onQuizAnswer,
   onNext,
   onAnswerSelect,
-  onShowResult
-}: PracticeProps) {
+  onShowResult,
+  onQuizAnswer
+}) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
-  // Call onQuizStart when quiz session begins
-  useEffect(() => {
-    if (practiceData.practiceType === 'quiz' && currentIndex === 0) {
-      onQuizStart();
-    }
-  }, [practiceData.practiceType, currentIndex, onQuizStart]);
+  // Use the data from props instead of mockSessionData
+  const currentSessionData = type === 'vocabulary' ? vocabularyData : quizData;
 
-  // Determine the current session data and type
-  const isQuiz = practiceData.practiceType === 'quiz' && practiceData.questions;
-  const isVocabulary = practiceData.practiceType === 'vocabulary' && practiceData.vocabulary;
-  
-  const currentSessionData = isQuiz ? practiceData.questions : practiceData.vocabulary;
   const currentItem = currentSessionData?.[currentIndex];
-  
-  const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0;
 
-  const handleNext = () => {
+  const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0
+
+  const handleNextInternal = () => {
+    setIsTransitioning(true);
     // Reset state for next question
     setIsFlipped(false);
     onAnswerSelect(null);
     onShowResult(false);
     
-    // Call the parent's onNext handler
-    onNext();
-  };
+    // Short delay to allow animation
+    setTimeout(() => {
+      // Call the parent's onNext handler
+      onNext();
+      setIsTransitioning(false);
+    }, 300);
+  }
 
   const handleSkip = () => {
-    handleNext();
-  };
+    handleNextInternal()
+  }
 
   const renderVocabularySession = () => {
     if (!currentItem) return null;
-    const vocabItem = currentItem as VocabularyItem
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <motion.div
@@ -107,15 +225,15 @@ export function Practice({
           >
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-accent-teal-500 to-accent-teal-400 border-accent-teal-400/30 flex items-center justify-center">
               <div className="text-center text-white">
-                <h3 className="text-2xl font-bold mb-2">{vocabItem.word}</h3>
+                <h3 className="text-2xl font-bold mb-2">{currentItem.word}</h3>
                 <p className="text-accent-teal-100">Tap to reveal meaning</p>
               </div>
             </Card>
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-green-500 to-green-600 border-green-400/30 flex items-center justify-center"
                   style={{ transform: "rotateY(180deg)" }}>
               <div className="text-center text-white">
-                <h3 className="text-xl font-semibold mb-2">{vocabItem.translation}</h3>
-                <p className="text-green-100 text-sm">{vocabItem.example_sentence}</p>
+                <h3 className="text-xl font-semibold mb-2">{currentItem.translation}</h3>
+                <p className="text-green-100 text-sm">{currentItem.example_sentence}</p>
               </div>
             </Card>
           </motion.div>
@@ -124,18 +242,102 @@ export function Practice({
           <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
             Skip
           </Button>
-          <Button onClick={handleNext} className="button-gradient-primary text-white">
+          <Button onClick={handleNextInternal} className="button-gradient-primary text-white">
             {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
       </div>
     )
-  };
+  }
+
+  const renderPronunciationSession = () => {
+    if (!currentItem) return null;
+    
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Card className="p-8 mb-8 frosted-glass border-accent-teal-500/20 text-center max-w-md">
+          <h3 className="text-2xl font-bold mb-4 text-text-cream100">{currentItem.phrase}</h3>
+          <p className="text-text-cream300 mb-6">{currentItem.phonetic}</p>
+          <motion.button
+            className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              isRecording ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-accent-teal-500 to-accent-teal-400 hover:from-accent-teal-400 hover:to-accent-teal-500"
+            } transition-all duration-300`}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsRecording(!isRecording)}
+          >
+            <Mic className="w-8 h-8 text-white" />
+          </motion.button>
+          <p className="text-sm text-text-cream400">
+            {isRecording ? "Recording... Tap to stop" : "Tap to record"}
+          </p>
+        </Card>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+            Skip
+          </Button>
+          <Button onClick={handleNextInternal} className="button-gradient-primary text-white">
+            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const renderListeningSession = () => {
+    if (!currentItem) return null;
+    
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Card className="p-6 mb-6 frosted-glass border-accent-teal-500/20 text-center max-w-lg">
+          <div className="flex items-center justify-center mb-4">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="w-16 h-16 rounded-full button-gradient-secondary"
+            >
+              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+            </Button>
+          </div>
+          <h3 className="text-lg font-semibold mb-4 text-text-cream100">{currentItem.question}</h3>
+          <div className="space-y-2">
+            {currentItem.options.map((option: string, index: number) => (
+              <Button
+                key={index}
+                variant={selectedAnswer === option ? "default" : "outline"}
+                className={`w-full justify-start ${
+                  selectedAnswer === option 
+                    ? "button-gradient-primary text-white" 
+                    : "button-gradient-secondary"
+                }`}
+                onClick={() => onAnswerSelect(option)}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </Card>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+            Skip
+          </Button>
+          <Button 
+            onClick={handleNextInternal} 
+            className="button-gradient-primary text-white"
+            disabled={!selectedAnswer}
+          >
+            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const renderQuizSession = () => {
     if (!currentItem) return null;
     
     const quizItem = currentItem as QuizQuestion;
+    
     // Transform current question to QuizCard format
     const quizCardQuestion = {
       id: currentIndex.toString(),
@@ -151,7 +353,7 @@ export function Practice({
     };
 
     const handleQuizAnswer = (optionId: string, isCorrect: boolean) => {
-      const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
+      const answerIndex = optionId.charCodeAt(0) - 97;
       const selectedOptionText = quizItem.options[answerIndex];
       onAnswerSelect(selectedOptionText);
       onShowResult(true);
@@ -159,12 +361,13 @@ export function Practice({
     };
 
     const handleNextQuestion = () => {
-      handleNext();
+      handleNextInternal();
     };
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <QuizCard
+          key={currentIndex}  // Add key to force re-render on question change
           question={quizCardQuestion}
           onAnswer={handleQuizAnswer}
           onNext={handleNextQuestion}
@@ -173,56 +376,127 @@ export function Practice({
         />
       </div>
     );
-  };
+  }
 
-  const renderSession = () => {
-    if (isQuiz) {
-      return renderQuizSession();
-    } else if (isVocabulary) {
-      return renderVocabularySession();
+  const renderSessionContent = () => {
+    if (isTransitioning) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-accent-teal-400 mb-4" />
+          <p className="text-text-cream300">Loading next question...</p>
+        </div>
+      );
     }
-    return null;
-  };
+
+    switch (type) {
+      case "vocabulary":
+        return renderVocabularySession()
+      case "pronunciation":
+        return renderPronunciationSession()
+      case "listening":
+        return renderListeningSession()
+      case "quiz":
+        return renderQuizSession()
+      default:
+        return null
+    }
+  }
 
   return (
-    <div className="w-full">
-      {/* Add song info header */}
-      <div className="mb-4 text-center">
-        <h1 className="text-xl font-bold text-text-cream100">{songData?.song?.title}</h1>
-        <p className="text-text-cream300">{songData?.song?.artist}</p>
-      </div>
-
-      {/* Progress Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold capitalize text-text-cream100">
-            {practiceData.practiceType} Practice
-          </h2>
-          <div className="flex items-center gap-2">
-            {/* Show correct answers progress for quiz */}
-            {practiceData.practiceType === 'quiz' && (
-              <span className="text-sm text-text-cream400">
-                ✓ {correctAnswers.filter(Boolean).length}/{correctAnswers.length}
-              </span>
-            )}
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
+      {/* Session Header */}
+      <div className="border-b border-accent-teal-500/20 p-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={onExit} className="text-text-cream400 hover:text-text-cream200">
+              <X className="w-4 h-4" />
+            </Button>
+            <div className="flex-1">
+              <h2 className="font-semibold capitalize text-text-cream100">{type} Practice</h2>
+              <p className="text-sm text-text-cream300">
+                Question {currentIndex + 1} of {currentSessionData?.length || 0}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
             <span className="text-sm text-text-cream300">{Math.round(progress)}%</span>
           </div>
         </div>
-        <div className="w-full bg-base-dark3 rounded-full h-2">
-          <div 
-            className="bg-accent-teal-400 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <p className="text-sm text-text-cream300 mt-2">
-          Question {currentIndex + 1} of {currentSessionData?.length || 0}
-        </p>
       </div>
 
       {/* Session Content */}
-      <Card className="p-6">
-        {renderSession()}
-      </Card>
+      <div className="max-w-4xl mx-auto p-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            {renderSessionContent()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
-  );
+  )
 }
+
+interface PracticeInterfaceProps {
+  practiceData: any;
+  songData: any;
+  currentIndex: number;
+  selectedAnswer: string | null;
+  showResult: boolean;
+  correctAnswers: boolean[];
+  onQuizStart: () => void;
+  onQuizAnswer: (answer: string, isCorrect: boolean) => void;
+  onNext: () => void;
+  onAnswerSelect: (answer: string | null) => void;
+  onShowResult: (show: boolean) => void;
+}
+
+export const PracticeInterface: React.FC<PracticeInterfaceProps> = ({
+  practiceData,
+  songData,
+  currentIndex,
+  selectedAnswer,
+  showResult,
+  correctAnswers,
+  onQuizStart,
+  onQuizAnswer,
+  onNext,
+  onAnswerSelect,
+  onShowResult
+}) => {
+  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [sessionComplete, setSessionComplete] = useState(false);
+
+  return (
+    <SessionInterface
+      type="quiz"
+      onExit={() => {}}
+      quizData={practiceData.questions}
+      currentIndex={currentIndex}
+      setCurrentIndex={() => {}}
+      selectedAnswer={selectedAnswer}
+      setSelectedAnswer={onAnswerSelect}
+      showResult={showResult}
+      setShowResult={onShowResult}
+      score={score}
+      setScore={setScore}
+      answers={answers}
+      setAnswers={setAnswers}
+      sessionComplete={sessionComplete}
+      setSessionComplete={setSessionComplete}
+      onNext={onNext}
+      onAnswerSelect={onAnswerSelect}
+      onShowResult={onShowResult}
+      onQuizAnswer={onQuizAnswer}
+    />
+  );
+};
+
+export default SessionInterface
