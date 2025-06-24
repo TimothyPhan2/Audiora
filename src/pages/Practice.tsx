@@ -215,19 +215,19 @@ export default function PracticePage() {
     setFinalScore(score);
     setTimeTaken(timeTakenSeconds);
     setQuizCompleted(true);
+    const submittedAnswers = practiceData.questions.reduce((acc, question, index) => {
+      acc[`question_${index}`] = {
+      question: question.question,
+      selected_answer: userAnswers[index] || '', // Use tracked answers
+      correct_answer: question.correct_answer,
+      is_correct: correctAnswers[index] || false
+      };
+      return acc;
+    }, {} as Record<string, any>);
     
     // Save quiz result to database
     if (quizId) {
       try {
-        const submittedAnswers = practiceData.questions.reduce((acc, question, index) => {
-          acc[`question_${index}`] = {
-            question: question.question,
-            selected_answer: userAnswers[index] || '', // Use tracked answers
-            correct_answer: question.correct_answer,
-            is_correct: correctAnswers[index] || false
-          };
-          return acc;
-        }, {} as Record<string, any>);
         
         await saveQuizResultToDatabase(
           quizId,
