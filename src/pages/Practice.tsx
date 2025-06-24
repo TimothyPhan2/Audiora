@@ -96,15 +96,6 @@ export default function PracticePage() {
     }
   };
   
-  useEffect(() => {
-    // Reset quiz state when switching practice types
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setCorrectAnswers([]);
-    setQuizCompleted(false);
-    setUserAnswers([]);
-  }, [practiceType]);
 
   const generateNewQuiz = async () => {
     try {
@@ -424,7 +415,16 @@ export default function PracticePage() {
         <div className="mb-8">
           <div className="flex gap-4 mb-6">
             <Button
-              onClick={() => setPracticeType('vocabulary')}
+              onClick={() => {
+                setPracticeType('vocabulary');
+                // Reset state when switching to vocabulary
+                setCurrentIndex(0);
+                setSelectedAnswer(null);
+                setShowResult(false);
+                setCorrectAnswers([]);
+                setQuizCompleted(false);
+                setUserAnswers([]);
+              }}
               variant={practiceType === 'vocabulary' ? 'default' : 'outline'}
               className={practiceType === 'vocabulary' ? 'button-gradient-primary' : ''}
             >
@@ -432,7 +432,16 @@ export default function PracticePage() {
               Vocabulary
             </Button>
             <Button
-              onClick={() => setPracticeType('quiz')}
+               onClick={() => {
+                setPracticeType('quiz');
+                // Reset state when switching to quiz
+                setCurrentIndex(0);
+                setSelectedAnswer(null);
+                setShowResult(false);
+                setCorrectAnswers([]);
+                setQuizCompleted(false);
+                setUserAnswers([]);
+              }}
               variant={practiceType === 'quiz' ? 'default' : 'outline'}
               className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
             >
