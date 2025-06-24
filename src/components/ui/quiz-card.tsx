@@ -246,7 +246,11 @@ export function QuizCard({
               )}
 
               <div className="flex gap-3">
-                <Button onClick={onNext} className="flex-1 button-gradient-primary">
+                <Button onClick={() => {
+                        console.log('🔴 Next button clicked in QuizCard');
+                        onNext();
+                  }}  
+                  className="flex-1 button-gradient-primary">
                   Next Question
                 </Button>
                 <Button variant="outline" onClick={handleReset} className="button-gradient-secondary">
