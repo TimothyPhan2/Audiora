@@ -67,9 +67,7 @@ node_modules/
 .bolt/Summary.txt
 .bolt/Summary copy.txt
 supabase/migrations/*
-supabase/functions/*
 public/*
-src/lib/*
 src/stripe-config.ts
 src/vite-env.d.ts
 src/main.tsx
