@@ -51,6 +51,14 @@ export function QuizCard({
   selectedOption = '',
   className,
 }: QuizCardProps) {
+  
+  console.log('🃏 QuizCard render:', {
+    questionId: question.id,
+    showResult,
+    selectedOption,
+    questionPreview: question.question.substring(0, 50) + '...'
+  });
+
   const [isAnswered, setIsAnswered] = useState(showResult);
   const [selectedAnswer, setSelectedAnswer] = useState(selectedOption);
 
