@@ -1,4 +1,4 @@
-src/components/ui/*
+
 hooks/use-toast.ts
 node_modules/
 .bolt/Summary.txt
@@ -7,4 +7,3 @@ src/components/auth/*
 src/components/dashboard/*
 src/components/layout/*
 src/pages/*
-!src/components/ui/practice.tsx
