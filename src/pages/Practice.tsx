@@ -49,7 +49,7 @@ export default function PracticePage() {
 
   
   useEffect(() => {
-    if (songData?.song && practiceType === 'quiz') {
+    if (songData?.song) {
       generatePracticeContent();
     }
   }, [songData, practiceType]);
@@ -61,33 +61,35 @@ export default function PracticePage() {
     setError(null);
     
     try {
-      // First, check if quiz already exists in database
-      console.log('🔍 Checking for existing quiz...');
-      const existingQuiz = await fetchQuizForSong(songData.song.id);
-      
-      if (existingQuiz) {
-        console.log('✅ Found existing quiz, using cached version');
-        setQuizId(existingQuiz.id);
-        setPracticeData({
-          questions: existingQuiz.questions.map((q: any) => ({
-            question: q.question_text,
-            options: q.options ? JSON.parse(q.options) : [],
-            correct_answer: typeof q.correct_answer === 'string' ? JSON.parse(q.correct_answer) : q.correct_answer,
-            explanation: q.explanation || '',
-            difficulty_level: 'intermediate',
-            question_type: q.question_type
-          })),
-          songId: songData.song.id,
-          practiceType: 'quiz',
-          timestamp: new Date().toISOString()
-        });
-        setIsGenerating(false);
-        return;
+      if (practiceType === 'quiz') {
+        // First, check if quiz already exists in database
+        console.log('🔍 Checking for existing quiz...');
+        const existingQuiz = await fetchQuizForSong(songData.song.id);
+        
+        if (existingQuiz) {
+          console.log('✅ Found existing quiz, using cached version');
+          setQuizId(existingQuiz.id);
+          setPracticeData({
+            questions: existingQuiz.questions.map((q: any) => ({
+              question: q.question_text,
+              options: q.options ? JSON.parse(q.options) : [],
+              correct_answer: typeof q.correct_answer === 'string' ? JSON.parse(q.correct_answer) : q.correct_answer,
+              explanation: q.explanation || '',
+              difficulty_level: 'intermediate',
+              question_type: q.question_type
+            })),
+            songId: songData.song.id,
+            practiceType: 'quiz',
+            timestamp: new Date().toISOString()
+          });
+          setIsGenerating(false);
+          return;
+        }
       }
       
-      // Generate new quiz using Gemini API
-      console.log('🤖 Generating new quiz with Gemini...');
-      await generateNewQuiz();
+      // Generate new content using Gemini API
+      console.log(`🤖 Generating new ${practiceType} with Gemini...`);
+      await generateNewContent();
       
     } catch (error) {
       console.error('Error in generatePracticeContent:', error);
@@ -97,13 +99,13 @@ export default function PracticePage() {
   };
   
 
-  const generateNewQuiz = async () => {
+  const generateNewContent = async () => {
     try {
       // Get user session token
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        throw new Error('User must be logged in to generate quizzes');
+        throw new Error('User must be logged in to generate practice content');
       }
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
@@ -114,7 +116,7 @@ export default function PracticePage() {
         },
         body: JSON.stringify({
           songId: songData?.song.id,
-          practiceType: 'quiz',
+          practiceType: practiceType,
           userProficiencyLevel: 'Intermediate',
           targetLanguage: songData?.song.language,
           lyrics: songData?.lyrics.map(l => l.text).join('\n')
@@ -131,31 +133,33 @@ export default function PracticePage() {
         throw new Error(data.error);
       }
 
-      // Save generated quiz to database
-      try {
-        console.log('💾 Saving quiz to database...');
-        const savedQuizId = await saveGeneratedQuizToDatabase({
-          title: `Practice Quiz: ${songData?.song.title}`,
-          description: `Interactive quiz for ${songData?.song.title} by ${songData?.song.artist}`,
-          quiz_type: 'mixed',
-          passing_score: 70,
-          max_attempts: 3,
-          questions: data.questions.map((q: any, index: number) => ({
-            question_type: 'multiple_choice',
-            question_text: q.question,
-            options: q.options,
-            correct_answer: q.correct_answer,
-            explanation: q.explanation,
-            points: 1,
-            order_index: index
-          }))
-        }, songData?.song);
-        
-        setQuizId(savedQuizId);
-        console.log('✅ Quiz saved with ID:', savedQuizId);
-      } catch (saveError) {
-        console.error('Failed to save quiz to database:', saveError);
-        // Continue with generated quiz even if save fails
+      // Save generated quiz to database (only for quiz type)
+      if (practiceType === 'quiz' && data.questions) {
+        try {
+          console.log('💾 Saving quiz to database...');
+          const savedQuizId = await saveGeneratedQuizToDatabase({
+            title: `Practice Quiz: ${songData?.song.title}`,
+            description: `Interactive quiz for ${songData?.song.title} by ${songData?.song.artist}`,
+            quiz_type: 'mixed',
+            passing_score: 70,
+            max_attempts: 3,
+            questions: data.questions.map((q: any, index: number) => ({
+              question_type: 'multiple_choice',
+              question_text: q.question,
+              options: q.options,
+              correct_answer: q.correct_answer,
+              explanation: q.explanation,
+              points: 1,
+              order_index: index
+            }))
+          }, songData?.song);
+          
+          setQuizId(savedQuizId);
+          console.log('✅ Quiz saved with ID:', savedQuizId);
+        } catch (saveError) {
+          console.error('Failed to save quiz to database:', saveError);
+          // Continue with generated quiz even if save fails
+        }
       }
       
       setPracticeData(data);
@@ -188,7 +192,11 @@ export default function PracticePage() {
   
   const handleNext = () => {
       console.log('🚀 handleNext called, currentIndex (before update):', currentIndex);
-    if (currentIndex < (practiceData?.questions.length || 0) - 1) {
+    const totalItems = practiceType === 'quiz' 
+      ? (practiceData?.questions?.length || 0)
+      : (practiceData?.vocabulary?.length || 0);
+      
+    if (currentIndex < totalItems - 1) {
       console.log('✅ IF block executing - about to call setCurrentIndex');
        setCurrentIndex(prev => {
       console.log('📈 setCurrentIndex: prev =', prev, 'new =', prev + 1);
@@ -197,8 +205,13 @@ export default function PracticePage() {
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // Quiz completed
-      completeQuiz();
+      // Practice session completed
+      if (practiceType === 'quiz') {
+        completeQuiz();
+      } else {
+        // For vocabulary, just navigate back or show completion
+        navigate(`/lessons/${songId}`);
+      }
     }
   };
   
@@ -265,11 +278,15 @@ export default function PracticePage() {
   };
 
   useEffect(() => {
-  if (practiceData?.questions) {
-    console.log('📊 Quiz loaded - Total questions:', practiceData.questions.length);
-    console.log('📊 Questions preview:', practiceData.questions.map((q, i) => `${i}: ${q.question.substring(0, 50)}...`));
-  }
-}, [practiceData]);
+    if (practiceData?.questions) {
+      console.log('📊 Quiz loaded - Total questions:', practiceData.questions.length);
+      console.log('📊 Questions preview:', practiceData.questions.map((q, i) => `${i}: ${q.question.substring(0, 50)}...`));
+    }
+    if (practiceData?.vocabulary) {
+      console.log('📚 Vocabulary loaded - Total words:', practiceData.vocabulary.length);
+      console.log('📚 Vocabulary preview:', practiceData.vocabulary.map((v, i) => `${i}: ${v.word}`));
+    }
+  }, [practiceData]);
   
   if (songLoading) {
     return (
