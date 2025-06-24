@@ -7,8 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store';
 import { batchTranslateLyrics } from '@/lib/api';
 import { toast } from 'sonner';
-import { useRef } from 'react';
-
+import { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 interface Song {
   id: string;
   title: string;
@@ -110,9 +110,9 @@ export function SongDetail() {
       const updatedLyrics = await Promise.all(updatePromises);
       
       // Update local state with translations
-      setLyrics(prevLyrics => {
-        const updatedMap = new Map(updatedLyrics.map(lyric => [lyric.id, lyric]));
-        return prevLyrics.map(lyric => updatedMap.get(lyric.id) || lyric);
+      setLyrics(prevLyrics: Lyric[] => {
+        const updatedMap = new Map(updatedLyrics.map(lyric: Lyric => [lyric.id, lyric]));
+        return prevLyrics.map(lyric: Lyric => updatedMap.get(lyric.id) || lyric);
       });
       
       toast.success('Translations loaded successfully!');
