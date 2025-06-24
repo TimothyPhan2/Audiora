@@ -147,24 +147,56 @@ const PracticeRecommendation: React.FC<PracticeRecommendationProps> = ({
 interface SessionInterfaceProps {
   type: "vocabulary" | "pronunciation" | "listening" | "quiz"
   onExit: () => void
-  sessionData: any
+  vocabularyData?: any[]
+  quizData?: any[]
+  currentIndex: number
+  setCurrentIndex: (index: number) => void
+  selectedAnswer: string
+  setSelectedAnswer: (answer: string) => void
+  showResult: boolean
+  setShowResult: (show: boolean) => void
+  score: number
+  setScore: (score: number) => void
+  answers: boolean[]
+  setAnswers: (answers: boolean[]) => void
+  sessionComplete: boolean
+  setSessionComplete: (complete: boolean) => void
 }
 
-const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessionData }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
+const SessionInterface: React.FC<SessionInterfaceProps> = ({
+  type,
+  onExit,
+  vocabularyData,
+  quizData,
+  currentIndex,
+  setCurrentIndex,
+  selectedAnswer,
+  setSelectedAnswer,
+  showResult,
+  setShowResult,
+  score,
+  setScore,
+  answers,
+  setAnswers,
+  sessionComplete,
+  setSessionComplete
+}) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
-  const [showResult, setShowResult] = useState(false)
 
-  const progress = ((currentIndex + 1) / sessionData.items.length) * 100
+  // Use the data from props instead of mockSessionData
+  const currentSessionData = type === 'vocabulary' ? vocabularyData : quizData;
+
+  const currentItem = currentSessionData?.[currentIndex];
+
+  const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0
 
   const handleNext = () => {
-    if (currentIndex < sessionData.items.length - 1) {
+    if (currentSessionData && currentIndex < currentSessionData.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setIsFlipped(false)
-      setSelectedAnswer(null)
+      setSelectedAnswer('')
       setShowResult(false)
     } else {
       onExit()
@@ -176,7 +208,8 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
   }
 
   const renderVocabularySession = () => {
-    const item = sessionData.items[currentIndex]
+    if (!currentItem) return null;
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <motion.div
@@ -192,15 +225,15 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           >
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-accent-teal-500 to-accent-teal-400 border-accent-teal-400/30 flex items-center justify-center">
               <div className="text-center text-white">
-                <h3 className="text-2xl font-bold mb-2">{item.word}</h3>
+                <h3 className="text-2xl font-bold mb-2">{currentItem.word}</h3>
                 <p className="text-accent-teal-100">Tap to reveal meaning</p>
               </div>
             </Card>
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-green-500 to-green-600 border-green-400/30 flex items-center justify-center"
                   style={{ transform: "rotateY(180deg)" }}>
               <div className="text-center text-white">
-                <h3 className="text-xl font-semibold mb-2">{item.meaning}</h3>
-                <p className="text-green-100 text-sm">{item.example}</p>
+                <h3 className="text-xl font-semibold mb-2">{currentItem.translation}</h3>
+                <p className="text-green-100 text-sm">{currentItem.example_sentence}</p>
               </div>
             </Card>
           </motion.div>
@@ -210,7 +243,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             Skip
           </Button>
           <Button onClick={handleNext} className="button-gradient-primary text-white">
-            {currentIndex === sessionData.items.length - 1 ? "Finish" : "Next"}
+            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
       </div>
@@ -218,12 +251,13 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
   }
 
   const renderPronunciationSession = () => {
-    const item = sessionData.items[currentIndex]
+    if (!currentItem) return null;
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Card className="p-8 mb-8 frosted-glass border-accent-teal-500/20 text-center max-w-md">
-          <h3 className="text-2xl font-bold mb-4 text-text-cream100">{item.phrase}</h3>
-          <p className="text-text-cream300 mb-6">{item.phonetic}</p>
+          <h3 className="text-2xl font-bold mb-4 text-text-cream100">{currentItem.phrase}</h3>
+          <p className="text-text-cream300 mb-6">{currentItem.phonetic}</p>
           <motion.button
             className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
               isRecording ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-accent-teal-500 to-accent-teal-400 hover:from-accent-teal-400 hover:to-accent-teal-500"
@@ -242,7 +276,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             Skip
           </Button>
           <Button onClick={handleNext} className="button-gradient-primary text-white">
-            {currentIndex === sessionData.items.length - 1 ? "Finish" : "Next"}
+            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
       </div>
@@ -250,7 +284,8 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
   }
 
   const renderListeningSession = () => {
-    const item = sessionData.items[currentIndex]
+    if (!currentItem) return null;
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Card className="p-6 mb-6 frosted-glass border-accent-teal-500/20 text-center max-w-lg">
@@ -264,9 +299,9 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
             </Button>
           </div>
-          <h3 className="text-lg font-semibold mb-4 text-text-cream100">{item.question}</h3>
+          <h3 className="text-lg font-semibold mb-4 text-text-cream100">{currentItem.question}</h3>
           <div className="space-y-2">
-            {item.options.map((option: string, index: number) => (
+            {currentItem.options.map((option: string, index: number) => (
               <Button
                 key={index}
                 variant={selectedAnswer === option ? "default" : "outline"}
@@ -291,7 +326,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             className="button-gradient-primary text-white"
             disabled={!selectedAnswer}
           >
-            {currentIndex === sessionData.items.length - 1 ? "Finish" : "Next"}
+            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
       </div>
@@ -299,29 +334,29 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
   }
 
   const renderQuizSession = () => {
-    const item = sessionData.items[currentIndex]
+    if (!currentItem) return null;
     
     // Transform current question to QuizCard format
     const quizCardQuestion = {
       id: currentIndex.toString(),
-      question: item.question,
-      options: item.options.map((option: string, index: number) => ({
+      question: currentItem.question,
+      options: currentItem.options.map((option: string, index: number) => ({
         id: String.fromCharCode(97 + index), // 'a', 'b', 'c', 'd'
         text: option,
         isCorrect: index === 0 // Assuming first option is correct for mock data
       })),
-      explanation: item.explanation,
+      explanation: currentItem.explanation,
       difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
       category: 'Quiz'
     };
 
     const handleQuizAnswer = (optionId: string, isCorrect: boolean) => {
       const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
-      setSelectedAnswer(item.options[answerIndex]);
+      setSelectedAnswer(currentItem.options[answerIndex]);
       setShowResult(true);
 
        // TODO: Track correctness for user progress/vocabulary mastery
-      console.log(`Answer ${isCorrect ? 'correct' : 'incorrect'} for:`, item.question);
+      console.log(`Answer ${isCorrect ? 'correct' : 'incorrect'} for:`, currentItem.question);
     };
 
     const handleNextQuestion = () => {
@@ -335,7 +370,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
           onAnswer={handleQuizAnswer}
           onNext={handleNextQuestion}
           showResult={showResult}
-          selectedOption={selectedAnswer ? String.fromCharCode(97 + item.options.indexOf(selectedAnswer)) : ''}
+          selectedOption={selectedAnswer ? String.fromCharCode(97 + currentItem.options.indexOf(selectedAnswer)) : ''}
         />
       </div>
     )
@@ -368,7 +403,7 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
             <div className="flex-1">
               <h2 className="font-semibold capitalize text-text-cream100">{type} Practice</h2>
               <p className="text-sm text-text-cream300">
-                Question {currentIndex + 1} of {sessionData.items.length}
+                Question {currentIndex + 1} of {currentSessionData?.length || 0}
               </p>
             </div>
           </div>
@@ -601,6 +636,14 @@ const Practice: React.FC<PracticeProps> = ({
   const filters = ["All", "Vocabulary", "Pronunciation", "Listening", "Quizzes"]
 
   const handleStartVocabulary = async () => {
+    // Reset all state when starting new session
+    setCurrentIndex(0);
+    setSelectedAnswer('');
+    setShowResult(false);
+    setScore(0);
+    setAnswers([]);
+    setSessionComplete(false);
+    
     if (songId && songData) {
       const content = await generatePracticeContent('vocabulary');
       if (content?.vocabulary) {
@@ -613,14 +656,18 @@ const Practice: React.FC<PracticeProps> = ({
       // Use mock data if no song data
       setVocabularyData(mockVocabularyData);
     }
-    setActiveSession({ type: 'vocabulary', data: content?.vocabulary || mockVocabularyData });
-    setCurrentIndex(0);
-    setScore(0);
-    setAnswers([]);
-    setSessionComplete(false);
+    setActiveSession('vocabulary');
   };
 
   const handleStartQuiz = async () => {
+    // Reset all state when starting new session
+    setCurrentIndex(0);
+    setSelectedAnswer('');
+    setShowResult(false);
+    setScore(0);
+    setAnswers([]);
+    setSessionComplete(false);
+    
     if (songId && songData) {
       const content = await generatePracticeContent('quiz');
       if (content?.questions) {
@@ -633,13 +680,7 @@ const Practice: React.FC<PracticeProps> = ({
       // Use mock data if no song data
       setQuizData(mockQuizData);
     }
-    setActiveSession({ type: 'quiz', data: content?.questions || mockQuizData });
-    setCurrentIndex(0);
-    setScore(0);
-    setAnswers([]);
-    setSessionComplete(false);
-    setSelectedAnswer('');
-    setShowResult(false);
+    setActiveSession('quiz');
   };
 
   const startPractice = (type: "vocabulary" | "pronunciation" | "listening" | "quiz") => {
@@ -824,7 +865,20 @@ const Practice: React.FC<PracticeProps> = ({
       <SessionInterface
         type="vocabulary"
         onExit={exitSession}
-        sessionData={mockSessionData.vocabulary}
+        vocabularyData={vocabularyData}
+        quizData={null}
+        currentIndex={currentIndex}
+        setCurrentIndex={setCurrentIndex}
+        selectedAnswer={selectedAnswer}
+        setSelectedAnswer={setSelectedAnswer}
+        showResult={showResult}
+        setShowResult={setShowResult}
+        score={score}
+        setScore={setScore}
+        answers={answers}
+        setAnswers={setAnswers}
+        sessionComplete={sessionComplete}
+        setSessionComplete={setSessionComplete}
       />
     )
   }
@@ -834,7 +888,20 @@ const Practice: React.FC<PracticeProps> = ({
       <SessionInterface
         type="quiz"
         onExit={exitSession}
-        sessionData={mockSessionData.quiz}
+        vocabularyData={null}
+        quizData={quizData}
+        currentIndex={currentIndex}
+        setCurrentIndex={setCurrentIndex}
+        selectedAnswer={selectedAnswer}
+        setSelectedAnswer={setSelectedAnswer}
+        showResult={showResult}
+        setShowResult={setShowResult}
+        score={score}
+        setScore={setScore}
+        answers={answers}
+        setAnswers={setAnswers}
+        sessionComplete={sessionComplete}
+        setSessionComplete={setSessionComplete}
       />
     )
   }
