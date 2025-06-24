@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 interface PracticeQuestion {
   question: string;
@@ -96,10 +97,17 @@ export default function PracticePage() {
   
   const generateNewQuiz = async () => {
     try {
+      // Get user session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('User must be logged in to generate quizzes');
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
