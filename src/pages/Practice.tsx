@@ -198,6 +198,7 @@ export default function PracticePage() {
   const handleNext = () => {
       console.log('🚀 handleNext called, currentIndex (before update):', currentIndex);
     if (currentIndex < (practiceData?.questions.length || 0) - 1) {
+      console.log('✅ IF block executing - about to call setCurrentIndex');
        setCurrentIndex(prev => {
       console.log('📈 setCurrentIndex: prev =', prev, 'new =', prev + 1);
       return prev + 1;
@@ -211,6 +212,7 @@ export default function PracticePage() {
   };
   
   const completeQuiz = async () => {
+    console.log('🏁 completeQuiz called');
     if (!quizStartTime || !practiceData) return;
     
     const endTime = new Date();
@@ -271,6 +273,13 @@ export default function PracticePage() {
     navigate(`/lessons/${songId}`);
   };
 
+  useEffect(() => {
+  if (practiceData?.questions) {
+    console.log('📊 Quiz loaded - Total questions:', practiceData.questions.length);
+    console.log('📊 Questions preview:', practiceData.questions.map((q, i) => `${i}: ${q.question.substring(0, 50)}...`));
+  }
+}, [practiceData]);
+  
   if (songLoading) {
     return (
       <div className="min-h-screen bg-base-dark2 flex items-center justify-center">
