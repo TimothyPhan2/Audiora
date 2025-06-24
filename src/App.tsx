@@ -16,7 +16,7 @@ import { Onboarding } from '@/pages/Onboarding';
 import { Pricing } from '@/pages/Pricing';
 import { Dashboard } from '@/pages/Dashboard';
 import { Lessons } from '@/pages/Lessons';
-import { PracticePage } from '@/pages/Practice';
+import PracticePage  from '@/pages/Practice';
 import { ProgressPage } from '@/pages/Progress';
 import { Settings } from '@/pages/Settings';
 import { AuthCallback } from '@/pages/AuthCallback';
