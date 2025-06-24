@@ -217,21 +217,17 @@ Deno.serve(async (req) => {
     // Fetch song data if lyrics not provided
     let songLyrics = lyrics;
     if (!songLyrics) {
-      const { data: songData, error: songError } = await supabase
-        .from('songs')
-        .select(`
-          title,
-          artist,
-          lyrics:lyrics(text)
-        `)
-        .eq('id', songId)
-        .single();
+      const { data: lyricsData, error: songError } = await supabase
+        .from('lyrics')
+        .select('text')
+        .eq('song_id', songId)
+        .order('line_number', { ascending: true });
 
-      if (songError || !songData) {
+      if (songError || !lyricsData) {
         return new Response('Song not found', { status: 404, headers: corsHeaders });
       }
 
-      songLyrics = songData.lyrics?.map((l: any) => l.text).join('\n') || '';
+      songLyrics = lyricsData.map((l: any) => l.text).join('\n') || '';
     }
 
     let result: any;

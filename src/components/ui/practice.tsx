@@ -55,6 +55,15 @@ interface PracticeProps {
 interface PracticeTypeCardProps {
   icon: React.ReactNode
   title: string
+  currentIndex: number;
+  selectedAnswer: string | null;
+  showResult: boolean;
+  correctAnswers: boolean[];
+  onQuizStart: () => void;
+  onQuizAnswer: (answer: string, isCorrect: boolean) => void;
+  onNext: () => void;
+  onAnswerSelect: (answer: string | null) => void;
+  onShowResult: (show: boolean) => void;
   description: string
   emoji: string
   onClick: () => void
@@ -408,18 +417,66 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({
       </div>
     </div>
   )
-}
+export function PracticeInterface({ 
+  practiceData, 
+  songData,
+  currentIndex,
+  selectedAnswer,
+  showResult,
+  correctAnswers,
+  onQuizStart,
+  onQuizAnswer,
+  onNext,
+  onAnswerSelect,
+  onShowResult
+}: PracticeInterfaceProps) {
 
 const Practice: React.FC<PracticeProps> = ({ 
   songId, 
-  songData, 
+    return (
+      <SessionInterface 
+        practiceData={practiceData} 
+        songData={songData}
+        currentIndex={currentIndex}
+        selectedAnswer={selectedAnswer}
+        showResult={showResult}
+        correctAnswers={correctAnswers}
+        onQuizStart={onQuizStart}
+        onQuizAnswer={onQuizAnswer}
+        onNext={onNext}
+        onAnswerSelect={onAnswerSelect}
+        onShowResult={onShowResult}
+      />
+    );
   practiceType: initialPracticeType,
   onExit 
 }) => {
-  const [activeSession, setActiveSession] = useState<'menu' | 'vocabulary' | 'quiz'>('menu');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-  const [showResult, setShowResult] = useState(false);
+function SessionInterface({ 
+  practiceData, 
+  songData,
+  currentIndex,
+  selectedAnswer,
+  showResult,
+  correctAnswers,
+  onQuizStart,
+  onQuizAnswer,
+  onNext,
+  onAnswerSelect,
+  onShowResult
+}: {
+  practiceData: PracticeData;
+  songData: any;
+  currentIndex: number;
+  selectedAnswer: string | null;
+  showResult: boolean;
+  correctAnswers: boolean[];
+  onQuizStart: () => void;
+  onQuizAnswer: (answer: string, isCorrect: boolean) => void;
+  onNext: () => void;
+  onAnswerSelect: (answer: string | null) => void;
+  onShowResult: (show: boolean) => void;
+}) {
+  const [hasStarted, setHasStarted] = useState(false);
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -480,18 +537,25 @@ const Practice: React.FC<PracticeProps> = ({
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+  // Start quiz on first render
+  useEffect(() => {
+    if (!hasStarted) {
+      onQuizStart();
+      setHasStarted(true);
+    }
+  }, [hasStarted, onQuizStart]);
         throw new Error(errorData.error || `API error: ${response.status}`);
       }
-      
-      const data = await response.json();
+    onAnswerSelect(answer);
+    onShowResult(true);
+    onQuizAnswer(answer, answer === currentQuestion.correct_answer);
       return data;
     } catch (error) {
       console.error('Failed to generate practice content:', error);
-      setApiError(error instanceof Error ? error.message : 'Failed to generate practice content');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    // Clear all visual indicators and reset state
+    onAnswerSelect(null);
+    onShowResult(false);
+    onNext();
   };
 
   // Mock data fallback
@@ -873,6 +937,13 @@ const Practice: React.FC<PracticeProps> = ({
             <div>
               <h1 className="text-3xl font-bold text-text-cream100 mb-2">Ready to Practice?</h1>
               <p className="text-text-cream300">Choose your practice type and start learning</p>
+        
+        {/* Score indicator */}
+        {correctAnswers.length > 0 && (
+          <div className="text-center text-sm text-text-cream300">
+            Score: {correctAnswers.filter(Boolean).length} / {correctAnswers.length} correct
+          </div>
+        )}
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center p-3 rounded-lg frosted-glass border border-accent-teal-500/20 shadow-sm">
@@ -987,3 +1058,4 @@ const Practice: React.FC<PracticeProps> = ({
 }
 
 export default Practice
+                  {currentIndex === practiceData.questions.length - 1 ? 'Complete Quiz' : 'Next Question'}
