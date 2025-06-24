@@ -281,6 +281,9 @@ const SessionInterface: React.FC<SessionInterfaceProps> = ({ type, onExit, sessi
       const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
       setSelectedAnswer(item.options[answerIndex]);
       setShowResult(true);
+
+       // TODO: Track correctness for user progress/vocabulary mastery
+      console.log(`Answer ${isCorrect ? 'correct' : 'incorrect'} for:`, item.question);
     };
 
     const handleNextQuestion = () => {
