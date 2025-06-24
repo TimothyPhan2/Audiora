@@ -147,7 +147,7 @@ export function Practice({
       onQuizAnswer(selectedOptionText, isCorrect);
     };
 
-    console.log('🎯 Rendering question:', currentIndex, quizItem?.question);
+    
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
