@@ -22,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { QuizCard } from '@/components/ui/quiz-card'
 import { useAuthStore } from '@/lib/store';
 import { useVocabularyStore } from '@/lib/store';
@@ -494,43 +493,6 @@ const Practice: React.FC<PracticeProps> = ({
       setIsLoading(false);
     }
   };
-
-  // Mock data
-  const mockSessionData = {
-    vocabulary: {
-      items: [
-        { word: "Melodía", meaning: "Melody", example: "La melodía de esta canción es hermosa" },
-        { word: "Ritmo", meaning: "Rhythm", example: "El ritmo de la música es contagioso" },
-        { word: "Armonía", meaning: "Harmony", example: "La armonía vocal es perfecta" }
-      ]
-    },
-    pronunciation: {
-      items: [
-        { phrase: "Buenos días", phonetic: "/ˈbwe.nos ˈdi.as/" },
-        { phrase: "¿Cómo estás?", phonetic: "/ˈko.mo esˈtas/" },
-        { phrase: "Muchas gracias", phonetic: "/ˈmu.tʃas ˈɡɾa.θjas/" }
-      ]
-    },
-    listening: {
-      items: [
-        {
-          question: "What is the singer expressing in this verse?",
-          options: ["Love", "Sadness", "Joy", "Anger"],
-          correct: "Love"
-        }
-      ]
-    },
-    quiz: {
-      items: [
-        {
-          question: "What does 'corazón' mean in English?",
-          options: ["Heart", "Soul", "Mind", "Spirit"],
-          correct: "Heart",
-          explanation: "Corazón is the Spanish word for heart."
-        }
-      ]
-    }
-  }
 
   // Mock data fallback
   const mockVocabularyData: VocabularyItem[] = [
