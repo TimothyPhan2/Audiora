@@ -75,19 +75,6 @@ export function Practice({
   
   const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0;
 
-  const handleNext = () => {
-    // Reset state for next question
-    setIsFlipped(false);
-    onAnswerSelect(null);
-    onShowResult(false);
-    
-    // Call the parent's onNext handler
-    onNext();
-  };
-
-  const handleSkip = () => {
-    handleNext();
-  };
 
   const renderVocabularySession = () => {
     if (!currentItem) return null;
@@ -121,7 +108,7 @@ export function Practice({
           </motion.div>
         </motion.div>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={onNext} className="button-gradient-secondary">
             Skip
           </Button>
           <Button onClick={handleNext} className="button-gradient-primary text-white">
@@ -168,7 +155,7 @@ export function Practice({
           selectedOption={selectedAnswer ?? ""}
           showResult={showResult}
           onAnswer={handleQuizAnswer}
-          onNext={handleNext}
+          onNext={onNext}
         />
       </div>
     );
