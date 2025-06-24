@@ -110,7 +110,7 @@ export function SongDetail() {
       const updatedLyrics = await Promise.all(updatePromises);
       
       // Update local state with translations
-      setLyrics(prevLyrics: Lyric[] => {
+      setLyrics((prevLyrics: Lyric[]) => {
         const updatedMap = new Map(updatedLyrics.map(lyric: Lyric => [lyric.id, lyric]));
         return prevLyrics.map(lyric: Lyric => updatedMap.get(lyric.id) || lyric);
       });
