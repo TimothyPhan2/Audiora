@@ -57,7 +57,8 @@ export function Practice({
   onAnswerSelect,
   onShowResult
 }: PracticeProps) {
-  const [isFlipped, setIsFlipped] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Call onQuizStart when quiz session begins
   useEffect(() => {
@@ -91,7 +92,7 @@ export function Practice({
 
   const renderVocabularySession = () => {
     if (!currentItem) return null;
-    const vocabItem = currentItem as VocabularyItem
+    const vocabItem = currentItem as VocabularyItem;
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <motion.div
@@ -129,7 +130,7 @@ export function Practice({
           </Button>
         </div>
       </div>
-    )
+    );
   };
 
   const renderQuizSession = () => {
@@ -137,7 +138,6 @@ export function Practice({
     
     const quizItem = currentItem as QuizQuestion;
     
-    const quizItem = currentItem as QuizQuestion;
     // Transform current question to QuizCard format
     const quizCardQuestion = {
       id: currentIndex.toString(),
@@ -161,6 +161,7 @@ export function Practice({
       onQuizAnswer(selectedOptionText, isCorrect);
       
       setTimeout(() => setIsSubmitting(false), 500); // Brief delay for visual feedback
+    };
 
     const handleNextQuestion = () => {
       // Reset state before calling parent's handleNext to prevent state carryover
