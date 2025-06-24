@@ -95,6 +95,16 @@ export default function PracticePage() {
     }
   };
   
+  useEffect(() => {
+    // Reset quiz state when switching practice types
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setCorrectAnswers([]);
+    setQuizCompleted(false);
+    setUserAnswers([]);
+  }, [practiceType]);
+
   const generateNewQuiz = async () => {
     try {
       // Get user session token
@@ -185,7 +195,7 @@ export default function PracticePage() {
   
   const handleNext = () => {
     if (currentIndex < (practiceData?.questions.length || 0) - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
@@ -212,7 +222,7 @@ export default function PracticePage() {
         const submittedAnswers = practiceData.questions.reduce((acc, question, index) => {
           acc[`question_${index}`] = {
             question: question.question,
-            selected_answer: selectedAnswer, // This would need to be tracked per question
+            selected_answer: userAnswers[index] || '', // Use tracked answers
             correct_answer: question.correct_answer,
             is_correct: correctAnswers[index] || false
           };
@@ -229,7 +239,15 @@ export default function PracticePage() {
         console.log('✅ Quiz result saved successfully');
       } catch (error) {
         console.error('Failed to save quiz result:', error);
-        // Don't show error to user, just log it
+        // Retry once after 1 second
+        setTimeout(async () => {
+          try {
+            await saveQuizResultToDatabase(quizId, score, totalQuestions, timeTakenSeconds, submittedAnswers);
+            console.log('✅ Quiz result saved on retry');
+          } catch (retryError) {
+            console.error('Failed to save quiz result on retry:', retryError);
+          }
+        }, 1000);
       }
     }
   };
