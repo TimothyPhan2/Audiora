@@ -142,7 +142,7 @@ export function Practice({
     const handleQuizAnswer = async (optionId: string, isCorrect: boolean) => {
       const answerIndex = optionId.charCodeAt(0) - 97; // Convert 'a', 'b', 'c', 'd' back to 0, 1, 2, 3
       const selectedOptionText = quizItem.options[answerIndex];
-      onAnswerSelect(selectedOptionText);
+      onAnswerSelect(optionId);
       onShowResult(true);
       onQuizAnswer(selectedOptionText, isCorrect);
     };
