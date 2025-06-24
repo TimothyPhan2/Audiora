@@ -75,19 +75,7 @@ export function Practice({
   
   const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0;
 
-  const handleNext = () => {
-    // Reset state for next question
-    setIsFlipped(false);
-    onAnswerSelect(null);
-    onShowResult(false);
-    
-    // Call the parent's onNext handler
-    onNext();
-  };
 
-  const handleSkip = () => {
-    handleNext();
-  };
 
   const renderVocabularySession = () => {
     if (!currentItem) return null;
@@ -121,10 +109,10 @@ export function Practice({
           </motion.div>
         </motion.div>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleSkip} className="button-gradient-secondary">
+          <Button variant="outline" onClick={onNext} className="button-gradient-secondary">
             Skip
           </Button>
-          <Button onClick={handleNext} className="button-gradient-primary text-white">
+          <Button onClick={onNext} className="button-gradient-primary text-white">
             {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
           </Button>
         </div>
@@ -159,24 +147,17 @@ export function Practice({
       onQuizAnswer(selectedOptionText, isCorrect);
     };
 
-    const handleNextQuestion = () => {
-      // Reset state before calling parent's handleNext to prevent state carryover
-      onShowResult(false);       // Hide result immediately
-      onAnswerSelect(null);      // Clear selected answer
-      setTimeout(() => {         // Use timeout to ensure UI updates before transition
-        handleNext();            // Then call parent's handleNext
-      }, 10);
-    };
+    console.log('🎯 Rendering question:', currentIndex, quizItem?.question);
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <QuizCard
           key={currentIndex}
           question={quizCardQuestion}
-          selectedAnswer={selectedAnswer}
+          selectedOption={selectedAnswer ?? ""}
           showResult={showResult}
           onAnswer={handleQuizAnswer}
-          onNext={handleNextQuestion}
+          onNext={onNext}
         />
       </div>
     );
