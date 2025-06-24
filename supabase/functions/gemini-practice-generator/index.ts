@@ -141,7 +141,7 @@ async function callGeminiAPI(prompt: string, schema: any): Promise<any> {
         }]
       }],
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.2,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 2048,
