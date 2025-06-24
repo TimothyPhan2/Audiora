@@ -47,7 +47,6 @@ export default function PracticePage() {
   const [finalScore, setFinalScore] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
 
   useEffect(() => {
     if (songData?.song && practiceType === 'quiz') {
