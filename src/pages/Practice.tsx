@@ -9,7 +9,6 @@ import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
-
 interface PracticeQuestion {
   question: string;
   options: string[];
@@ -46,7 +45,7 @@ export default function PracticePage() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
 
   useEffect(() => {
     if (songData?.song && practiceType === 'quiz') {
@@ -104,7 +103,6 @@ export default function PracticePage() {
       if (!session?.access_token) {
         throw new Error('User must be logged in to generate quizzes');
       }
-
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
         method: 'POST',
@@ -183,27 +181,13 @@ export default function PracticePage() {
     const newUserAnswers = [...userAnswers];
     newUserAnswers[currentIndex] = answer;
     setUserAnswers(newUserAnswers);
-    
-    // Debug logging
-    console.log(`Question ${currentIndex + 1} answered:`, {
-      question: practiceData?.questions[currentIndex].question,
-      selectedAnswer: answer,
-      correctAnswer: practiceData?.questions[currentIndex].correct_answer,
-      isCorrect,
-      scoreTracker: newCorrectAnswers.filter(Boolean).length,
-      totalAnswered: newCorrectAnswers.filter(a => a !== undefined).length
-    });
-    
   };
   
   const handleNext = () => {
     if (currentIndex < (practiceData?.questions.length || 0) - 1) {
-      // Clear state before incrementing index
+      setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
-      
-      // Then increment index (this triggers re-render)
-      setCurrentIndex(currentIndex + 1);
     } else {
       // Quiz completed
       completeQuiz();
@@ -228,7 +212,7 @@ export default function PracticePage() {
         const submittedAnswers = practiceData.questions.reduce((acc, question, index) => {
           acc[`question_${index}`] = {
             question: question.question,
-            selected_answer: userAnswers[index] || null,
+            selected_answer: selectedAnswer, // This would need to be tracked per question
             correct_answer: question.correct_answer,
             is_correct: correctAnswers[index] || false
           };
@@ -255,7 +239,6 @@ export default function PracticePage() {
     setSelectedAnswer(null);
     setShowResult(false);
     setCorrectAnswers([]);
-    setUserAnswers([]);
     setQuizCompleted(false);
     setQuizStartTime(new Date());
   };
