@@ -438,10 +438,10 @@ export default function PracticePage() {
           <Practice 
             practiceData={practiceData}
             songData={songData}
+            correctAnswers={correctAnswers}
             currentIndex={currentIndex}
             selectedAnswer={selectedAnswer}
             showResult={showResult}
-            correctAnswers={correctAnswers}
             onQuizStart={handleQuizStart}
             onQuizAnswer={handleQuizAnswer}
             onNext={handleNext}
