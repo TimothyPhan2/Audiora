@@ -192,6 +192,7 @@ export default function PracticePage() {
     const newUserAnswers = [...userAnswers];
     newUserAnswers[currentIndex] = answer;
     setUserAnswers(newUserAnswers);
+    console.log('✅ handleQuizAnswer called:', { currentIndex, isCorrect, answer });
   };
   
   const handleNext = () => {
