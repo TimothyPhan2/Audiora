@@ -8,7 +8,7 @@ import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
+
 
 interface PracticeQuestion {
   question: string;
