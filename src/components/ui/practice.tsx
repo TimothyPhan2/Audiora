@@ -717,6 +717,7 @@ const Practice: React.FC<PracticeProps> = ({
             </>
           )}
         </motion.div>
+        </div>
 
         {/* Loading State */}
         {isLoading && (
