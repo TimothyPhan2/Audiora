@@ -37,6 +37,7 @@ interface PracticeData {
 export default function PracticePage() {
   const { songId } = useParams<{ songId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: songData, isLoading: songLoading, error: songError } = useSongData(songId);
   
   const [practiceType, setPracticeType] = useState<'vocabulary' | 'quiz'>('quiz');
