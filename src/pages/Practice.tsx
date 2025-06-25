@@ -128,7 +128,7 @@ export default function PracticePage() {
         console.error('Error fetching user profile:', profileError);
       }
   
-      const userProficiencyLevel = userProfile?.proficiency_level;
+      const userProficiencyLevel = userProfile?.proficiency_level || 'intermediate';
       console.log('👤 User proficiency level:', userProficiencyLevel);
       
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
