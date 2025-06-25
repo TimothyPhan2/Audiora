@@ -110,7 +110,7 @@ export default function PracticePage() {
               question_type: q.question_type
             })),
             songId: songData.song.id,
-            practiceType: 'quiz',
+            practiceType: practiceType,
             timestamp: new Date().toISOString()
           });
           setIsGenerating(false);
