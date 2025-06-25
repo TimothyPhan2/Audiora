@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { QuizCard } from '@/components/ui/quiz-card'
@@ -11,6 +12,8 @@ interface VocabularyItem {
   example_sentence: string;
   difficulty_level: string;
   part_of_speech: string;
+  source: 'review' | 'new';
+  user_vocabulary_id?: string;
 }
 
 interface QuizQuestion {
@@ -42,6 +45,7 @@ interface PracticeProps {
   onNext: () => void;
   onAnswerSelect: (answer: string | null) => void;
   onShowResult: (show: boolean) => void;
+  onMasteryUpdate?: (vocabularyItem: VocabularyItem, knewIt: boolean) => Promise<void>;
 }
 
 export function Practice({
@@ -55,13 +59,18 @@ export function Practice({
   onQuizAnswer,
   onNext,
   onAnswerSelect,
-  onShowResult
+  onShowResult,
+  onMasteryUpdate
 }: PracticeProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [isUpdatingMastery, setIsUpdatingMastery] = useState(false);
 
-  // Reset card flip state when moving to next item
+  // Reset states when moving to next item
   useEffect(() => {
     setIsFlipped(false);
+    setHasAnswered(false);
+    setIsUpdatingMastery(false);
   }, [currentIndex]);
 
   // Call onQuizStart when quiz session begins
@@ -85,11 +94,48 @@ export function Practice({
   const renderVocabularySession = () => {
     if (!currentItem) return null;
     const vocabItem = currentItem as VocabularyItem;
+    
+    const handleMasteryUpdate = async (knewIt: boolean) => {
+      if (isUpdatingMastery || !onMasteryUpdate) return;
+      
+      setIsUpdatingMastery(true);
+      setHasAnswered(true);
+      
+      try {
+        await onMasteryUpdate(vocabItem, knewIt);
+        
+        // Auto-advance after feedback
+        setTimeout(() => {
+          onNext();
+        }, 1500);
+      } catch (error) {
+        console.error('Failed to update mastery:', error);
+        setIsUpdatingMastery(false);
+        setHasAnswered(false);
+      }
+    };
+
+    const getSourceBadge = () => {
+      if (vocabItem.source === 'review') {
+        return (
+          <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded">
+            Review
+          </span>
+        );
+      } else {
+        return (
+          <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+            New
+          </span>
+        );
+      }
+    };
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <motion.div
           className="w-80 h-48 relative cursor-pointer mb-8"
-          onClick={() => setIsFlipped(!isFlipped)}
+          onClick={() => !hasAnswered && setIsFlipped(!isFlipped)}
           style={{ perspective: "1000px" }}
         >
           <motion.div
@@ -98,28 +144,70 @@ export function Practice({
             transition={{ duration: 0.6 }}
             style={{ transformStyle: "preserve-3d" }}
           >
+            {/* Front of card */}
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-accent-teal-500 to-accent-teal-400 border-accent-teal-400/30 flex items-center justify-center">
+              {getSourceBadge()}
               <div className="text-center text-white">
                 <h3 className="text-2xl font-bold mb-2">{vocabItem.word}</h3>
-                <p className="text-accent-teal-100">Tap to reveal meaning</p>
+                <p className="text-accent-teal-100">
+                  {vocabItem.source === 'review' ? 'Do you remember this?' : 'Tap to learn meaning'}
+                </p>
               </div>
             </Card>
+            
+            {/* Back of card */}
             <Card className="w-full h-full absolute backface-hidden bg-gradient-to-br from-green-500 to-green-600 border-green-400/30 flex items-center justify-center"
                   style={{ transform: "rotateY(180deg)" }}>
-              <div className="text-center text-white">
+              <div className="text-center text-white p-4">
                 <h3 className="text-xl font-semibold mb-2">{vocabItem.translation}</h3>
                 <p className="text-green-100 text-sm">{vocabItem.example_sentence}</p>
               </div>
             </Card>
           </motion.div>
         </motion.div>
+        
+        {/* Interaction buttons */}
         <div className="flex gap-4">
-          <Button variant="outline" onClick={onNext} className="button-gradient-secondary">
-            Skip
-          </Button>
-          <Button onClick={onNext} className="button-gradient-primary text-white">
-            {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
-          </Button>
+          {!isFlipped ? (
+            <Button 
+              onClick={() => setIsFlipped(true)} 
+              className="button-gradient-primary text-white"
+            >
+              {vocabItem.source === 'review' ? 'Check Answer' : 'Reveal Meaning'}
+            </Button>
+          ) : !hasAnswered ? (
+            <>
+              <Button 
+                onClick={() => handleMasteryUpdate(false)}
+                variant="outline" 
+                className="border-red-400 text-red-400 hover:bg-red-400 hover:text-white"
+                disabled={isUpdatingMastery}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                {vocabItem.source === 'review' ? "Didn't Remember" : "Need Practice"}
+              </Button>
+              <Button 
+                onClick={() => handleMasteryUpdate(true)}
+                className="bg-green-500 hover:bg-green-600 text-white"
+                disabled={isUpdatingMastery}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {vocabItem.source === 'review' ? "I Remembered" : "Got It!"}
+              </Button>
+            </>
+          ) : (
+            <div className="text-center">
+              <p className="text-accent-teal-400 mb-2">
+                {isUpdatingMastery ? "Updating progress..." : "Progress updated!"}
+              </p>
+              <Button 
+                onClick={onNext} 
+                className="button-gradient-primary text-white"
+              >
+                {currentSessionData && currentIndex === currentSessionData.length - 1 ? "Finish" : "Next"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );

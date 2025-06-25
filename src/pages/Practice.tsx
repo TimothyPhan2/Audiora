@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
-import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary } from '@/lib/api';
+import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary, updateUserVocabularyProgress } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 interface VocabularyItem {
@@ -15,6 +15,8 @@ interface VocabularyItem {
   example_sentence: string;
   difficulty_level: string;
   part_of_speech: string;
+  source: 'review' | 'new';
+  user_vocabulary_id?: string;
 }
 
 interface PracticeQuestion {
@@ -103,6 +105,38 @@ export default function PracticePage() {
     fetchUserVocab();
   }, [songData?.song?.language]);
 
+  // Handle mastery updates for vocabulary practice
+  const handleMasteryUpdate = async (vocabularyItem: VocabularyItem, knewIt: boolean) => {
+    try {
+      await updateUserVocabularyProgress({
+        word: vocabularyItem.word,
+        translation: vocabularyItem.translation,
+        source: vocabularyItem.source,
+        user_vocabulary_id: vocabularyItem.user_vocabulary_id,
+        language: songData?.song.language || '',
+        songId: songData?.song.id,
+        difficulty_level: vocabularyItem.difficulty_level
+      }, knewIt);
+      
+      // Refresh user vocabulary data after update
+      const updatedVocabData = await getUserVocabulary();
+      const relevantVocab = updatedVocabData
+        .filter(item => item.vocabulary?.language === songData?.song.language)
+        .map(item => ({
+          word: item.vocabulary.word,
+          translation: item.vocabulary.translation,
+          mastery_score: item.mastery_score || 0,
+          times_practiced: item.times_practiced || 0,
+          times_correct: item.times_correct || 0,
+          last_practiced_at: item.last_practiced_at
+        }));
+      setUserVocabulary(relevantVocab);
+      
+    } catch (error) {
+      console.error('Failed to update mastery:', error);
+      // TODO: Show error toast/notification
+    }
+  };
   const generatePracticeContent = async () => {
     if (!songData?.song) return;
     
@@ -580,6 +614,7 @@ export default function PracticePage() {
             onNext={handleNext}
             onAnswerSelect={setSelectedAnswer}
             onShowResult={setShowResult}
+            onMasteryUpdate={handleMasteryUpdate}
           />
         ) : (
           <Card className="p-8 text-center">

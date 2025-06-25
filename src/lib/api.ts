@@ -529,6 +529,126 @@ export async function addWordToVocabulary(word: string, translation: string, lan
     .eq('id', vocabularyItem.id);
 }
 
+/**
+ * Updates user vocabulary mastery based on practice results
+ * Handles both review words and new words differently
+ */
+export async function updateUserVocabularyProgress(
+  vocabularyItem: { 
+    word: string; 
+    translation: string; 
+    source: 'review' | 'new'; 
+    user_vocabulary_id?: string;
+    language: string;
+    songId?: string;
+    difficulty_level?: string;
+  }, 
+  knewIt: boolean
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated to update vocabulary progress');
+  }
+
+  if (vocabularyItem.source === 'review' && vocabularyItem.user_vocabulary_id) {
+    // Update existing vocabulary progress
+    await updateExistingVocabularyProgress(vocabularyItem.user_vocabulary_id, knewIt);
+  } else if (vocabularyItem.source === 'new') {
+    // Add new word to user vocabulary
+    await addNewVocabularyToUser(vocabularyItem, knewIt, user.id);
+  }
+}
+
+/**
+ * Updates progress for existing vocabulary
+ */
+async function updateExistingVocabularyProgress(
+  userVocabularyId: string, 
+  knewIt: boolean
+): Promise<void> {
+  // Fetch current progress
+  const { data: currentProgress, error: fetchError } = await supabase
+    .from('user_vocabulary')
+    .select('times_practiced, times_correct, mastery_score')
+    .eq('id', userVocabularyId)
+    .single();
+
+  if (fetchError) {
+    throw new Error('Failed to fetch current vocabulary progress: ' + fetchError.message);
+  }
+
+  // Calculate new values
+  const newTimesPracticed = (currentProgress.times_practiced || 0) + 1;
+  const newTimesCorrect = (currentProgress.times_correct || 0) + (knewIt ? 1 : 0);
+  const newMasteryScore = Math.round((newTimesCorrect / newTimesPracticed) * 100);
+
+  // Update the record
+  const { error: updateError } = await supabase
+    .from('user_vocabulary')
+    .update({
+      times_practiced: newTimesPracticed,
+      times_correct: newTimesCorrect,
+      mastery_score: newMasteryScore,
+      last_practiced_at: new Date().toISOString()
+    })
+    .eq('id', userVocabularyId);
+
+  if (updateError) {
+    throw new Error('Failed to update vocabulary progress: ' + updateError.message);
+  }
+
+  console.log(`📈 Updated existing word mastery: ${newMasteryScore}% (${newTimesCorrect}/${newTimesPracticed})`);
+}
+
+/**
+ * Adds new vocabulary word to user's collection
+ */
+async function addNewVocabularyToUser(
+  vocabularyItem: any, 
+  knewIt: boolean, 
+  userId: string
+): Promise<void> {
+  // First, ensure word exists in vocabulary table
+  const { data: vocabData, error: vocabError } = await supabase
+    .from('vocabulary')
+    .upsert({
+      word: vocabularyItem.word.toLowerCase(),
+      language: vocabularyItem.language,
+      translation: vocabularyItem.translation,
+      difficulty_level: vocabularyItem.difficulty_level || 'intermediate',
+      is_premium: false,
+    }, {
+      onConflict: 'word,language'
+    })
+    .select('id')
+    .single();
+
+  if (vocabError || !vocabData) {
+    throw new Error('Failed to create vocabulary entry: ' + vocabError?.message);
+  }
+
+  // Add to user's vocabulary with initial progress
+  const initialMasteryScore = knewIt ? 100 : 0;
+  const { error: userVocabError } = await supabase
+    .from('user_vocabulary')
+    .insert({
+      user_id: userId,
+      vocabulary_id: vocabData.id,
+      mastery_score: initialMasteryScore,
+      times_practiced: 1,
+      times_correct: knewIt ? 1 : 0,
+      last_practiced_at: new Date().toISOString(),
+      learned_from_song_id: vocabularyItem.songId
+    });
+
+  if (userVocabError) {
+    throw new Error('Failed to add word to user vocabulary: ' + userVocabError.message);
+  }
+
+  console.log(`✨ Added new word with ${initialMasteryScore}% mastery`);
+}
+
 export async function removeWordFromVocabulary(vocabularyId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   
