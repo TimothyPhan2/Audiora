@@ -9,6 +9,14 @@ import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
+interface VocabularyItem {
+  word: string;
+  translation: string;
+  example_sentence: string;
+  difficulty_level: string;
+  part_of_speech: string;
+}
+
 interface PracticeQuestion {
   question: string;
   options: string[];
@@ -20,6 +28,7 @@ interface PracticeQuestion {
 
 interface PracticeData {
   questions: PracticeQuestion[];
+  vocabulary?: VocabularyItem[];
   songId: string;
   practiceType: string;
   timestamp: string;
