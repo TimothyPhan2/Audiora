@@ -51,6 +51,29 @@ const VOCABULARY_SCHEMA = {
   required: ["vocabulary"]
 };
 
+const VOCABULARY_SCHEMA = {
+  type: "object",
+  properties: {
+    vocabulary: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          word: { type: "string" },
+          translation: { type: "string" },
+          example_sentence: { type: "string" },
+          difficulty_level: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
+          part_of_speech: { type: "string" },
+          source: { type: "string", enum: ["review", "new"] },
+          user_vocabulary_id: { type: "string", description: "Required for review words" }
+        },
+        required: ["word", "translation", "example_sentence", "difficulty_level", "part_of_speech", "source"]
+      }
+    }
+  },
+  required: ["vocabulary"]
+};
+
 const QUIZ_SCHEMA = {
   type: "object",
   properties: {
@@ -74,9 +97,9 @@ const QUIZ_SCHEMA = {
 };
 
 // System Prompts
-const VOCABULARY_PROMPT = `You are an expert language learning instructor specializing in music-based language acquisition. Your role is to extract and enhance vocabulary from song lyrics for language learners.
+const VOCABULARY_PROMPT = `You are an expert language learning instructor specializing in music-based language acquisition with spaced repetition principles.
 
-TASK: Generate vocabulary cards from the provided song lyrics.
+TASK: Generate vocabulary cards that intelligently mix review and new learning.
 
 CONTEXT:
 - User's proficiency level: {proficiencyLevel}
@@ -84,14 +107,31 @@ CONTEXT:
 - Song lyrics: {lyrics}
 - User's existing vocabulary knowledge: {userVocabulary}
 
+VOCABULARY SELECTION STRATEGY:
+Generate 8-12 vocabulary cards using this intelligent priority system:
+
+HIGH PRIORITY (Review - include first):
+- Words from userVocabulary with mastery_score < 50% (struggling words)
+- Words from userVocabulary with mastery_score 50-70% that appear in the song lyrics
+- Words from userVocabulary not practiced recently (last_practiced_at > 7 days ago)
+
+MEDIUM PRIORITY (New Learning - fill remaining slots):
+- New meaningful words from song lyrics that don't exist in userVocabulary
+- Words slightly above user's proficiency level for growth
+- Key words central to the song's meaning/theme
+
+AVOID:
+- Words from userVocabulary with mastery_score > 80% (well mastered)
+- Basic articles, prepositions, common function words
+- Words significantly below user's proficiency level
+
 REQUIREMENTS:
-1. Extract 8-12 meaningful words from the song lyrics
-2. Prioritize words that appear in the song but avoid basic articles/prepositions
-3. Include words slightly above the user's current level for growth
-4. Avoid words the user already has high mastery (>80%) unless they're key to the song
-5. Provide clear, contextual translations
-6. Create example sentences using the word in the song's context/theme
-7. Assign appropriate difficulty levels based on user's proficiency
+1. Prioritize review words first, then fill with new words
+2. For review words, use the existing translation from userVocabulary
+3. For new words, provide clear contextual translations
+4. Create example sentences that relate to the song's context/theme
+5. Include a "source" field indicating "review" or "new"
+6. For review words, include the user_vocabulary_id for tracking
 
 DIFFICULTY MAPPING:
 - Beginner: Common words, basic vocabulary, present tense
