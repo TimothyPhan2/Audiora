@@ -61,3 +61,15 @@ src/components/dashboard/*
 src/components/layout/*
 src/components/songs/*
 
+# Other files
+hooks/use-toast.ts
+node_modules/
+.bolt/Summary.txt
+.bolt/Summary copy.txt
+supabase/migrations/*
+public/*
+src/stripe-config.ts
+src/vite-env.d.ts
+src/main.tsx
+src/index.css
+src/App.tsx
