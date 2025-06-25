@@ -70,46 +70,6 @@ export default function PracticePage() {
     setError(null);
     
     try {
-      if (practiceType === 'quiz') {
-        // First, check if quiz already exists in database
-        console.log('🔍 Checking for existing quiz...');
-        const existingQuiz = await fetchQuizForSong(songData.song.id);
-        
-        if (existingQuiz) {
-          console.log('✅ Found existing quiz, using cached version');
-          setQuizId(existingQuiz.id);
-          setPracticeData({
-            questions: existingQuiz.questions.map((q: any) => ({
-              question: q.question_text,
-              options: q.options ? JSON.parse(q.options) : [],
-              correct_answer: typeof q.correct_answer === 'string' ? JSON.parse(q.correct_answer) : q.correct_answer,
-              explanation: q.explanation || '',
-              difficulty_level: 'intermediate',
-              question_type: q.question_type
-            })),
-            songId: songData.song.id,
-            practiceType: 'quiz',
-            timestamp: new Date().toISOString()
-          });
-          setIsGenerating(false);
-          return;
-        }
-      }
-      
-      // Generate new content using Gemini API
-      console.log(`🤖 Generating new ${practiceType} with Gemini...`);
-      await generateNewContent();
-      
-    } catch (error) {
-      console.error('Error in generatePracticeContent:', error);
-      setError('Failed to load practice content. Please try again.');
-      setIsGenerating(false);
-    }
-  };
-  
-
-  const generateNewContent = async () => {
-    try {
       // Get user session token
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -130,6 +90,54 @@ export default function PracticePage() {
   
       const userProficiencyLevel = userProfile?.proficiency_level || 'intermediate';
       console.log('👤 User proficiency level:', userProficiencyLevel);
+
+      
+      if (practiceType === 'quiz') {
+        // First, check if quiz already exists in database
+        console.log('🔍 Checking for existing quiz...');
+        const existingQuiz = await fetchQuizForSong(songData.song.id);
+        
+        if (existingQuiz) {
+          console.log('✅ Found existing quiz, using cached version');
+          setQuizId(existingQuiz.id);
+          setPracticeData({
+            questions: existingQuiz.questions.map((q: any) => ({
+              question: q.question_text,
+              options: q.options ? JSON.parse(q.options) : [],
+              correct_answer: typeof q.correct_answer === 'string' ? JSON.parse(q.correct_answer) : q.correct_answer,
+              explanation: q.explanation || '',
+              difficulty_level: userProficiencyLevel,
+              question_type: q.question_type
+            })),
+            songId: songData.song.id,
+            practiceType: 'quiz',
+            timestamp: new Date().toISOString()
+          });
+          setIsGenerating(false);
+          return;
+        }
+      }
+      
+      // Generate new content using Gemini API
+      console.log(`🤖 Generating new ${practiceType} with Gemini...`);
+      await generateNewContent(userProficiencyLevel);
+      
+    } catch (error) {
+      console.error('Error in generatePracticeContent:', error);
+      setError('Failed to load practice content. Please try again.');
+      setIsGenerating(false);
+    }
+  };
+  
+
+  const generateNewContent = async (userProficiencyLevel: string) => {
+    try {
+      // Get user session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('User must be logged in to generate practice content');
+      }
       
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
         method: 'POST',
