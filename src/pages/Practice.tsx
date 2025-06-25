@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
-import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase } from '@/lib/api';
+import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 interface VocabularyItem {
@@ -57,6 +57,10 @@ export default function PracticePage() {
   const [finalScore, setFinalScore] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  
+  // User vocabulary state for enhanced generation
+  const [userVocabulary, setUserVocabulary] = useState<any[]>([]);
+  const [isLoadingUserVocab, setIsLoadingUserVocab] = useState(false);
 
   
   useEffect(() => {
@@ -64,6 +68,40 @@ export default function PracticePage() {
       generatePracticeContent();
     }
   }, [songData, practiceType]);
+
+  // Fetch user vocabulary data for enhanced generation
+  useEffect(() => {
+    const fetchUserVocab = async () => {
+      if (!songData?.song) return;
+      
+      setIsLoadingUserVocab(true);
+      try {
+        const vocabularyData = await getUserVocabulary();
+        
+        // Filter vocabulary for the same language as the song
+        const relevantVocab = vocabularyData
+          .filter(item => item.vocabulary?.language === songData.song.language)
+          .map(item => ({
+            word: item.vocabulary.word,
+            translation: item.vocabulary.translation,
+            mastery_score: item.mastery_score || 0,
+            times_practiced: item.times_practiced || 0,
+            times_correct: item.times_correct || 0,
+            last_practiced_at: item.last_practiced_at
+          }));
+        
+        setUserVocabulary(relevantVocab);
+        console.log('📚 Fetched user vocabulary for generation:', relevantVocab.length, 'words');
+      } catch (error) {
+        console.error('Error fetching user vocabulary:', error);
+        setUserVocabulary([]); // Continue with empty array if fetch fails
+      } finally {
+        setIsLoadingUserVocab(false);
+      }
+    };
+    
+    fetchUserVocab();
+  }, [songData?.song?.language]);
 
   const generatePracticeContent = async () => {
     if (!songData?.song) return;
@@ -152,7 +190,8 @@ export default function PracticePage() {
           practiceType: practiceType,
           userProficiencyLevel: userProficiencyLevel,
           targetLanguage: songData?.song.language,
-          lyrics: songData?.lyrics.map(l => l.text).join('\n')
+          lyrics: songData?.lyrics.map(l => l.text).join('\n'),
+          userVocabulary: userVocabulary // Pass user vocabulary data
         }),
       });
 

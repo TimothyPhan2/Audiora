@@ -59,6 +59,11 @@ export function Practice({
 }: PracticeProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // Reset card flip state when moving to next item
+  useEffect(() => {
+    setIsFlipped(false);
+  }, [currentIndex]);
+
   // Call onQuizStart when quiz session begins
   useEffect(() => {
     if (practiceData.practiceType === 'quiz' && currentIndex === 0) {
