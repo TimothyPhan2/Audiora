@@ -472,6 +472,7 @@ export default function PracticePage() {
                 setCorrectAnswers([]);
                 setQuizCompleted(false);
                 setUserAnswers([]);
+                setPracticeData(null);
               }}
               variant={practiceType === 'vocabulary' ? 'default' : 'outline'}
               className={practiceType === 'vocabulary' ? 'button-gradient-primary' : ''}
@@ -489,6 +490,7 @@ export default function PracticePage() {
                 setCorrectAnswers([]);
                 setQuizCompleted(false);
                 setUserAnswers([]);
+                setPracticeData(null);
               }}
               variant={practiceType === 'quiz' ? 'default' : 'outline'}
               className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
