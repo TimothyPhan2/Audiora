@@ -62,7 +62,7 @@ export default function PracticePage() {
   
   // User vocabulary state for enhanced generation
   const [userVocabulary, setUserVocabulary] = useState<any[]>([]);
-  const [isLoadingUserVocab, setIsLoadingUserVocab] = useState(false);
+
 
   
   useEffect(() => {
@@ -76,7 +76,6 @@ export default function PracticePage() {
     const fetchUserVocab = async () => {
       if (!songData?.song) return;
       
-      setIsLoadingUserVocab(true);
       try {
         const vocabularyData = await getUserVocabulary();
         
@@ -97,9 +96,7 @@ export default function PracticePage() {
       } catch (error) {
         console.error('Error fetching user vocabulary:', error);
         setUserVocabulary([]); // Continue with empty array if fetch fails
-      } finally {
-        setIsLoadingUserVocab(false);
-      }
+      } 
     };
     
     fetchUserVocab();
