@@ -40,7 +40,8 @@ export default function PracticePage() {
   const [searchParams] = useSearchParams();
   const { data: songData, isLoading: songLoading, error: songError } = useSongData(songId);
   
-  const [practiceType, setPracticeType] = useState<'vocabulary' | 'quiz'>('quiz');
+  const urlPracticeType = searchParams.get('type') as 'vocabulary' | 'quiz' | null;
+  const [practiceType, setPracticeType] = useState<'vocabulary' | 'quiz'>(urlPracticeType || 'quiz');
   const [practiceData, setPracticeData] = useState<PracticeData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
