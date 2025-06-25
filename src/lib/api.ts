@@ -609,6 +609,7 @@ async function addNewVocabularyToUser(
   knewIt: boolean, 
   userId: string
 ): Promise<void> {
+  console.log('Attempting to add new vocabulary to user:', { vocabularyItem, knewIt, userId });
   // First, ensure word exists in vocabulary table
   const { data: vocabData, error: vocabError } = await supabase
     .from('vocabulary')
@@ -624,10 +625,16 @@ async function addNewVocabularyToUser(
     .select('id')
     .single();
 
-  if (vocabError || !vocabData) {
-    throw new Error('Failed to create vocabulary entry: ' + vocabError?.message);
+  if (vocabError) {
+    console.error('Supabase Error: Failed to upsert into vocabulary table:', vocabError);
+    throw new Error('Failed to create vocabulary entry: ' + vocabError.message);
   }
-
+  if (!vocabData) {
+    console.error('Supabase Error: No data returned after upserting into vocabulary table.');
+    throw new Error('Failed to create vocabulary entry: No data returned.');
+  }
+  console.log('Successfully upserted word into vocabulary table. Vocab ID:', vocabData.id);
+  
   // Add to user's vocabulary with initial progress
   const initialMasteryScore = knewIt ? 100 : 0;
   const { error: userVocabError } = await supabase
@@ -642,11 +649,12 @@ async function addNewVocabularyToUser(
       learned_from_song_id: vocabularyItem.songId
     });
 
-  if (userVocabError) {
+ if (userVocabError) {
+    console.error('Supabase Error: Failed to insert into user_vocabulary table:', userVocabError);
     throw new Error('Failed to add word to user vocabulary: ' + userVocabError.message);
   }
 
-  console.log(`✨ Added new word with ${initialMasteryScore}% mastery`);
+  console.log(`✨ Successfully added new word to user_vocabulary with ${initialMasteryScore}% mastery`);
 }
 
 export async function removeWordFromVocabulary(vocabularyId: string): Promise<void> {
