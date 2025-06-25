@@ -42,27 +42,6 @@ const VOCABULARY_SCHEMA = {
           translation: { type: "string" },
           example_sentence: { type: "string" },
           difficulty_level: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
-          part_of_speech: { type: "string" }
-        },
-        required: ["word", "translation", "example_sentence", "difficulty_level", "part_of_speech"]
-      }
-    }
-  },
-  required: ["vocabulary"]
-};
-
-const VOCABULARY_SCHEMA = {
-  type: "object",
-  properties: {
-    vocabulary: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          word: { type: "string" },
-          translation: { type: "string" },
-          example_sentence: { type: "string" },
-          difficulty_level: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
           part_of_speech: { type: "string" },
           source: { type: "string", enum: ["review", "new"] },
           user_vocabulary_id: { type: "string", description: "Required for review words" }
