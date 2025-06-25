@@ -117,6 +117,20 @@ export default function PracticePage() {
         throw new Error('User must be logged in to generate practice content');
       }
 
+      // Fetch user's proficiency level from database
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('proficiency_level')
+        .eq('id', session.user.id)
+        .single();
+  
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+      }
+  
+      const userProficiencyLevel = userProfile?.proficiency_level;
+      console.log('👤 User proficiency level:', userProficiencyLevel);
+      
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-practice-generator`, {
         method: 'POST',
         headers: {
@@ -126,7 +140,7 @@ export default function PracticePage() {
         body: JSON.stringify({
           songId: songData?.song.id,
           practiceType: practiceType,
-          userProficiencyLevel: 'Intermediate',
+          userProficiencyLevel: userProficiencyLevel,
           targetLanguage: songData?.song.language,
           lyrics: songData?.lyrics.map(l => l.text).join('\n')
         }),
