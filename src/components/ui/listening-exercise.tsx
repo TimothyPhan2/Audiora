@@ -182,7 +182,7 @@ export function ListeningExercise({
             <div className="space-y-3">
               {exercise.options.map((option, index) => {
                 const isSelected = selectedAnswer === option;
-                const isCorrectOption = option === exercise.correct_answer;
+                const isCorrectOption = option === correctAnswerText;
                 const showCorrect = showResult && isCorrectOption;
                 const showIncorrect = showResult && isSelected && !isCorrectOption;
 
