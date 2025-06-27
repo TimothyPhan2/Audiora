@@ -384,8 +384,8 @@ Deno.serve(async (req) => {
       difficulty_level: string;
     }> = [];
 
-    for (let i = 0; i < geminiResponse.exercises.length; i++) {
-      const exercise = geminiResponse.exercises[i];
+    for (let i = 0; i < exerciseData.exercises.length; i++) {
+      const exercise = exerciseData.exercises[i];
       
       console.log(`🎵 Processing exercise ${i + 1}: "${exercise.audio_transcript}"`);
       
