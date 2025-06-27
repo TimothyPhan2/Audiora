@@ -66,8 +66,6 @@ hooks/use-toast.ts
 node_modules/
 .bolt/Summary.txt
 .bolt/Summary copy.txt
-supabase/migrations/*
-supabase/functions/*
 public/*
 src/stripe-config.ts
 src/vite-env.d.ts
