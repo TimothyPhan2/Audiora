@@ -124,7 +124,7 @@ export default function PracticePage() {
   }, [songData?.song?.language]);
 
 
-// Initialize vocabulary session start time
+// Initialize vocabulary session and listening session start time
 useEffect(() => {
   if (practiceData?.practiceType === 'vocabulary' && currentIndex === 0 && !vocabularyStartTime) {
     setVocabularyStartTime(new Date());
@@ -135,7 +135,7 @@ useEffect(() => {
     setListeningOutcomes([]); // Reset outcomes for a new session
     console.log('⏱️ Listening session started!');
   }
-}, [practiceData, currentIndex, vocabularyStartTime, practiceType]);
+}, [practiceData, currentIndex, vocabularyStartTime, listeningStartTime, practiceType]);
 
 
   // Handle mastery updates for vocabulary practice
