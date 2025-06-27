@@ -8,6 +8,8 @@ import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary, updateUserVocabularyProgress } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { ListeningExerciseData } from '@/components/ui/listening-exercise';
+import { PronunciationExerciseData } from '@/components/ui/pronunciation-exercise';
 
 interface VocabularyItem {
   word: string;
