@@ -686,7 +686,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
 
   // Quiz completion screen
   if (quizCompleted && practiceData) {
-    const scorePercentage = Math.round((finalScore / practiceData.questions.length) * 100);
+    const scorePercentage = Math.round((finalScore / (practiceData.questions?.length || 0)) * 100);
     const passed = scorePercentage >= 70;
     
     return (
@@ -712,7 +712,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                   {scorePercentage}%
                 </div>
                 <p className="text-text-cream300 text-lg">
-                  {finalScore} out of {practiceData.questions.length} correct
+                  {finalScore} out of {practiceData.questions?.length || 0} correct
                 </p>
               </div>
               
