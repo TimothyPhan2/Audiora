@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Brain, RotateCcw } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, RotateCcw, Volume2, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
@@ -42,8 +42,8 @@ export default function PracticePage() {
   const [searchParams] = useSearchParams();
   const { data: songData, isLoading: songLoading, error: songError } = useSongData(songId);
   
-  const urlPracticeType = searchParams.get('type') as 'vocabulary' | 'quiz' | null;
-  const [practiceType, setPracticeType] = useState<'vocabulary' | 'quiz'>(urlPracticeType || 'quiz');
+  const urlPracticeType = searchParams.get('type') as 'vocabulary' | 'quiz' | 'listening' | 'pronunciation' | null;
+  const [practiceType, setPracticeType] = useState<'vocabulary' | 'quiz' | 'listening' | 'pronunciation'>(urlPracticeType || 'quiz');
   const [practiceData, setPracticeData] = useState<PracticeData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -217,7 +217,13 @@ useEffect(() => {
       
       // Generate new content using Gemini API
       console.log(`🤖 Generating new ${practiceType} with Gemini...`);
-      await generateNewContent(userProficiencyLevel);
+      
+      if (practiceType === 'listening' || practiceType === 'pronunciation') {
+        // For now, use mock data for listening and pronunciation
+        generateMockContent(practiceType);
+      } else {
+        await generateNewContent(userProficiencyLevel);
+      }
       
     } catch (error) {
       console.error('Error in generatePracticeContent:', error);
@@ -225,6 +231,87 @@ useEffect(() => {
       setIsGenerating(false);
     }
   };
+
+  // Add this function
+const generateMockContent = (type: 'listening' | 'pronunciation') => {
+  if (!songData?.song) return;
+
+  if (type === 'listening') {
+    const mockListeningExercises = [
+      {
+        id: 'listen-1',
+        audio_url: 'mock-audio-url-1', // Replace with actual mock audio URLs if available
+        question: `What is the speaker saying in ${songData.song.title}?`,
+        options: ['Option A', 'Option B', 'Option C', 'Option D'],
+        correct_answer: 'Option A',
+        explanation: 'This is the correct interpretation of the audio.',
+        difficulty_level: 'beginner',
+      },
+      {
+        id: 'listen-2',
+        audio_url: 'mock-audio-url-2',
+        question: `Which phrase best describes the mood of the music in ${songData.song.title}?`,
+        options: ['Happy and upbeat', 'Sad and melancholic', 'Energetic and fast', 'Calm and soothing'],
+        correct_answer: 'Calm and soothing',
+        explanation: 'The music has a slow tempo and soft instrumentation.',
+        difficulty_level: 'intermediate',
+      },
+      {
+        id: 'listen-3',
+        audio_url: 'mock-audio-url-3',
+        question: `What is the cultural reference implied in this part of ${songData.song.title}?`,
+        options: ['A traditional festival', 'A historical event', 'A common idiom', 'A famous landmark'],
+        correct_answer: 'A traditional festival',
+        explanation: 'The lyrics mention elements commonly associated with [specific festival].',
+        difficulty_level: 'advanced',
+      },
+    ];
+    setPracticeData({
+      listening: mockListeningExercises,
+      songId: songData.song.id,
+      practiceType: type,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (type === 'pronunciation') {
+    const mockPronunciationExercises = [
+      {
+        id: 'pron-1',
+        word_or_phrase: 'Bonjour',
+        phonetic_transcription: 'bɔ̃ʒuʁ',
+        reference_audio_url: 'mock-pron-audio-1',
+        difficulty_level: 'beginner',
+        language: songData.song.language,
+        context: 'Common greeting',
+      },
+      {
+        id: 'pron-2',
+        word_or_phrase: 'Rendezvous',
+        phonetic_transcription: 'ʁɑ̃devu',
+        reference_audio_url: 'mock-pron-audio-2',
+        difficulty_level: 'intermediate',
+        language: songData.song.language,
+        context: 'Meeting point',
+      },
+      {
+        id: 'pron-3',
+        word_or_phrase: 'Écureuil',
+        phonetic_transcription: 'ekyʁœj',
+        reference_audio_url: 'mock-pron-audio-3',
+        difficulty_level: 'advanced',
+        language: songData.song.language,
+        context: 'Squirrel (challenging sound)',
+      },
+    ];
+    setPracticeData({
+      pronunciation: mockPronunciationExercises,
+      songId: songData.song.id,
+      practiceType: type,
+      timestamp: new Date().toISOString(),
+    });
+  }
+  setIsGenerating(false);
+};
+
   
 
   const generateNewContent = async (userProficiencyLevel: string) => {
@@ -321,9 +408,15 @@ useEffect(() => {
   
   const handleNext = () => {
       console.log('🚀 handleNext called, currentIndex (before update):', currentIndex);
-    const totalItems = practiceType === 'quiz' 
-      ? (practiceData?.questions?.length || 0)
-      : (practiceData?.vocabulary?.length || 0);
+    const totalItems = practiceType === 'quiz'
+    ? (practiceData?.questions?.length || 0)
+    : practiceType === 'vocabulary'
+    ? (practiceData?.vocabulary?.length || 0)
+    : practiceType === 'listening' // Add this line
+    ? (practiceData?.listening?.length || 0) // Add this line
+    : practiceType === 'pronunciation' // Add this line
+    ? (practiceData?.pronunciation?.length || 0) // Add this line
+    : 0;  // Default to 0 if practiceData or type is unexpected
       
     if (currentIndex < totalItems - 1) {
       console.log('✅ IF block executing - about to call setCurrentIndex');
@@ -337,9 +430,15 @@ useEffect(() => {
       // Practice session completed
       if (practiceType === 'quiz') {
         completeQuiz();
-      } else {
+      } else if (practiceType === 'vocabulary'){
         // For vocabulary, just navigate back or show completion
         completeVocabulary(); // Call new function for vocabulary completion
+      }
+      else{
+          // For listening and pronunciation, just navigate back or show completion
+      // For now, we'll just navigate back to the song detail page
+      // You might want to implement a completion screen for these too later
+      handleBackToSong();
       }
     }
   };
@@ -704,6 +803,29 @@ if (vocabularyCompleted && vocabularyResults && songData) {
           <div className="flex gap-4 mb-6">
             <Button
               onClick={() => {
+                setPracticeType('quiz');
+                // Reset state when switching to quiz
+                setCurrentIndex(0);
+                setSelectedAnswer(null);
+                setShowResult(false);
+                setCorrectAnswers([]);
+                setQuizCompleted(false);
+                setUserAnswers([]);
+                setPracticeData(null);
+                // New vocabulary-specific resets
+                setVocabularyStartTime(null);
+                setVocabularyCompleted(false);
+                setVocabularyResults(null);
+                setVocabularyOutcomes([]);
+              }}
+              variant={practiceType === 'quiz' ? 'default' : 'outline'}
+              className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              Quiz
+            </Button>
+            <Button
+              onClick={() => {
                 setPracticeType('vocabulary');
                 // Reset state when switching to vocabulary
                 setCurrentIndex(0);
@@ -726,9 +848,9 @@ if (vocabularyCompleted && vocabularyResults && songData) {
               Vocabulary
             </Button>
             <Button
-               onClick={() => {
-                setPracticeType('quiz');
-                // Reset state when switching to quiz
+              onClick={() => {
+                setPracticeType('listening');
+                // Reset state when switching to listening
                 setCurrentIndex(0);
                 setSelectedAnswer(null);
                 setShowResult(false);
@@ -736,17 +858,38 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                 setQuizCompleted(false);
                 setUserAnswers([]);
                 setPracticeData(null);
-                // New vocabulary-specific resets
                 setVocabularyStartTime(null);
                 setVocabularyCompleted(false);
                 setVocabularyResults(null);
                 setVocabularyOutcomes([]);
               }}
-              variant={practiceType === 'quiz' ? 'default' : 'outline'}
-              className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
+              variant={practiceType === 'listening' ? 'default' : 'outline'}
+              className={practiceType === 'listening' ? 'button-gradient-primary' : ''}
             >
-              <Brain className="w-4 h-4 mr-2" />
-              Quiz
+              <Volume2 className="w-4 h-4 mr-2" />
+              Listening
+            </Button>
+            <Button
+              onClick={() => {
+                setPracticeType('pronunciation');
+                // Reset state when switching to pronunciation
+                setCurrentIndex(0);
+                setSelectedAnswer(null);
+                setShowResult(false);
+                setCorrectAnswers([]);
+                setQuizCompleted(false);
+                setUserAnswers([]);
+                setPracticeData(null);
+                setVocabularyStartTime(null);
+                setVocabularyCompleted(false);
+                setVocabularyResults(null);
+                setVocabularyOutcomes([]);
+              }}
+              variant={practiceType === 'pronunciation' ? 'default' : 'outline'}
+              className={practiceType === 'pronunciation' ? 'button-gradient-primary' : ''}
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              Pronunciation
             </Button>
           </div>
         </div>
@@ -804,7 +947,10 @@ if (vocabularyCompleted && vocabularyResults && songData) {
               onClick={generatePracticeContent}
               className="button-gradient-primary"
             >
-              Generate {practiceType === 'vocabulary' ? 'Vocabulary' : 'Quiz'}
+              Generate {practiceType === 'vocabulary' ? 'Vocabulary' : 
+                       practiceType === 'quiz' ? 'Quiz' :
+                       practiceType === 'listening' ? 'Listening' :
+                       'Pronunciation'} Exercises
             </Button>
           </Card>
         )}
