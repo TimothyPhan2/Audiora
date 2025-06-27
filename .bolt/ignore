@@ -6,7 +6,7 @@ src/components/ui/aspect-ratio.tsx
 src/components/ui/audiora-settings.tsx
 src/components/ui/avatar.tsx
 src/components/ui/badge.tsx
-src/components/ui/button.tsx
+
 src/components/ui/card.tsx
 src/components/ui/checkbox.tsx
 src/components/ui/dialog.tsx
@@ -23,7 +23,7 @@ src/components/ui/pricing-page.tsx
 src/components/ui/progress-bar.tsx
 src/components/ui/progress-page.tsx
 src/components/ui/progress.tsx
-src/components/ui/radio-group.tsx
+
 src/components/ui/resizable.tsx
 src/components/ui/scroll-area.tsx
 src/components/ui/select.tsx
@@ -67,6 +67,7 @@ node_modules/
 .bolt/Summary.txt
 .bolt/Summary copy.txt
 supabase/migrations/*
+supabase/functions/*
 public/*
 src/stripe-config.ts
 src/vite-env.d.ts
