@@ -74,7 +74,16 @@ export default function PracticePage() {
   totalWords: number;
   timeTaken: number;
 } | null>(null);
-const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // To track "Got It" vs "Need Practice" for each word
+  const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // To track "Got It" vs "Need Practice" for each word
+  // Listening exercise state
+  const [listeningStartTime, setListeningStartTime] = useState<Date | null>(null);
+  const [listeningCompleted, setListeningCompleted] = useState(false);
+  const [listeningResults, setListeningResults] = useState<{
+    correct: number;
+    total: number;
+    timeTaken: number;
+  } | null>(null);
+  const [listeningOutcomes, setListeningOutcomes] = useState<boolean[]>([]); // To track correctness for each listening exercise
 
   
   useEffect(() => {
@@ -121,6 +130,10 @@ useEffect(() => {
     setVocabularyStartTime(new Date());
     setVocabularyOutcomes([]); // Reset outcomes for a new session
     console.log('⏱️ Vocabulary session started!');
+  }else if (practiceData?.practiceType === 'listening' && currentIndex === 0 && !listeningStartTime) {
+    setListeningStartTime(new Date());
+    setListeningOutcomes([]); // Reset outcomes for a new session
+    console.log('⏱️ Listening session started!');
   }
 }, [practiceData, currentIndex, vocabularyStartTime, practiceType]);
 
@@ -430,7 +443,8 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
     setQuizCompleted(false);
   };
   
-  const handleQuizAnswer = (answer: string, isCorrect: boolean) => {
+const handleAnswer = (answer: string, isCorrect: boolean) => {
+  if (practiceType === 'quiz') {
     const newCorrectAnswers = [...correctAnswers];
     newCorrectAnswers[currentIndex] = isCorrect;
     setCorrectAnswers(newCorrectAnswers);
@@ -439,8 +453,16 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
     const newUserAnswers = [...userAnswers];
     newUserAnswers[currentIndex] = answer;
     setUserAnswers(newUserAnswers);
-    console.log('✅ handleQuizAnswer called:', { currentIndex, isCorrect, answer });
-  };
+    console.log('✅ handleAnswer called (Quiz):', { currentIndex, isCorrect, answer });
+  } else if (practiceType === 'listening') {
+    setListeningOutcomes(prev => {
+      const newOutcomes = [...prev];
+      newOutcomes[currentIndex] = isCorrect;
+      return newOutcomes;
+    });
+    console.log('✅ handleAnswer called (Listening):', { currentIndex, isCorrect, answer });
+  }
+};
   
   const handleNext = () => {
       console.log('🚀 handleNext called, currentIndex (before update):', currentIndex);
@@ -469,6 +491,8 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
       } else if (practiceType === 'vocabulary'){
         // For vocabulary, just navigate back or show completion
         completeVocabulary(); // Call new function for vocabulary completion
+      }else if(practiceType === 'listening'){
+        completeListening();
       }
       else{
           // For listening and pronunciation, just navigate back or show completion
@@ -548,6 +572,24 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
   setVocabularyCompleted(true);
 };
 
+  const completeListening = () => {
+  console.log('🏁 completeListening called');
+  if (!listeningStartTime || !practiceData?.listening) return;
+
+  const endTime = new Date();
+  const timeTakenSeconds = Math.round((endTime.getTime() - listeningStartTime.getTime()) / 1000);
+
+  const correctCount = listeningOutcomes.filter(outcome => outcome).length;
+  const totalExercises = practiceData.listening.length;
+
+  setListeningResults({
+    correct: correctCount,
+    total: totalExercises,
+    timeTaken: timeTakenSeconds,
+  });
+  setListeningCompleted(true);
+};
+
   
   const handleTryAgain = () => {
     setCurrentIndex(0);
@@ -555,6 +597,17 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
     setShowResult(false);
     setCorrectAnswers([]);
     setQuizCompleted(false);
+    setUserAnswers([]); // Reset user answers for quiz
+    // Reset listening specific states
+    setListeningStartTime(null);
+    setListeningCompleted(false);
+    setListeningResults(null);
+    setListeningOutcomes([]);
+    // Reset vocabulary specific states
+    setVocabularyStartTime(null);
+    setVocabularyCompleted(false);
+    setVocabularyResults(null);
+    setVocabularyOutcomes([]);
     setQuizStartTime(new Date());
   };
   
@@ -801,7 +854,118 @@ if (vocabularyCompleted && vocabularyResults && songData) {
       </div>
     );
   }
+// Listening completion screen
+if (listeningCompleted && listeningResults && songData) {
+  const scorePercentage = Math.round((listeningResults.correct / listeningResults.total) * 100);
+  const message = scorePercentage >= 70 ? "Excellent work! You're a great listener." :
+                  scorePercentage > 0 ? "Good effort! Keep practicing your listening skills." : "Keep practicing! You'll get there.";
 
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-base-dark2 p-4">
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-6"
+        >
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-text-cream100 mb-2">
+              Listening Practice Complete!
+            </h1>
+            <p className="text-text-cream300">
+              {songData.song.title} by {songData.song.artist}
+            </p>
+          </div>
+
+          <Card className="p-8 space-y-6">
+            <div className="text-center">
+              <div className={`text-6xl font-bold mb-2 ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                {scorePercentage}%
+              </div>
+              <p className="text-text-cream300 text-lg">
+                {listeningResults.correct} out of {listeningResults.total} correct
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="text-text-cream400 text-sm">Time Taken</p>
+                <p className="text-text-cream100 font-semibold">
+                  {formatTime(listeningResults.timeTaken)}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-cream400 text-sm">Status</p>
+                <p className={`font-semibold ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {scorePercentage >= 70 ? 'Great Job!' : 'Keep Practicing'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-text-cream300 mb-4">
+                {message}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => {
+                  // Reset listening specific states and regenerate content
+                  setListeningStartTime(null);
+                  setListeningCompleted(false);
+                  setListeningResults(null);
+                  setListeningOutcomes([]);
+                  setCurrentIndex(0); // Start from the beginning
+                  setSelectedAnswer(null);
+                  setShowResult(false);
+                  generatePracticeContent(); // Regenerate content for a new session
+                }}
+                className="button-gradient-primary"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Practice Again
+              </Button>
+              <Button
+                onClick={() => {
+                  // Switch to quiz practice type and navigate
+                  setPracticeType('quiz');
+                  setQuizCompleted(false); // Ensure quiz completion state is reset
+                  setListeningCompleted(false); // Ensure listening completion state is reset
+                  setListeningStartTime(null);
+                  setListeningResults(null);
+                  setListeningOutcomes([]);
+                  setCurrentIndex(0);
+                  setSelectedAnswer(null);
+                  setShowResult(false);
+                  setUserAnswers([]);
+                  navigate(`/practice/${songId}?type=quiz`); // Navigate with query param
+                }}
+                variant="outline"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Take Quiz
+              </Button>
+              <Button
+                onClick={() => navigate(`/lessons/${songId}`)}
+                variant="outline"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Song
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
   
 
   return (
@@ -853,6 +1017,9 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                 setVocabularyCompleted(false);
                 setVocabularyResults(null);
                 setVocabularyOutcomes([]);
+                setListeningStartTime(null);
+                setListeningCompleted(false);
+                setListeningResults(null);
               }}
               variant={practiceType === 'quiz' ? 'default' : 'outline'}
               className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
@@ -876,6 +1043,9 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                 setVocabularyCompleted(false);
                 setVocabularyResults(null);
                 setVocabularyOutcomes([]);
+                setListeningStartTime(null);
+                setListeningCompleted(false);
+                setListeningResults(null);
               }}
               variant={practiceType === 'vocabulary' ? 'default' : 'outline'}
               className={practiceType === 'vocabulary' ? 'button-gradient-primary' : ''}
@@ -898,6 +1068,9 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                 setVocabularyCompleted(false);
                 setVocabularyResults(null);
                 setVocabularyOutcomes([]);
+                setListeningStartTime(null);
+                setListeningCompleted(false);
+                setListeningResults(null);
               }}
               variant={practiceType === 'listening' ? 'default' : 'outline'}
               className={practiceType === 'listening' ? 'button-gradient-primary' : ''}
@@ -920,6 +1093,9 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                 setVocabularyCompleted(false);
                 setVocabularyResults(null);
                 setVocabularyOutcomes([]);
+                setListeningStartTime(null);
+                setListeningCompleted(false);
+                setListeningResults(null);
               }}
               variant={practiceType === 'pronunciation' ? 'default' : 'outline'}
               className={practiceType === 'pronunciation' ? 'button-gradient-primary' : ''}
@@ -964,7 +1140,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
             selectedAnswer={selectedAnswer}
             showResult={showResult}
             onQuizStart={handleQuizStart}
-            onQuizAnswer={handleQuizAnswer}
+            onAnswer={handleAnswer}
             onNext={handleNext}
             onAnswerSelect={setSelectedAnswer}
             onShowResult={setShowResult}
