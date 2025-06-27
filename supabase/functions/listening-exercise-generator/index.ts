@@ -32,10 +32,15 @@ const VOICE_CONFIG = {
     languages: ["spanish", "italian", "german", "french"],
   },
   
-  // Manav - Asian language voice  
+  // Manav - Chinese voice  
   "6MoEUz34rbRrmmyxgRm4": {
     name: "Manav", 
-    languages: ["japanese", "chinese"],
+    languages: ["chinese"],
+  },
+  // Jhenny - Japanese voice
+  "D9MdulIxfrCUUJcGNQon": {
+    name: "Jhenny", 
+    languages: ["japanese"],
   }
 };
 
@@ -44,7 +49,7 @@ const LANGUAGE_VOICE_MAPPING = {
   italian: "XfNU2rGpBa01ckF309OY", 
   german: "XfNU2rGpBa01ckF309OY",
   french: "XfNU2rGpBa01ckF309OY",
-  japanese: "6MoEUz34rbRrmmyxgRm4",
+  japanese: "D9MdulIxfrCUUJcGNQon",
   chinese: "6MoEUz34rbRrmmyxgRm4"
 };
 
@@ -58,16 +63,18 @@ interface ListeningExerciseRequest {
 }
 
 interface GeminiExerciseResponse {
-  question: string;
-  options: string[];
-  correct_answer: string;
-  explanation: string;
-  audio_transcript: string;
+  exercises: Array<{
+    question: string;
+    options: string[];
+    correct_answer: string;
+    explanation: string;
+    audio_transcript: string;
+  }>;
 }
 
 interface ListeningExerciseResponse {
   success: boolean;
-  data?: {
+  data?: Array<{
     id: string;
     question: string;
     options: string[];
@@ -75,7 +82,7 @@ interface ListeningExerciseResponse {
     explanation: string;
     audio_url: string;
     difficulty_level: string;
-  };
+  }>;
   error?: string;
 }
 
@@ -83,18 +90,43 @@ interface ListeningExerciseResponse {
 const LISTENING_EXERCISE_SCHEMA = {
   type: "object",
   properties: {
-    question: { type: "string" },
-    options: { 
-      type: "array", 
-      items: { type: "string" },
-      minItems: 4,
-      maxItems: 4
-    },
-    correct_answer: { type: "string" },
-    explanation: { type: "string" },
-    audio_transcript: { type: "string" }
+    exercises: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { 
+            type: "string",
+            description: "The listening comprehension question"
+          },
+          options: { 
+            type: "array", 
+            items: { type: "string" },
+            minItems: 4,
+            maxItems: 4,
+            description: "Exactly 4 multiple choice options"
+          },
+          correct_answer: { 
+            type: "string",
+            description: "The correct answer from the options"
+          },
+          explanation: { 
+            type: "string",
+            description: "Explanation of why the answer is correct"
+          },
+          audio_transcript: { 
+            type: "string",
+            description: "Short audio text in target language (3-5 seconds when spoken, roughly 5-8 words)"
+          }
+        },
+        required: ["question", "options", "correct_answer", "explanation", "audio_transcript"]
+      },
+      minItems: 5,
+      maxItems: 5,
+      description: "Exactly 5 listening exercises"
+    }
   },
-  required: ["question", "options", "correct_answer", "explanation", "audio_transcript"]
+  required: ["exercises"]
 };
 
 // Helper function to call Gemini API
@@ -225,7 +257,7 @@ function createListeningExercisePrompt(
 ): string {
   return `You are an expert language learning instructor creating listening comprehension exercises.
 
-TASK: Create a listening exercise based on the song "${title}" in ${language}.
+TASK: Create 5 listening exercises based on the song "${title}" in ${language}.
 
 SONG LYRICS:
 ${lyrics}
@@ -246,6 +278,7 @@ DIFFICULTY GUIDELINES:
 
 AUDIO TRANSCRIPT GUIDELINES:
 - Should be 3-5 seconds when spoken aloud
+- Roughly 5-8 words (varies by language)
 - Must be in ${language}
 - Should relate to the song's theme or content
 - Appropriate for ${difficulty} level learners
