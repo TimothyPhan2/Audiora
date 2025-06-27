@@ -4,6 +4,8 @@ import { CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { QuizCard } from '@/components/ui/quiz-card'
+import { ListeningExercise } from '@/components/ui/listening-exercise'
+import { PronunciationExercise } from '@/components/ui/pronunciation-exercise'
 
 // Types for practice content
 interface VocabularyItem {
@@ -25,9 +27,31 @@ interface QuizQuestion {
   question_type: string;
 }
 
+interface ListeningExerciseData {
+  id: string;
+  audio_url: string;
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation?: string;
+  difficulty_level: string;
+}
+
+interface PronunciationExerciseData {
+  id: string;
+  word_or_phrase: string;
+  phonetic_transcription?: string;
+  reference_audio_url?: string;
+  difficulty_level: string;
+  language: string;
+  context?: string;
+}
+
 interface PracticeData {
   questions?: QuizQuestion[];
   vocabulary?: VocabularyItem[];
+  listening?: ListeningExerciseData[];
+  pronunciation?: PronunciationExerciseData[];
   songId: string;
   practiceType: string;
   timestamp: string;
@@ -83,8 +107,13 @@ export function Practice({
   // Determine the current session data and type
   const isQuiz = practiceData.practiceType === 'quiz' && practiceData.questions;
   const isVocabulary = practiceData.practiceType === 'vocabulary' && practiceData.vocabulary;
+  const isListening = practiceData.practiceType === 'listening' && practiceData.listening;
+  const isPronunciation = practiceData.practiceType === 'pronunciation' && practiceData.pronunciation;
   
-  const currentSessionData = isQuiz ? practiceData.questions : practiceData.vocabulary;
+  const currentSessionData = isQuiz ? practiceData.questions : 
+                           isVocabulary ? practiceData.vocabulary :
+                           isListening ? practiceData.listening :
+                           isPronunciation ? practiceData.pronunciation : null;
   const currentItem = currentSessionData?.[currentIndex];
   
   const progress = currentSessionData ? ((currentIndex + 1) / currentSessionData.length) * 100 : 0;
@@ -213,6 +242,53 @@ export function Practice({
     );
   };
 
+  const renderListeningSession = () => {
+    if (!currentItem) return null;
+    const listeningItem = currentItem as ListeningExerciseData;
+    
+    const handleListeningAnswer = (answer: string, isCorrect: boolean) => {
+      onAnswerSelect(answer);
+      onShowResult(true);
+      onQuizAnswer(answer, isCorrect);
+    };
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <ListeningExercise
+          key={currentIndex}
+          exercise={listeningItem}
+          selectedAnswer={selectedAnswer ?? ""}
+          showResult={showResult}
+          onAnswer={handleListeningAnswer}
+          onNext={onNext}
+        />
+      </div>
+    );
+  };
+
+  const renderPronunciationSession = () => {
+    if (!currentItem) return null;
+    const pronunciationItem = currentItem as PronunciationExerciseData;
+    
+    const handlePronunciationComplete = (score: number) => {
+      // For pronunciation, we consider it "correct" if score >= 70
+      const isCorrect = score >= 70;
+      onQuizAnswer(`Score: ${score}%`, isCorrect);
+      onShowResult(true);
+    };
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <PronunciationExercise
+          key={currentIndex}
+          exercise={pronunciationItem}
+          onComplete={handlePronunciationComplete}
+          onNext={onNext}
+        />
+      </div>
+    );
+  };
+
   const renderQuizSession = () => {
     if (!currentItem) return null;
     
@@ -261,6 +337,10 @@ export function Practice({
       return renderQuizSession();
     } else if (isVocabulary) {
       return renderVocabularySession();
+    } else if (isListening) {
+      return renderListeningSession();
+    } else if (isPronunciation) {
+      return renderPronunciationSession();
     }
     return null;
   };
