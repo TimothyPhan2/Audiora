@@ -83,11 +83,28 @@ export function ListeningExercise({
   const handleAnswerSelect = (answer: string) => {
     if (showResult) return;
     
-    const isCorrect = answer === exercise.correct_answer;
+    // Helper function to get the full text of an option by its letter
+    const getOptionTextByLetter = (letter: string): string => {
+      const option = exercise.options.find(opt => opt.startsWith(letter + '.'));
+      return option || '';
+    };
+    
+    // Get the full text of the correct answer
+    const correctAnswerText = getOptionTextByLetter(exercise.correct_answer);
+    
+    // Compare the selected answer with the correct answer text
+    const isCorrect = answer === correctAnswerText;
     onAnswer(answer, isCorrect);
   };
 
-  const isCorrect = selectedAnswer === exercise.correct_answer;
+  // Helper function to get the full text of an option by its letter (reused)
+  const getOptionTextByLetter = (letter: string): string => {
+    const option = exercise.options.find(opt => opt.startsWith(letter + '.'));
+    return option || '';
+  };
+  
+  const correctAnswerText = getOptionTextByLetter(exercise.correct_answer);
+  const isCorrect = selectedAnswer === correctAnswerText;
 
   return (
     <motion.div
@@ -251,7 +268,7 @@ export function ListeningExercise({
                 </h4>
                 {!isCorrect && (
                   <p className="text-sm text-text-cream300 mt-1">
-                    The correct answer is: <span className="font-medium text-text-cream100">{exercise.correct_answer}</span>
+                    The correct answer is: <span className="font-medium text-text-cream100">{correctAnswerText}</span>
                   </p>
                 )}
               </div>
