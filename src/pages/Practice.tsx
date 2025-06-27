@@ -781,7 +781,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                   Try Again
                 </Button>
                 <Button 
-                  onClick={() => navigate('/practice')}
+                  onClick={() => navigate(`/practice/${songId}?type=vocabulary`)}
                   variant="outline"
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
