@@ -31,8 +31,10 @@ interface PracticeQuestion {
 }
 
 interface PracticeData {
-  questions: PracticeQuestion[];
+  questions?: PracticeQuestion[]; 
   vocabulary?: VocabularyItem[];
+  listening?: ListeningExerciseData[]; 
+  pronunciation?: PronunciationExerciseData[]; 
   songId: string;
   practiceType: string;
   timestamp: string;
@@ -452,12 +454,12 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
     const endTime = new Date();
     const timeTakenSeconds = Math.round((endTime.getTime() - quizStartTime.getTime()) / 1000);
     const score = correctAnswers.filter(Boolean).length;
-    const totalQuestions = practiceData.questions.length;
+    const totalQuestions = practiceData.questions?.length || 0;
     
     setFinalScore(score);
     setTimeTaken(timeTakenSeconds);
     setQuizCompleted(true);
-    const submittedAnswers = practiceData.questions.reduce((acc, question, index) => {
+    const submittedAnswers = practiceData.questions?.reduce((acc, question, index) => {
       acc[`question_${index}`] = {
       question: question.question,
       selected_answer: userAnswers[index] || '', // Use tracked answers
@@ -465,7 +467,7 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
       is_correct: correctAnswers[index] || false
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, any>) || {};
     
     // Save quiz result to database
     if (quizId) {
