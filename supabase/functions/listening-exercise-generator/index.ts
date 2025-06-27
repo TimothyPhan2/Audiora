@@ -146,7 +146,7 @@ async function callGeminiAPI(prompt: string): Promise<GeminiExerciseResponse> {
         temperature: 0.3,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
         responseMimeType: "application/json",
         responseSchema: LISTENING_EXERCISE_SCHEMA
       }
@@ -223,7 +223,13 @@ async function uploadAudioToStorage(audioBuffer: ArrayBuffer, filename: string):
 // Helper function to save exercise to database
 async function saveExerciseToDatabase(
   songId: string,
-  exerciseData: GeminiExerciseResponse,
+  exercise: {
+    question: string;
+    options: string[];
+    correct_answer: string;
+    explanation: string;
+    audio_transcript: string;
+  },
   audioUrl: string,
   difficulty: string
 ): Promise<string> {
@@ -231,10 +237,10 @@ async function saveExerciseToDatabase(
     .from('listening_exercises')
     .insert({
       song_id: songId,
-      question: exerciseData.question,
-      options: exerciseData.options,
-      correct_answer: exerciseData.correct_answer,
-      explanation: exerciseData.explanation,
+      question: exercise.question,
+      options: exercise.options,
+      correct_answer: exercise.correct_answer,
+      explanation: exercise.explanation,
       audio_url: audioUrl,
       difficulty_level: difficulty
     })
@@ -359,42 +365,62 @@ Deno.serve(async (req) => {
       return new Response('No lyrics available for this song', { status: 400, headers: corsHeaders });
     }
 
-    console.log(`🎧 Generating listening exercise for song: ${songTitle} (${language}, ${difficulty})`);
+    console.log(`🎧 Generating 5 listening exercise for song: ${songTitle} (${language}, ${difficulty})`);
 
     // Step 1: Generate exercise content with Gemini
     const prompt = createListeningExercisePrompt(songTitle, songLyrics, language, difficulty);
     const exerciseData = await callGeminiAPI(prompt);
 
-    console.log(`✅ Generated exercise content: ${exerciseData.question}`);
+    console.log(`✅ Generated ${exerciseData.exercises.length} exercises`);
 
-    // Step 2: Generate audio with ElevenLabs TTS
-    const audioBuffer = await callElevenLabsTTS(exerciseData.audio_transcript, voiceId);
+   // Step 2-4: Process each exercise
+    const exerciseResults: Array<{
+      id: string;
+      question: string;
+      options: string[];
+      correct_answer: string;
+      explanation: string;
+      audio_url: string;
+      difficulty_level: string;
+    }> = [];
 
-    console.log(`🎵 Generated audio for transcript: "${exerciseData.audio_transcript}"`);
-
-    // Step 3: Upload audio to Supabase storage
-    const filename = `listening-exercise-${songId}-${crypto.randomUUID()}.mp3`;
-    const audioUrl = await uploadAudioToStorage(audioBuffer, filename);
-
-    console.log(`📁 Uploaded audio to storage: ${filename}`);
-
-    // Step 4: Save exercise to database
-    const exerciseId = await saveExerciseToDatabase(songId, exerciseData, audioUrl, difficulty);
-
-    console.log(`💾 Saved exercise to database with ID: ${exerciseId}`);
-
-    // Return success response
-    const response: ListeningExerciseResponse = {
-      success: true,
-      data: {
+    for (let i = 0; i < geminiResponse.exercises.length; i++) {
+      const exercise = geminiResponse.exercises[i];
+      
+      console.log(`🎵 Processing exercise ${i + 1}: "${exercise.audio_transcript}"`);
+      
+      // Generate audio for this exercise
+      const audioBuffer = await callElevenLabsTTS(exercise.audio_transcript, voiceId);
+      
+      // Upload audio to storage with unique filename
+      const filename = `listening-exercise-${songId}-${i + 1}-${crypto.randomUUID()}.mp3`;
+      const audioUrl = await uploadAudioToStorage(audioBuffer, filename);
+      
+      console.log(`📁 Uploaded audio ${i + 1} to storage: ${filename}`);
+      
+      // Save exercise to database  
+      const exerciseId = await saveExerciseToDatabase(songId, exercise, audioUrl, difficulty);
+      
+      // Add to results
+      exerciseResults.push({
         id: exerciseId,
-        question: exerciseData.question,
-        options: exerciseData.options,
-        correct_answer: exerciseData.correct_answer,
-        explanation: exerciseData.explanation,
+        question: exercise.question,
+        options: exercise.options,
+        correct_answer: exercise.correct_answer,
+        explanation: exercise.explanation,
         audio_url: audioUrl,
         difficulty_level: difficulty
-      }
+      });
+      
+      console.log(`✅ Completed exercise ${i + 1}/${geminiResponse.exercises.length} with ID: ${exerciseId}`);
+    }
+
+    console.log(`🎉 Successfully generated ${exerciseResults.length} listening exercises!`);
+
+    // Return success response with all exercises
+    const response: ListeningExerciseResponse = {
+      success: true,
+      data: exerciseResults
     };
 
     return new Response(JSON.stringify(response), {
