@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle, BookOpen, Brain } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, BookOpen, Brain, Volume2, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongPlayer } from '@/components/songs/SongPlayer';
 import { supabase } from '@/lib/supabase';
@@ -295,6 +295,20 @@ export function SongDetail() {
                 >
                   <Brain className="w-5 h-5" />
                   Quick Quiz
+                </Link>
+                <Link 
+                  to={`/practice/${songId}?type=listening`}
+                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+                >
+                  <Brain className="w-5 h-5" />
+                 Listening Exercise
+                </Link>
+                <Link 
+                  to={`/practice/${songId}?type=pronunciation`}
+                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+                >
+                  <Brain className="w-5 h-5" />
+                 Pronunciation Practice
                 </Link>
               </div>
             </div>
