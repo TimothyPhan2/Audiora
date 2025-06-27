@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
         difficulty_level: difficulty
       });
       
-      console.log(`✅ Completed exercise ${i + 1}/${geminiResponse.exercises.length} with ID: ${exerciseId}`);
+      console.log(`✅ Completed exercise ${i + 1}/${exerciseData.exercises.length} with ID: ${exerciseId}`);
     }
 
     console.log(`🎉 Successfully generated ${exerciseResults.length} listening exercises!`);
