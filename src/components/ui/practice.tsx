@@ -65,7 +65,7 @@ interface PracticeProps {
   showResult: boolean;
   correctAnswers: boolean[];
   onQuizStart: () => void;
-  onQuizAnswer: (answer: string, isCorrect: boolean) => void;
+  onAnswer: (answer: string, isCorrect: boolean) => void;  // Generic answer handler
   onNext: () => void;
   onAnswerSelect: (answer: string | null) => void;
   onShowResult: (show: boolean) => void;
@@ -80,7 +80,7 @@ export function Practice({
   showResult,
   correctAnswers,
   onQuizStart,
-  onQuizAnswer,
+  onAnswer,
   onNext,
   onAnswerSelect,
   onShowResult,
@@ -249,7 +249,7 @@ export function Practice({
     const handleListeningAnswer = (answer: string, isCorrect: boolean) => {
       onAnswerSelect(answer);
       onShowResult(true);
-      onQuizAnswer(answer, isCorrect);
+      onAnswer(answer, isCorrect);
     };
 
     return (
@@ -273,7 +273,7 @@ export function Practice({
     const handlePronunciationComplete = (score: number) => {
       // For pronunciation, we consider it "correct" if score >= 70
       const isCorrect = score >= 70;
-      onQuizAnswer(`Score: ${score}%`, isCorrect);
+      onAnswer(`Score: ${score}%`, isCorrect);
       onShowResult(true);
     };
 
@@ -313,7 +313,7 @@ export function Practice({
       const selectedOptionText = quizItem.options[answerIndex];
       onAnswerSelect(optionId);
       onShowResult(true);
-      onQuizAnswer(selectedOptionText, isCorrect);
+      onAnswer(selectedOptionText, isCorrect);
     };
 
     
