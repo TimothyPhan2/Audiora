@@ -254,7 +254,7 @@ useEffect(() => {
       console.log('✅ Generated listening exercise:', listeningData);
       
       setPracticeData({
-        listening: [listeningData], // Wrap in array since UI expects array
+        listening: listeningData.data, 
         songId: songData?.song.id || '',
         practiceType: 'listening',
         timestamp: new Date().toISOString()
