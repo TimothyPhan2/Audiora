@@ -34,17 +34,51 @@ export function ListeningExercise({
 }: ListeningExerciseProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const handlePlay = () => {
-    // Mock audio playback for now
-    setIsPlaying(true);
-    setHasPlayedOnce(true);
-    
-    // Simulate audio duration
-    setTimeout(() => {
+    if (exercise.audio_url) {
+      // Clean up previous audio if exists
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+
+      const audio = new Audio(exercise.audio_url);
+      setAudioElement(audio);
+      setIsPlaying(true);
+      setHasPlayedOnce(true);
+      
+      audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        setIsPlaying(false);
+      });
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+      };
+      
+      audio.onerror = () => {
+        setIsPlaying(false);
+        console.error('Error loading audio from:', exercise.audio_url);
+      };
+    } else {
+      console.error('No audio URL provided in exercise data');
+      // Fallback to mock behavior for development
       setIsPlaying(false);
-    }, 3000);
+      setHasPlayedOnce(true);
+    }
   };
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+    };
+  }, [audioElement]);
 
   const handleAnswerSelect = (answer: string) => {
     if (showResult) return;

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
 import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary, updateUserVocabularyProgress } from '@/lib/api';
+import { generateListeningExercise } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { ListeningExerciseData } from '@/components/ui/listening-exercise';
 import { PronunciationExerciseData } from '@/components/ui/pronunciation-exercise';
@@ -223,8 +224,12 @@ useEffect(() => {
       console.log(`🤖 Generating new ${practiceType} with Gemini...`);
       
       if (practiceType === 'listening' || practiceType === 'pronunciation') {
-        // For now, use mock data for listening and pronunciation
-        generateMockContent(practiceType);
+        if (practiceType === 'listening') {
+          await generateListeningContent(userProficiencyLevel);
+        } else {
+          // For now, use mock data for pronunciation
+          generateMockContent(practiceType);
+        }
       } else {
         await generateNewContent(userProficiencyLevel);
       }
@@ -232,6 +237,34 @@ useEffect(() => {
     } catch (error) {
       console.error('Error in generatePracticeContent:', error);
       setError('Failed to load practice content. Please try again.');
+      setIsGenerating(false);
+    }
+  };
+
+  // Generate real listening content using the edge function
+  const generateListeningContent = async (userProficiencyLevel: string) => {
+    try {
+      console.log('🎧 Generating listening exercise with AI...');
+      
+      const listeningData = await generateListeningExercise(
+        songData?.song.id || '',
+        songData?.song.language || '',
+        userProficiencyLevel.toLowerCase()
+      );
+      
+      console.log('✅ Generated listening exercise:', listeningData);
+      
+      setPracticeData({
+        listening: [listeningData], // Wrap in array since UI expects array
+        songId: songData?.song.id || '',
+        practiceType: 'listening',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error generating listening exercise:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate listening exercise');
+    } finally {
       setIsGenerating(false);
     }
   };
