@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-interface ListeningExerciseData {
+export interface ListeningExerciseData {
   id: string;
   audio_url: string;
   question: string;
