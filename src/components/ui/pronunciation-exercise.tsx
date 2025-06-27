@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-interface PronunciationExerciseData {
+export interface PronunciationExerciseData {
   id: string;
   word_or_phrase: string;
   phonetic_transcription?: string;
