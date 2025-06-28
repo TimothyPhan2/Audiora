@@ -117,7 +117,8 @@ const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // 
             mastery_score: item.mastery_score || 0,
             times_practiced: item.times_practiced || 0,
             times_correct: item.times_correct || 0,
-            last_practiced_at: item.last_practiced_at
+            last_practiced_at: item.last_practiced_at,
+            user_vocabulary_id: item.id
           }));
         
         setUserVocabulary(relevantVocab);
