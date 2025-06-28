@@ -373,12 +373,14 @@ export async function testDatabasePersistence(): Promise<void> {
   console.log('1. Testing vocabulary table insert...');
   const { data: vocabResult, error: vocabError } = await supabase
     .from('vocabulary')
-    .insert({
+    .upsert({
       word: testWord,
       language: 'japanese',
       translation: testTranslation,
       difficulty_level: 'beginner',
       is_premium: false
+    }, {
+      onConflict: 'word,language'
     })
     .select()
     .single();
@@ -996,4 +998,74 @@ export async function generateListeningExercise(songId: string, language: string
   }
 
   return await response.json();
+}
+
+/**
+ * Check if cached listening exercises exist for a song and difficulty
+ */
+export async function fetchCachedListeningExercises(
+  songId: string, 
+  difficulty: string
+): Promise<any[] | null> {
+  try {
+    console.log('🔍 Checking for cached listening exercises:', songId, difficulty);
+    
+    const { data: exercises, error } = await supabase
+      .from('listening_exercises')
+      .select('*')
+      .eq('song_id', songId)
+      .eq('difficulty_level', difficulty)
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching cached exercises:', error);
+      return null;
+    }
+    
+    if (!exercises || exercises.length === 0) {
+      console.log('📝 No cached exercises found');
+      return null;
+    }
+    
+    console.log('✅ Found', exercises.length, 'cached exercises');
+    
+    // Format to match expected ListeningExerciseData interface
+    return exercises.map(exercise => ({
+      id: exercise.id,
+      audio_url: exercise.audio_url,
+      question: exercise.question,
+      options: exercise.options,
+      correct_answer: exercise.correct_answer,
+      explanation: exercise.explanation,
+      difficulty_level: exercise.difficulty_level
+    }));
+    
+  } catch (error) {
+    console.error('Error in fetchCachedListeningExercises:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if any listening exercises exist for a song (any difficulty)
+ * Used to avoid unnecessary API calls when exercises exist
+ */
+export async function checkListeningExercisesExist(songId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('listening_exercises')
+      .select('id')
+      .eq('song_id', songId)
+      .limit(1);
+    
+    if (error) {
+      console.error('Error checking exercise existence:', error);
+      return false;
+    }
+    
+    return data && data.length > 0;
+  } catch (error) {
+    console.error('Error in checkListeningExercisesExist:', error);
+    return false;
+  }
 }
