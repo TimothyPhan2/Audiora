@@ -14,7 +14,6 @@ import {
   updateUserVocabularyProgress, 
   generateListeningExercise,
   fetchCachedListeningExercises,  // ADD THIS
-  checkListeningExercisesExist    // ADD THIS
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { ListeningExerciseData } from '@/components/ui/listening-exercise';
