@@ -1069,3 +1069,70 @@ export async function checkListeningExercisesExist(songId: string): Promise<bool
     return false;
   }
 }
+
+// =====================================================
+// PRONUNCIATION EXERCISE FUNCTIONS
+// =====================================================
+
+export async function generatePronunciationExercises(
+  songId: string, 
+  difficulty: string, 
+  language: string, 
+  userVocabulary: any[]
+) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase.functions.invoke('pronunciation-exercise-generator', {
+    body: { songId, difficulty, language, userVocabulary }
+  });
+
+  if (error) throw error;
+  return data.exercises;
+}
+
+export async function fetchCachedPronunciationExercises(songId: string, difficulty: string) {
+  const { data, error } = await supabase
+    .from('pronunciation_exercises')
+    .select('*')
+    .eq('song_id', songId)
+    .eq('difficulty_level', difficulty)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function savePronunciationResult(result: {
+  pronunciation_exercise_id: string;
+  transcribed_text: string;
+  accuracy_score: number;
+  feedback: string;
+  user_audio_url?: string;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('user_pronunciation_results')
+    .insert({
+      user_id: user.id,
+      ...result
+    });
+
+  if (error) throw error;
+  return data;
+}
+
+// 🔒 SECURE: Eleven Labs STT via Edge Function (no frontend API key)
+export async function transcribeAudioWithElevenLabs(audioBlob: Blob): Promise<{
+  text: string;
+  confidence?: number;
+}> {
+  const { data, error } = await supabase.functions.invoke('pronunciation-stt-processor', {
+    body: audioBlob
+  });
+
+  if (error) throw error;
+  return data;
+}
