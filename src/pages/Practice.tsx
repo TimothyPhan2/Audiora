@@ -14,10 +14,13 @@ import {
   updateUserVocabularyProgress, 
   generateListeningExercise,
   fetchCachedListeningExercises,  // ADD THIS
+  generatePronunciationExercises, // ADD THIS
+  fetchCachedPronunciationExercises, // ADD THIS
+  savePronunciationResult // ADD THIS
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { ListeningExerciseData } from '@/components/ui/listening-exercise';
-import { PronunciationExerciseData } from '@/components/ui/pronunciation-exercise';
+import { PronunciationExercise, PronunciationExerciseData } from '@/components/ui/pronunciation-exercise'; // ADD THIS
 
 interface VocabularyItem {
   word: string;
@@ -93,6 +96,12 @@ const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // 
   } | null>(null);
   const [listeningOutcomes, setListeningOutcomes] = useState<boolean[]>([]); // To track correctness for each listening exercise
 
+  // Pronunciation exercise state (ADD THESE)
+  const [pronunciationExercises, setPronunciationExercises] = useState<PronunciationExerciseData[]>([]);
+  const [currentPronunciationIndex, setCurrentPronunciationIndex] = useState(0);
+  const [pronunciationResults, setPronunciationResults] = useState<any[]>([]);
+  const [pronunciationCompleted, setPronunciationCompleted] = useState(false);
+  const [pronunciationStartTime, setPronunciationStartTime] = useState<Date | null>(null);
   
   useEffect(() => {
     if (songData?.song) {
@@ -143,8 +152,12 @@ useEffect(() => {
     setListeningStartTime(new Date());
     setListeningOutcomes([]); // Reset outcomes for a new session
     console.log('⏱️ Listening session started!');
+  } else if (practiceType === 'pronunciation' && currentPronunciationIndex === 0 && !pronunciationStartTime) {
+    setPronunciationStartTime(new Date());
+    setPronunciationResults([]); // Reset results for a new session
+    console.log('⏱️ Pronunciation session started!');
   }
-}, [practiceData, currentIndex, vocabularyStartTime, listeningStartTime, practiceType]);
+}, [practiceData, currentIndex, vocabularyStartTime, listeningStartTime, practiceType, currentPronunciationIndex, pronunciationStartTime]);
 
 
   // Handle mastery updates for vocabulary practice
@@ -248,6 +261,8 @@ useEffect(() => {
       if (practiceType === 'listening') {
         await generateListeningContent(userProficiencyLevel);
       } else if (practiceType === 'pronunciation') {
+        await generatePronunciationContent(userProficiencyLevel); // CALL NEW FUNCTION
+      } else if (practiceType === 'pronunciation-mock') {
         // For now, use mock data for pronunciation
         generateMockContent(practiceType);
       } else {
@@ -312,6 +327,58 @@ useEffect(() => {
     }
   };
 
+  // Add pronunciation generation function (NEW)
+  const generatePronunciationContent = async (userProficiencyLevel: string) => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+
+      if (!songData?.song) {
+        throw new Error('Song data not available');
+      }
+
+      // Check for cached exercises first
+      const cachedExercises = await fetchCachedPronunciationExercises(
+        songData.song.id, 
+        userProficiencyLevel
+      );
+
+      if (cachedExercises && cachedExercises.length > 0) {
+        console.log('Using cached pronunciation exercises');
+        setPronunciationExercises(cachedExercises);
+      } else {
+        console.log('Generating new pronunciation exercises');
+        
+        // Get user vocabulary for intelligent selection
+        const relevantVocab = userVocabulary
+          .map(item => ({
+            id: item.vocabulary?.id || item.id,
+            word: item.vocabulary?.word || item.word,
+            translation: item.vocabulary?.translation || item.translation,
+            mastery_score: item.mastery_score || 0,
+            user_vocabulary_id: item.user_vocabulary_id || item.id
+          }));
+
+        const exercises = await generatePronunciationExercises(
+          songData.song.id,
+          userProficiencyLevel,
+          songData.song.language,
+          relevantVocab
+        );
+
+        setPronunciationExercises(exercises);
+      }
+      
+      // Set start time
+      setPronunciationStartTime(new Date());
+    } catch (error) {
+      console.error('Pronunciation generation error:', error);
+      setError('Failed to generate pronunciation exercises. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Add this function
 const generateMockContent = (type: 'listening' | 'pronunciation') => {
   if (!songData?.song) return;
@@ -353,41 +420,7 @@ const generateMockContent = (type: 'listening' | 'pronunciation') => {
       timestamp: new Date().toISOString(),
     });
   } else if (type === 'pronunciation') {
-    const mockPronunciationExercises = [
-      {
-        id: 'pron-1',
-        word_or_phrase: 'Bonjour',
-        phonetic_transcription: 'bɔ̃ʒuʁ',
-        reference_audio_url: 'mock-pron-audio-1',
-        difficulty_level: 'beginner',
-        language: songData.song.language,
-        context: 'Common greeting',
-      },
-      {
-        id: 'pron-2',
-        word_or_phrase: 'Rendezvous',
-        phonetic_transcription: 'ʁɑ̃devu',
-        reference_audio_url: 'mock-pron-audio-2',
-        difficulty_level: 'intermediate',
-        language: songData.song.language,
-        context: 'Meeting point',
-      },
-      {
-        id: 'pron-3',
-        word_or_phrase: 'Écureuil',
-        phonetic_transcription: 'ekyʁœj',
-        reference_audio_url: 'mock-pron-audio-3',
-        difficulty_level: 'advanced',
-        language: songData.song.language,
-        context: 'Squirrel (challenging sound)',
-      },
-    ];
-    setPracticeData({
-      pronunciation: mockPronunciationExercises,
-      songId: songData.song.id,
-      practiceType: type,
-      timestamp: new Date().toISOString(),
-    });
+    // Mock pronunciation removed - handled by generatePronunciationContent
   }
   setIsGenerating(false);
 };
@@ -504,7 +537,7 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     : practiceType === 'listening' // Add this line
     ? (practiceData?.listening?.length || 0) // Add this line
     : practiceType === 'pronunciation' // Add this line
-    ? (practiceData?.pronunciation?.length || 0) // Add this line
+    ? (pronunciationExercises?.length || 0) // Use pronunciationExercises length
     : 0;  // Default to 0 if practiceData or type is unexpected
       
     if (currentIndex < totalItems - 1) {
@@ -524,6 +557,8 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
         completeVocabulary(); // Call new function for vocabulary completion
       }else if(practiceType === 'listening'){
         completeListening();
+      } else if (practiceType === 'pronunciation') { // ADD THIS
+        setPronunciationCompleted(true); // Mark pronunciation as completed
       }
       else{
           // For listening and pronunciation, just navigate back or show completion
@@ -621,7 +656,53 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
   setListeningCompleted(true);
 };
 
-  
+  // Add pronunciation completion handler (NEW)
+  const completePronunciationExercise = async (result: {
+    transcribed_text: string;
+    accuracy_score: number;
+    feedback: string;
+  }) => {
+    const currentExercise = pronunciationExercises[currentPronunciationIndex];
+    
+    try {
+      // Save result to database
+      await savePronunciationResult({
+        pronunciation_exercise_id: currentExercise.id,
+        transcribed_text: result.transcribed_text,
+        accuracy_score: result.accuracy_score,
+        feedback: result.feedback
+      });
+
+      // Track results locally
+      const newResults = [...pronunciationResults, {
+        exercise: currentExercise,
+        ...result
+      }];
+      setPronunciationResults(newResults);
+
+      // Update vocabulary progress if applicable
+      if (currentExercise.user_vocabulary_id) {
+        await updateUserVocabularyProgress({
+          word: currentExercise.word_or_phrase,
+          translation: '', // Translation is not directly available here, can be empty or fetched if needed
+          source: 'review',
+          user_vocabulary_id: currentExercise.user_vocabulary_id,
+          language: songData?.song.language || '',
+          difficulty_level: currentExercise.difficulty_level
+        }, result.accuracy_score >= 70); // Consider 70+ as correct
+      }
+
+      // Move to next exercise or complete
+      if (currentPronunciationIndex < pronunciationExercises.length - 1) {
+        setCurrentPronunciationIndex(currentPronunciationIndex + 1);
+      } else {
+        setPronunciationCompleted(true);
+      }
+    } catch (error) {
+      console.error('Error saving pronunciation result:', error);
+    }
+  };
+
   const handleTryAgain = () => {
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -639,9 +720,26 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     setVocabularyCompleted(false);
     setVocabularyResults(null);
     setVocabularyOutcomes([]);
+    // Reset pronunciation specific states (NEW)
+    resetPronunciationPractice();
     setQuizStartTime(new Date());
   };
-  
+
+  // Add reset function for pronunciation (NEW)
+  const resetPronunciationPractice = () => {
+    setPronunciationExercises([]);
+    setCurrentPronunciationIndex(0);
+    setPronunciationResults([]);
+    setPronunciationCompleted(false);
+    setPronunciationStartTime(null);
+    setError(null);
+    // Re-generate content for a new session
+    if (songData?.song && userVocabulary.length > 0) {
+      const userProficiencyLevel = 'intermediate'; // Default or get from user profile
+      generatePronunciationContent(userProficiencyLevel);
+    }
+  };
+
   const handleBackToSong = () => {
     navigate(`/lessons/${songId}`);
   };
@@ -655,7 +753,12 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       console.log('📚 Vocabulary loaded - Total words:', practiceData.vocabulary.length);
       console.log('📚 Vocabulary preview:', practiceData.vocabulary.map((v, i) => `${i}: ${v.word}`));
     }
-  }, [practiceData]);
+    // Add this for pronunciation (NEW)
+    if (practiceType === 'pronunciation' && songData?.song && userVocabulary.length > 0) {
+      const userProficiencyLevel = 'intermediate'; // Default or get from user profile
+      generatePronunciationContent(userProficiencyLevel);
+    }
+  }, [practiceData, practiceType, songData, userVocabulary]); // Add userVocabulary to dependencies
   
   if (songLoading) {
     return (
@@ -910,6 +1013,86 @@ if (listeningCompleted && listeningResults && songData) {
     </div>
   );
 }
+
+    // Pronunciation completion screen (NEW)
+    if (pronunciationCompleted && pronunciationResults.length > 0 && songData) {
+      const totalScore = pronunciationResults.reduce((sum, r) => sum + r.accuracy_score, 0);
+      const averageScore = Math.round(totalScore / pronunciationResults.length);
+      const message = averageScore >= 70 ? "Excellent work! Your pronunciation is on point." :
+                      averageScore > 0 ? "Good effort! Keep practicing to refine your pronunciation." : "Keep practicing! You'll get there.";
+
+      return (
+        <div className="min-h-screen bg-base-dark2 p-4">
+          <div className="max-w-2xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-6"
+            >
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-text-cream100 mb-2">
+                  Pronunciation Practice Complete!
+                </h1>
+                <p className="text-text-cream300">
+                  {songData.song.title} by {songData.song.artist}
+                </p>
+              </div>
+
+              <Card className="p-8 space-y-6">
+                <div className="text-center">
+                  <div className={`text-6xl font-bold mb-2 ${averageScore >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {averageScore}%
+                  </div>
+                  <p className="text-text-cream300 text-lg">
+                    Average Accuracy
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-text-cream100">Individual Results:</h3>
+                  {pronunciationResults.map((result, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-base-dark3 rounded-lg">
+                      <span className="font-medium text-text-cream200">{result.exercise.word_or_phrase}</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        result.accuracy_score >= 80 ? 'bg-green-500/20 text-green-400' :
+                        result.accuracy_score >= 60 ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {result.accuracy_score}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-center">
+                  <p className="text-text-cream300 mb-4">
+                    {message}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={resetPronunciationPractice}
+                    className="button-gradient-primary"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Practice Again
+                  </Button>
+                  <Button
+                    onClick={() => navigate(`/lessons/${songId}`)}
+                    variant="outline"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Song
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      );
+    }
+
   // Quiz completion screen
   if (quizCompleted && practiceData) {
     const scorePercentage = Math.round((finalScore / (practiceData.questions?.length || 0)) * 100);
@@ -1050,6 +1233,12 @@ if (listeningCompleted && listeningResults && songData) {
                 setListeningStartTime(null);
                 setListeningCompleted(false);
                 setListeningResults(null);
+                // Pronunciation-specific resets (NEW)
+                setPronunciationExercises([]);
+                setCurrentPronunciationIndex(0);
+                setPronunciationResults([]);
+                setPronunciationCompleted(false);
+                setPronunciationStartTime(null);
               }}
               variant={practiceType === 'quiz' ? 'default' : 'outline'}
               className={practiceType === 'quiz' ? 'button-gradient-primary' : ''}
@@ -1076,6 +1265,12 @@ if (listeningCompleted && listeningResults && songData) {
                 setListeningStartTime(null);
                 setListeningCompleted(false);
                 setListeningResults(null);
+                // Pronunciation-specific resets (NEW)
+                setPronunciationExercises([]);
+                setCurrentPronunciationIndex(0);
+                setPronunciationResults([]);
+                setPronunciationCompleted(false);
+                setPronunciationStartTime(null);
               }}
               variant={practiceType === 'vocabulary' ? 'default' : 'outline'}
               className={practiceType === 'vocabulary' ? 'button-gradient-primary' : ''}
@@ -1101,6 +1296,12 @@ if (listeningCompleted && listeningResults && songData) {
                 setListeningStartTime(null);
                 setListeningCompleted(false);
                 setListeningResults(null);
+                // Pronunciation-specific resets (NEW)
+                setPronunciationExercises([]);
+                setCurrentPronunciationIndex(0);
+                setPronunciationResults([]);
+                setPronunciationCompleted(false);
+                setPronunciationStartTime(null);
               }}
               variant={practiceType === 'listening' ? 'default' : 'outline'}
               className={practiceType === 'listening' ? 'button-gradient-primary' : ''}
@@ -1126,6 +1327,12 @@ if (listeningCompleted && listeningResults && songData) {
                 setListeningStartTime(null);
                 setListeningCompleted(false);
                 setListeningResults(null);
+                // Pronunciation-specific resets (NEW)
+                setPronunciationExercises([]);
+                setCurrentPronunciationIndex(0);
+                setPronunciationResults([]);
+                setPronunciationCompleted(false);
+                setPronunciationStartTime(null);
               }}
               variant={practiceType === 'pronunciation' ? 'default' : 'outline'}
               className={practiceType === 'pronunciation' ? 'button-gradient-primary' : ''}
@@ -1161,6 +1368,43 @@ if (listeningCompleted && listeningResults && songData) {
               Try Again
             </Button>
           </Card>
+        ) : practiceType === 'pronunciation' ? ( // ADD THIS BLOCK
+          pronunciationExercises.length > 0 ? (
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-sm text-text-cream300">
+                  Exercise {currentPronunciationIndex + 1} of {pronunciationExercises.length}
+                </p>
+                <div className="w-full bg-base-dark3 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-accent-teal-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentPronunciationIndex) / pronunciationExercises.length) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              <PronunciationExercise
+                exercise={pronunciationExercises[currentPronunciationIndex]}
+                onComplete={completePronunciationExercise}
+              />
+            </div>
+          ) : (
+            <Card className="p-8 text-center">
+              <Mic className="w-12 h-12 mx-auto mb-4 text-accent-teal-400" />
+              <h3 className="text-lg font-semibold text-text-cream100 mb-2">
+                Ready to Practice Pronunciation
+              </h3>
+              <p className="text-text-cream300 mb-4">
+                Click the button below to generate pronunciation exercises
+              </p>
+              <Button 
+                onClick={generatePracticeContent}
+                className="button-gradient-primary"
+              >
+                Generate Pronunciation Exercises
+              </Button>
+            </Card>
+          )
         ) : practiceData ? (
           <Practice 
             practiceData={practiceData}
