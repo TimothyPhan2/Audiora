@@ -6,7 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSongData } from '@/lib/hooks';
 import { Practice } from '@/components/ui/practice';
-import { fetchQuizForSong, saveGeneratedQuizToDatabase, saveQuizResultToDatabase, getUserVocabulary, updateUserVocabularyProgress, generateListeningExercise } from '@/lib/api';
+import { 
+  fetchQuizForSong, 
+  saveGeneratedQuizToDatabase, 
+  saveQuizResultToDatabase, 
+  getUserVocabulary, 
+  updateUserVocabularyProgress, 
+  generateListeningExercise,
+  fetchCachedListeningExercises,  // ADD THIS
+  checkListeningExercisesExist    // ADD THIS
+} from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { ListeningExerciseData } from '@/components/ui/listening-exercise';
 import { PronunciationExerciseData } from '@/components/ui/pronunciation-exercise';
@@ -74,7 +83,7 @@ export default function PracticePage() {
   totalWords: number;
   timeTaken: number;
 } | null>(null);
-  const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // To track "Got It" vs "Need Practice" for each word
+const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // To track "Got It" vs "Need Practice" for each word
   // Listening exercise state
   const [listeningStartTime, setListeningStartTime] = useState<Date | null>(null);
   const [listeningCompleted, setListeningCompleted] = useState(false);
@@ -235,13 +244,11 @@ useEffect(() => {
       // Generate new content using Gemini API
       console.log(`🤖 Generating new ${practiceType} with Gemini...`);
       
-      if (practiceType === 'listening' || practiceType === 'pronunciation') {
-        if (practiceType === 'listening') {
-          await generateListeningContent(userProficiencyLevel);
-        } else {
-          // For now, use mock data for pronunciation
-          generateMockContent(practiceType);
-        }
+      if (practiceType === 'listening') {
+        await generateListeningContent(userProficiencyLevel);
+      } else if (practiceType === 'pronunciation') {
+        // For now, use mock data for pronunciation
+        generateMockContent(practiceType);
       } else {
         await generateNewContent(userProficiencyLevel);
       }
@@ -256,7 +263,27 @@ useEffect(() => {
   // Generate real listening content using the edge function
   const generateListeningContent = async (userProficiencyLevel: string) => {
     try {
-      console.log('🎧 Generating listening exercise with AI...');
+      // First check for cached exercises
+      console.log('🔍 Checking for cached listening exercises...');
+      const cachedExercises = await fetchCachedListeningExercises(
+        songData?.song.id || '',
+        userProficiencyLevel.toLowerCase()
+      );
+      
+      if (cachedExercises && cachedExercises.length > 0) {
+        console.log('✅ Using cached listening exercises');
+        setPracticeData({
+          listening: cachedExercises,
+          songId: songData?.song.id || '',
+          practiceType: 'listening',
+          timestamp: new Date().toISOString()
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      // No cached exercises found, generate new ones
+      console.log('🎧 Generating NEW listening exercises...');
       
       const listeningData = await generateListeningExercise(
         songData?.song.id || '',
@@ -264,7 +291,10 @@ useEffect(() => {
         userProficiencyLevel.toLowerCase()
       );
       
-      console.log('✅ Generated listening exercise:', listeningData);
+      console.log('✅ Generated new listening exercises:', listeningData);
+      
+      // Edge Function automatically saves to listening_exercises table
+      // So future calls will find cached versions
       
       setPracticeData({
         listening: listeningData.data, 
@@ -650,11 +680,11 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     );
   }
 
-// Vocabulary completion screen
-if (vocabularyCompleted && vocabularyResults && songData) {
-  const masteryPercentage = Math.round((vocabularyResults.gotIt / vocabularyResults.totalWords) * 100);
-  const message = masteryPercentage >= 70 ? "Excellent work! You're making great progress with these words." :
-                  masteryPercentage > 0 ? "Good effort! Keep practicing to improve your mastery." : "Keep practicing! You got this.";
+// Listening completion screen
+if (listeningCompleted && listeningResults && songData) {
+  const scorePercentage = Math.round((listeningResults.correct / listeningResults.total) * 100);
+  const message = scorePercentage >= 70 ? "Excellent work! You're a great listener." :
+                  scorePercentage > 0 ? "Good effort! Keep practicing your listening skills." : "Keep practicing! You'll get there.";
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -672,7 +702,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
         >
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-text-cream100 mb-2">
-              Vocabulary Complete!
+              Listening Practice Complete!
             </h1>
             <p className="text-text-cream300">
               {songData.song.title} by {songData.song.artist}
@@ -681,31 +711,25 @@ if (vocabularyCompleted && vocabularyResults && songData) {
 
           <Card className="p-8 space-y-6">
             <div className="text-center">
-              <div className={`text-6xl font-bold mb-2 ${masteryPercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
-                {masteryPercentage}%
+              <div className={`text-6xl font-bold mb-2 ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                {scorePercentage}%
               </div>
               <p className="text-text-cream300 text-lg">
-                Mastery Score
+                {listeningResults.correct} out of {listeningResults.total} correct
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-text-cream400 text-sm">Words Mastered</p>
-                <p className="text-green-400 font-semibold">
-                  {vocabularyResults.gotIt}
-                </p>
-              </div>
-              <div>
-                <p className="text-text-cream400 text-sm">Words to Practice</p>
-                <p className="text-yellow-400 font-semibold">
-                  {vocabularyResults.needPractice}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div>
                 <p className="text-text-cream400 text-sm">Time Taken</p>
                 <p className="text-text-cream100 font-semibold">
-                  {formatTime(vocabularyResults.timeTaken)}
+                  {formatTime(listeningResults.timeTaken)}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-cream400 text-sm">Status</p>
+                <p className={`font-semibold ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {scorePercentage >= 70 ? 'Great Job!' : 'Keep Practicing'}
                 </p>
               </div>
             </div>
@@ -719,15 +743,15 @@ if (vocabularyCompleted && vocabularyResults && songData) {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
                 onClick={() => {
-                  // Reset vocabulary specific states and regenerate content
-                  setVocabularyStartTime(null);
-                  setVocabularyCompleted(false);
-                  setVocabularyResults(null);
-                  setVocabularyOutcomes([]);
+                  // Just reset listening state, reuse same exercises
+                  setListeningStartTime(null);
+                  setListeningCompleted(false);
+                  setListeningResults(null);
+                  setListeningOutcomes([]);
                   setCurrentIndex(0); // Start from the beginning
                   setSelectedAnswer(null);
                   setShowResult(false);
-                  generatePracticeContent(); // Regenerate content for a new session
+                  // No need to regenerate - practiceData already contains exercises
                 }}
                 className="button-gradient-primary"
               >
@@ -739,10 +763,10 @@ if (vocabularyCompleted && vocabularyResults && songData) {
                   // Switch to quiz practice type and navigate
                   setPracticeType('quiz');
                   setQuizCompleted(false); // Ensure quiz completion state is reset
-                  setVocabularyCompleted(false); // Ensure vocabulary completion state is reset
-                  setVocabularyStartTime(null);
-                  setVocabularyResults(null);
-                  setVocabularyOutcomes([]);
+                  setListeningCompleted(false); // Ensure listening completion state is reset
+                  setListeningStartTime(null);
+                  setListeningResults(null);
+                  setListeningOutcomes([]);
                   setCurrentIndex(0);
                   setSelectedAnswer(null);
                   setShowResult(false);
@@ -768,7 +792,6 @@ if (vocabularyCompleted && vocabularyResults && songData) {
     </div>
   );
 }
-
   // Quiz completion screen
   if (quizCompleted && practiceData) {
     const scorePercentage = Math.round((finalScore / (practiceData.questions?.length || 0)) * 100);
@@ -854,118 +877,7 @@ if (vocabularyCompleted && vocabularyResults && songData) {
       </div>
     );
   }
-// Listening completion screen
-if (listeningCompleted && listeningResults && songData) {
-  const scorePercentage = Math.round((listeningResults.correct / listeningResults.total) * 100);
-  const message = scorePercentage >= 70 ? "Excellent work! You're a great listener." :
-                  scorePercentage > 0 ? "Good effort! Keep practicing your listening skills." : "Keep practicing! You'll get there.";
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="min-h-screen bg-base-dark2 p-4">
-      <div className="max-w-2xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-6"
-        >
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-text-cream100 mb-2">
-              Listening Practice Complete!
-            </h1>
-            <p className="text-text-cream300">
-              {songData.song.title} by {songData.song.artist}
-            </p>
-          </div>
-
-          <Card className="p-8 space-y-6">
-            <div className="text-center">
-              <div className={`text-6xl font-bold mb-2 ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
-                {scorePercentage}%
-              </div>
-              <p className="text-text-cream300 text-lg">
-                {listeningResults.correct} out of {listeningResults.total} correct
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-text-cream400 text-sm">Time Taken</p>
-                <p className="text-text-cream100 font-semibold">
-                  {formatTime(listeningResults.timeTaken)}
-                </p>
-              </div>
-              <div>
-                <p className="text-text-cream400 text-sm">Status</p>
-                <p className={`font-semibold ${scorePercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {scorePercentage >= 70 ? 'Great Job!' : 'Keep Practicing'}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <p className="text-text-cream300 mb-4">
-                {message}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                onClick={() => {
-                  // Reset listening specific states and regenerate content
-                  setListeningStartTime(null);
-                  setListeningCompleted(false);
-                  setListeningResults(null);
-                  setListeningOutcomes([]);
-                  setCurrentIndex(0); // Start from the beginning
-                  setSelectedAnswer(null);
-                  setShowResult(false);
-                  generatePracticeContent(); // Regenerate content for a new session
-                }}
-                className="button-gradient-primary"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Practice Again
-              </Button>
-              <Button
-                onClick={() => {
-                  // Switch to quiz practice type and navigate
-                  setPracticeType('quiz');
-                  setQuizCompleted(false); // Ensure quiz completion state is reset
-                  setListeningCompleted(false); // Ensure listening completion state is reset
-                  setListeningStartTime(null);
-                  setListeningResults(null);
-                  setListeningOutcomes([]);
-                  setCurrentIndex(0);
-                  setSelectedAnswer(null);
-                  setShowResult(false);
-                  setUserAnswers([]);
-                  navigate(`/practice/${songId}?type=quiz`); // Navigate with query param
-                }}
-                variant="outline"
-              >
-                <Brain className="w-4 h-4 mr-2" />
-                Take Quiz
-              </Button>
-              <Button
-                onClick={() => navigate(`/lessons/${songId}`)}
-                variant="outline"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Song
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
-  );
-}
   
 
   return (
@@ -1153,7 +1065,10 @@ if (listeningCompleted && listeningResults && songData) {
               Ready to Practice
             </h3>
             <p className="text-text-cream300 mb-4">
-              Click the button below to generate {practiceType} exercises
+              Click the button below to generate {practiceType === 'vocabulary' ? 'Vocabulary' : 
+                       practiceType === 'quiz' ? 'Quiz' :
+                       practiceType === 'listening' ? 'Listening' :
+                       'Pronunciation'} Exercises
             </p>
             <Button 
               onClick={generatePracticeContent}
