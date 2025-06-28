@@ -679,7 +679,124 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       </div>
     );
   }
+// Vocabulary completion screen
+if (vocabularyCompleted && vocabularyResults && songData) {
+  const masteryPercentage = Math.round((vocabularyResults.gotIt / vocabularyResults.totalWords) * 100);
+  const message = masteryPercentage >= 70 ? "Excellent work! You're making great progress with these words." :
+                  masteryPercentage > 0 ? "Good effort! Keep practicing to improve your mastery." : "Keep practicing! You got this.";
 
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-base-dark2 p-4">
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-6"
+        >
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-text-cream100 mb-2">
+              Vocabulary Complete!
+            </h1>
+            <p className="text-text-cream300">
+              {songData.song.title} by {songData.song.artist}
+            </p>
+          </div>
+
+          <Card className="p-8 space-y-6">
+            <div className="text-center">
+              <div className={`text-6xl font-bold mb-2 ${masteryPercentage >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                {masteryPercentage}%
+              </div>
+              <p className="text-text-cream300 text-lg">
+                Mastery Score
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-text-cream400 text-sm">Words Mastered</p>
+                <p className="text-green-400 font-semibold">
+                  {vocabularyResults.gotIt}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-cream400 text-sm">Words to Practice</p>
+                <p className="text-yellow-400 font-semibold">
+                  {vocabularyResults.needPractice}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-cream400 text-sm">Time Taken</p>
+                <p className="text-text-cream100 font-semibold">
+                  {formatTime(vocabularyResults.timeTaken)}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-text-cream300 mb-4">
+                {message}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => {
+                  // Reset vocabulary specific states and regenerate content
+                  setVocabularyStartTime(null);
+                  setVocabularyCompleted(false);
+                  setVocabularyResults(null);
+                  setVocabularyOutcomes([]);
+                  setCurrentIndex(0); // Start from the beginning
+                  setSelectedAnswer(null);
+                  setShowResult(false);
+                  generatePracticeContent(); // Regenerate content for a new session
+                }}
+                className="button-gradient-primary"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Practice Again
+              </Button>
+              <Button
+                onClick={() => {
+                  // Switch to quiz practice type and navigate
+                  setPracticeType('quiz');
+                  setQuizCompleted(false); // Ensure quiz completion state is reset
+                  setVocabularyCompleted(false); // Ensure vocabulary completion state is reset
+                  setVocabularyStartTime(null);
+                  setVocabularyResults(null);
+                  setVocabularyOutcomes([]);
+                  setCurrentIndex(0);
+                  setSelectedAnswer(null);
+                  setShowResult(false);
+                  setUserAnswers([]);
+                  navigate(`/practice/${songId}?type=quiz`); // Navigate with query param
+                }}
+                variant="outline"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Take Quiz
+              </Button>
+              <Button
+                onClick={() => navigate(`/lessons/${songId}`)}
+                variant="outline"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Song
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
 // Listening completion screen
 if (listeningCompleted && listeningResults && songData) {
   const scorePercentage = Math.round((listeningResults.correct / listeningResults.total) * 100);
