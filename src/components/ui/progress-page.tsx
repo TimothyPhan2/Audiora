@@ -1,14 +1,30 @@
-import * as React from "react"
-import { motion } from "framer-motion"
-import { Book, Flame, Music, Target, CheckCircle, Calendar, TrendingUp, Star, Zap, Award } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Book, 
+  Flame, 
+  Music, 
+  Target, 
+  CheckCircle, 
+  Calendar, 
+  TrendingUp, 
+  Star, 
+  Zap, 
+  Award,
+  Loader2
+} from 'lucide-react';
+import { useAuthStore } from '@/lib/store';
+import { getUserStats, getUserActivity, UserStats, ActivityItem } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
+// CircleProgress component
 interface CircleProgressProps {
-  value: number
-  maxValue: number
-  size?: number
-  strokeWidth?: number
-  className?: string
+  value: number;
+  maxValue: number;
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
 }
 
 const CircleProgress: React.FC<CircleProgressProps> = ({
@@ -18,19 +34,19 @@ const CircleProgress: React.FC<CircleProgressProps> = ({
   strokeWidth = 3,
   className
 }) => {
-  const [animatedValue, setAnimatedValue] = React.useState(0)
+  const [animatedValue, setAnimatedValue] = useState(0);
   
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
-      setAnimatedValue(value)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [value])
+      setAnimatedValue(value);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [value]);
 
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const fillPercentage = Math.min(animatedValue / maxValue, 1)
-  const strokeDashoffset = circumference * (1 - fillPercentage)
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const fillPercentage = Math.min(animatedValue / maxValue, 1);
+  const strokeDashoffset = circumference * (1 - fillPercentage);
 
   return (
     <div className={cn(className)}>
@@ -58,16 +74,17 @@ const CircleProgress: React.FC<CircleProgressProps> = ({
         />
       </svg>
     </div>
-  )
-}
+  );
+};
 
+// ProgressCard component
 interface ProgressCardProps {
-  title: string
-  value: number
-  maxValue?: number
-  icon: React.ReactNode
-  description?: string
-  className?: string
+  title: string;
+  value: number;
+  maxValue?: number;
+  icon: React.ReactNode;
+  description?: string;
+  className?: string;
 }
 
 const ProgressCard: React.FC<ProgressCardProps> = ({
@@ -107,17 +124,20 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
         <span className="text-text-cream400 ml-1">/ {maxValue}</span>
       </div>
     </motion.div>
-  )
+  );
+};
+
+// MilestoneTimeline component
+interface Milestone {
+  id: string;
+  title: string;
+  date: string;
+  icon: string;
+  completed: boolean;
 }
 
 interface MilestoneTimelineProps {
-  milestones: Array<{
-    id: string
-    title: string
-    date: string
-    icon: string
-    completed: boolean
-  }>
+  milestones: Milestone[];
 }
 
 const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ milestones }) => {
@@ -142,14 +162,15 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ milestones }) => 
         </motion.div>
       ))}
     </div>
-  )
-}
+  );
+};
 
+// SkillBar component
 interface SkillBarProps {
-  skill: string
-  percentage: number
-  isStrong?: boolean
-  needsFocus?: boolean
+  skill: string;
+  percentage: number;
+  isStrong?: boolean;
+  needsFocus?: boolean;
 }
 
 const SkillBar: React.FC<SkillBarProps> = ({ skill, percentage, isStrong, needsFocus }) => {
@@ -180,16 +201,17 @@ const SkillBar: React.FC<SkillBarProps> = ({ skill, percentage, isStrong, needsF
         />
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
+// StreakVisualizer component
 interface StreakVisualizerProps {
-  days: boolean[]
-  currentStreak: number
+  days: boolean[];
+  currentStreak: number;
 }
 
 const StreakVisualizer: React.FC<StreakVisualizerProps> = ({ days, currentStreak }) => {
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
   return (
     <div className="space-y-4">
@@ -214,50 +236,150 @@ const StreakVisualizer: React.FC<StreakVisualizerProps> = ({ days, currentStreak
         ))}
       </div>
       <p className="text-center text-text-cream300">
-        {currentStreak} out of 7 days this week - great consistency! 🔥
+        {currentStreak} out of 7 days this week - {currentStreak >= 5 ? 'great consistency!' : 'keep it up!'} 🔥
       </p>
     </div>
-  )
-}
+  );
+};
 
+// Main Progress component
+export function ProgressPageComponent() {
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [userActivity, setUserActivity] = useState<ActivityItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
-export default function ProgressPageComponent() {
-  const milestones = [
-    {
-      id: "1",
-      title: "🎵 Started learning Spanish",
-      date: "2 weeks ago",
-      icon: "🎵",
-      completed: true
-    },
-    {
-      id: "2", 
-      title: "📚 First 25 words mastered",
-      date: "1 week ago",
-      icon: "📚",
-      completed: true
-    },
-    {
-      id: "3",
-      title: "🎤 Hit 80% pronunciation accuracy",
-      date: "3 days ago", 
-      icon: "🎤",
-      completed: true
-    },
-    {
-      id: "4",
-      title: "🏆 Ready for your next song!",
-      date: "Today",
-      icon: "🏆",
-      completed: true
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
     }
-  ]
 
-  const weeklyStreak = [true, true, false, true, true, false, true]
-  const currentStreak = weeklyStreak.filter(Boolean).length
+    // Redirect to onboarding if user hasn't completed it
+    if (user && (user.learning_languages.length === 0 || !user.proficiency_level)) {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const [stats, activity] = await Promise.all([
+          getUserStats(),
+          getUserActivity(10)
+        ]);
+        
+        setUserStats(stats);
+        setUserActivity(activity);
+      } catch (error) {
+        console.error('Failed to fetch user progress data:', error);
+        setError('Failed to load progress data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
+  // Don't render anything while checking authentication/onboarding status
+  if (!isAuthenticated || !user || user.learning_languages.length === 0 || !user.proficiency_level) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-accent-teal-400 mx-auto" />
+          <p className="text-text-cream300 mt-2">Loading your progress...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-accent-teal-500 text-white rounded-lg hover:bg-accent-teal-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userStats) return null;
+
+  // Replace the hardcoded milestones with real activity data
+  // Helper function to get appropriate icons
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'lesson': return '🎵';
+      case 'achievement': return '🏆';
+      case 'practice': return '📚';
+      case 'quiz': return '🎤';
+      default: return '✨';
+    }
+  };
+
+  const milestones: Milestone[] = userActivity.slice(0, 4).map((activity) => ({
+    id: activity.id,
+    title: activity.title,
+    date: activity.timestamp || 'Recently',
+    icon: getActivityIcon(activity.type),
+    completed: true
+  }));
+
+  // Generate weekly streak (mock data for now, could be enhanced with real daily activity tracking)
+  const weeklyStreak = Array.from({ length: 7 }, (_, i) => {
+    return i < userStats.streakDays && userStats.streakDays > 0;
+  });
+  const currentStreak = weeklyStreak.filter(Boolean).length;
+
+  // Calculate skill percentages based on user stats
+  const vocabularyPercentage = Math.min((userStats.vocabularyCount / 100) * 100, 100);
+  const pronunciationPercentage = Math.min(userStats.averageQuizScore || 0, 100);
+  const listeningPercentage = Math.min((userStats.totalListeningTime / 60) * 100, 100); // Convert minutes to percentage
+
+  // Generate insights based on user data
+  const getTopInsight = () => {
+    if (vocabularyPercentage >= 80) return {
+      icon: "📈",
+      title: "Vocabulary is your strongest skill",
+      description: `${Math.round(vocabularyPercentage)}% mastery - well above average for your level`
+    };
+    if (userStats.streakDays >= 5) return {
+      icon: "🌟", 
+      title: "Consistent learner",
+      description: `${userStats.streakDays} day streak shows great dedication`
+    };
+    return {
+      icon: "🎵",
+      title: "Music-based learning works for you",
+      description: "Song-based exercises are helping you retain vocabulary better"
+    };
+  };
+
+  const topInsight = getTopInsight();
 
   return (
-   <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
+    <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         {/* Header */}
         <motion.div
@@ -306,7 +428,7 @@ export default function ProgressPageComponent() {
             >
               <div className="text-3xl mb-2">🎉</div>
               <h3 className="text-lg font-semibold text-green-400 mb-2">
-                Completed 3 practice sessions!
+                Completed {userStats.completedSongs + userStats.completedQuizzes} practice sessions!
               </h3>
               <p className="text-green-300/80">Keep up the momentum!</p>
             </motion.div>
@@ -317,9 +439,9 @@ export default function ProgressPageComponent() {
             >
               <div className="text-3xl mb-2">🔥</div>
               <h3 className="text-lg font-semibold text-orange-400 mb-2">
-                5-day learning streak!
+                {userStats.streakDays}-day learning streak!
               </h3>
-              <p className="text-orange-300/80">You're on fire!</p>
+              <p className="text-orange-300/80">{userStats.streakDays >= 5 ? "You're on fire!" : "Building consistency!"}</p>
             </motion.div>
             
             <motion.div
@@ -328,7 +450,7 @@ export default function ProgressPageComponent() {
             >
               <div className="text-3xl mb-2">📈</div>
               <h3 className="text-lg font-semibold text-blue-400 mb-2">
-                Pronunciation improved 15%!
+                {userStats.vocabularyCount} words learned!
               </h3>
               <p className="text-blue-300/80">Amazing progress!</p>
             </motion.div>
@@ -349,31 +471,31 @@ export default function ProgressPageComponent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ProgressCard
               title="Total Words"
-              value={127}
-              maxValue={200}
+              value={userStats.vocabularyCount}
+              maxValue={Math.max(userStats.vocabularyCount + 20, 100)}
               icon={<Book className="w-5 h-5" />}
               description="Words learned"
             />
             <ProgressCard
               title="Practice Streak"
-              value={5}
+              value={userStats.streakDays}
               maxValue={7}
               icon={<Flame className="w-5 h-5" />}
               description="Days this week"
             />
             <ProgressCard
               title="Songs Completed"
-              value={3}
-              maxValue={5}
+              value={userStats.completedSongs}
+              maxValue={Math.max(userStats.completedSongs + 2, 5)}
               icon={<Music className="w-5 h-5" />}
               description="This month"
             />
             <ProgressCard
-              title="Overall Accuracy"
-              value={82}
+              title="Quiz Accuracy"
+              value={Math.round(userStats.averageQuizScore)}
               maxValue={100}
               icon={<Target className="w-5 h-5" />}
-              description="Pronunciation"
+              description="Average score"
             />
           </div>
         </motion.section>
@@ -390,10 +512,26 @@ export default function ProgressPageComponent() {
             Skills Progress
           </h2>
           <div className="frosted-glass border border-accent-teal-500/20 rounded-xl p-6 space-y-6">
-            <SkillBar skill="Vocabulary" percentage={85} isStrong />
-            <SkillBar skill="Pronunciation" percentage={78} />
-            <SkillBar skill="Listening" percentage={72} />
-            <SkillBar skill="Grammar" percentage={65} needsFocus />
+            <SkillBar 
+              skill="Vocabulary" 
+              percentage={Math.round(vocabularyPercentage)} 
+              isStrong={vocabularyPercentage >= 70} 
+            />
+            <SkillBar 
+              skill="Quiz Performance" 
+              percentage={Math.round(pronunciationPercentage)} 
+              isStrong={pronunciationPercentage >= 80}
+            />
+            <SkillBar 
+              skill="Listening Time" 
+              percentage={Math.round(listeningPercentage)} 
+              needsFocus={listeningPercentage < 30}
+            />
+            <SkillBar 
+              skill="Consistency" 
+              percentage={Math.round((userStats.streakDays / 7) * 100)} 
+              needsFocus={userStats.streakDays < 3}
+            />
           </div>
         </motion.section>
 
@@ -429,12 +567,12 @@ export default function ProgressPageComponent() {
               whileHover={{ scale: 1.02 }}
               className="frosted-glass border border-accent-teal-500/20 rounded-xl p-6"
             >
-              <div className="text-2xl mb-3">🌟</div>
+              <div className="text-2xl mb-3">{topInsight.icon}</div>
               <h3 className="text-lg font-semibold text-text-cream100 mb-2">
-                You learn best in the evening
+                {topInsight.title}
               </h3>
               <p className="text-text-cream400 text-sm">
-                Your highest accuracy scores happen between 7-9 PM
+                {topInsight.description}
               </p>
             </motion.div>
             
@@ -442,12 +580,12 @@ export default function ProgressPageComponent() {
               whileHover={{ scale: 1.02 }}
               className="frosted-glass border border-accent-teal-500/20 rounded-xl p-6"
             >
-              <div className="text-2xl mb-3">🎵</div>
+              <div className="text-2xl mb-3">⏰</div>
               <h3 className="text-lg font-semibold text-text-cream100 mb-2">
-                Pop songs are your favorite
+                Total study time
               </h3>
               <p className="text-text-cream400 text-sm">
-                You've completed 60% more pop songs than other genres
+                {userStats.totalListeningTime} minutes of focused learning
               </p>
             </motion.div>
             
@@ -455,17 +593,20 @@ export default function ProgressPageComponent() {
               whileHover={{ scale: 1.02 }}
               className="frosted-glass border border-accent-teal-500/20 rounded-xl p-6"
             >
-              <div className="text-2xl mb-3">📈</div>
+              <div className="text-2xl mb-3">🎯</div>
               <h3 className="text-lg font-semibold text-text-cream100 mb-2">
-                Vocabulary is your strongest skill
+                Mastery rate
               </h3>
               <p className="text-text-cream400 text-sm">
-                85% accuracy - 20% above average for your level
+                {userStats.vocabularyCount > 0 
+                  ? `${Math.round((userStats.masteredWords / userStats.vocabularyCount) * 100)}% of words mastered`
+                  : "Start learning to see your mastery rate"
+                }
               </p>
             </motion.div>
           </div>
         </motion.section>
       </div>
     </div>
-  )
+  );
 }
