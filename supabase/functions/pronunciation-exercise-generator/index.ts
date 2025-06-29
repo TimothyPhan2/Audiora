@@ -242,10 +242,6 @@ Deno.serve(async (req)=>{
     }
     // Validate difficulty level
     if (!['beginner', 'intermediate', 'advanced', 'fluent'].includes(difficulty.toLowerCase())) {
-      'beginner',
-      'intermediate',
-      'advanced'
-    ].includes(difficulty.toLowerCase())) {
       return new Response('Invalid difficulty level', {
         status: 400,
         headers: corsHeaders
