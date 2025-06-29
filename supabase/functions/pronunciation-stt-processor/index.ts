@@ -54,9 +54,17 @@ Deno.serve(async (req) => {
 
     console.log('Processing STT for file:', audioFile.name, 'Size:', audioFile.size, 'Type:', audioFile.type);
 
+    // Read the file content into an ArrayBuffer
+    const audioArrayBuffer = await audioFile.arrayBuffer();
+    
+    // Create a new Blob from the ArrayBuffer with proper MIME type
+    const audioBlob = new Blob([audioArrayBuffer], { 
+      type: audioFile.type || 'audio/webm' 
+    });
+
     // Forward to Eleven Labs STT with server-side API key
     const sttFormData = new FormData();
-    sttFormData.append('audio', audioFile);
+    sttFormData.append('audio', audioBlob, audioFile.name || 'recording.webm');
     sttFormData.append('model_id', 'eleven_multilingual_v1');
 
     const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
