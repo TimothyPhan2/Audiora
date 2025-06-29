@@ -266,11 +266,32 @@ export function Practice({
       transcribed_text: string;
       accuracy_score: number;
       feedback: string;
+      user_vocabulary_id?: string;
     }) => {
       // For pronunciation, we consider it "correct" if score >= 70
       const isCorrect = result.accuracy_score >= 70;
       onAnswer(`Score: ${result.accuracy_score}%`, isCorrect);
       onShowResult(true);
+      
+      // Update vocabulary mastery if this is a review word or if onMasteryUpdate is available
+      if (onMasteryUpdate) {
+        const vocabItemForMasteryUpdate: VocabularyItem = {
+          id: pronunciationItem.id,
+          original: pronunciationItem.word_or_phrase,
+          translation: '', // We don't have translation in pronunciation exercise
+          context: pronunciationItem.context_sentence || '',
+          language: pronunciationItem.language,
+          difficulty_level: pronunciationItem.difficulty_level,
+          source: result.user_vocabulary_id ? 'review' : 'new',
+          user_vocabulary_entry_id: result.user_vocabulary_id,
+          songId: practiceData.songId
+        };
+        
+        // Call mastery update asynchronously
+        onMasteryUpdate(vocabItemForMasteryUpdate, isCorrect).catch(error => {
+          console.error('Failed to update vocabulary mastery:', error);
+        });
+      }
     };
 
     return (

@@ -22,6 +22,7 @@ interface PronunciationExerciseProps {
     accuracy_score: number;
     feedback: string;
     confidence?: number;
+    user_vocabulary_id?: string;
   }) => void;
   onNext?: () => void;
 }
@@ -212,7 +213,8 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
         transcribed_text: text,
         accuracy_score: accuracyScore,
         feedback: feedbackText,
-        confidence: confidence
+        confidence: confidence,
+        user_vocabulary_id: exercise.user_vocabulary_id
       });
 
     } catch (error) {

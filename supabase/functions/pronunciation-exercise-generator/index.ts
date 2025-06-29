@@ -198,7 +198,8 @@ async function saveExerciseToDatabase(
       reference_audio_url: audioUrl,
       difficulty_level: difficulty,
       language: language,
-      context_sentence: exercise.context_sentence
+      context_sentence: exercise.context_sentence,
+      user_vocabulary_id: exercise.user_vocabulary_id || null
     })
     .select('id')
     .single();

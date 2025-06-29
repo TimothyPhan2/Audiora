@@ -52,6 +52,8 @@ export interface VocabularyItem {
   difficulty_level?: string;
   mastery_score?: number;
   times_practiced?: number;
+  source?: 'review' | 'new';
+  user_vocabulary_entry_id?: string;
 }
 
 // Quiz types

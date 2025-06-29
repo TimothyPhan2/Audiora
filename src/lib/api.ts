@@ -540,7 +540,7 @@ export async function updateUserVocabularyProgress(
     word: string; 
     translation: string; 
     source: 'review' | 'new'; 
-    user_vocabulary_id?: string;
+    user_vocabulary_entry_id?: string;
     language: string;
     songId?: string;
     difficulty_level?: string;
@@ -553,9 +553,9 @@ export async function updateUserVocabularyProgress(
     throw new Error('User must be authenticated to update vocabulary progress');
   }
 
-  if (vocabularyItem.source === 'review' && vocabularyItem.user_vocabulary_id) {
+  if (vocabularyItem.source === 'review' && vocabularyItem.user_vocabulary_entry_id) {
     // Update existing vocabulary progress
-    await updateExistingVocabularyProgress(vocabularyItem.user_vocabulary_id, knewIt);
+    await updateExistingVocabularyProgress(vocabularyItem.user_vocabulary_entry_id, knewIt);
   } else if (vocabularyItem.source === 'new') {
     // Add new word to user vocabulary
     await addNewVocabularyToUser(vocabularyItem, knewIt, user.id);
@@ -569,6 +569,11 @@ async function updateExistingVocabularyProgress(
   userVocabularyId: string, 
   knewIt: boolean
 ): Promise<void> {
+  if (!userVocabularyId || userVocabularyId === 'null') {
+    console.warn('Invalid user vocabulary ID provided for update');
+    return;
+  }
+  
   // Fetch current progress
   const { data: currentProgress, error: fetchError } = await supabase
     .from('user_vocabulary')
