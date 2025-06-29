@@ -210,8 +210,6 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       const rawAccuracy = calculateAccuracyScore(exercise.word_or_phrase, text, exercise.language || 'english');
       const confidenceBonus = confidence ? Math.min(10, confidence * 10) : 0;
       const accuracyScore = Math.min(100, rawAccuracy + confidenceBonus);
-      const confidenceBonus = confidence ? Math.min(10, confidence * 10) : 0;
-      const accuracyScore = Math.min(100, rawAccuracy + confidenceBonus);
       setScore(accuracyScore);
 
       // Generate feedback
