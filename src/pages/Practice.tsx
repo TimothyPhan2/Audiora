@@ -170,7 +170,7 @@ useEffect(() => {
         word: vocabularyItem.word,
         translation: vocabularyItem.translation,
         source: vocabularyItem.source,
-        user_vocabulary_id: vocabularyItem.user_vocabulary_id,
+        user_vocabulary_entry_id: vocabularyItem.user_vocabulary_id,
         language: songData?.song.language || '',
         songId: songData?.song.id,
         difficulty_level: vocabularyItem.difficulty_level
@@ -634,20 +634,15 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
 
       // Update vocabulary mastery if this is a review word or new word
       if (result.user_vocabulary_id || currentExercise.word_or_phrase) {
-        const vocabItemForMasteryUpdate: VocabularyItem = {
-          id: currentExercise.id,
-          original: currentExercise.word_or_phrase,
+        await updateUserVocabularyProgress({
+          word: currentExercise.word_or_phrase,
           translation: '', // We don't have translation in pronunciation exercise
-          context: currentExercise.context_sentence || '',
-          language: currentExercise.language,
-          difficulty_level: currentExercise.difficulty_level,
           source: result.user_vocabulary_id ? 'review' : 'new',
           user_vocabulary_entry_id: result.user_vocabulary_id,
-          songId: songData?.song?.id
-        };
-        
-        // Call mastery update
-        await updateUserVocabularyProgress(vocabItemForMasteryUpdate, isCorrect);
+          language: songData?.song.language || '',
+          songId: songData?.song.id,
+          difficulty_level: currentExercise.difficulty_level
+        }, isCorrect);
       }
 
       // Save result to database if user is authenticated
@@ -1393,6 +1388,7 @@ if (listeningCompleted && listeningResults && songData) {
             onNext={handleNext}
             onAnswerSelect={setSelectedAnswer}
             onShowResult={setShowResult}
+            onMasteryUpdate={handleMasteryUpdate}
             onPronunciationExerciseCompleted={completePronunciationExercise}
           />
         ) : (
