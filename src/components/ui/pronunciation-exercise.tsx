@@ -277,12 +277,26 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
   };
 
   const generateFeedback = (target: string, transcribed: string, score: number): string => {
-    if (score >= 90) return "Excellent pronunciation! 🎉";
-    if (score >= 75) return "Good job! Your pronunciation is clear. 👍";
-    if (score >= 60) return "Not bad! Keep practicing for better clarity. 📈";
-    if (score >= 40) return "Keep trying! Focus on the sounds and rhythm. 🎯";
-    return "Let's try again! Listen to the reference audio first. 🔄";
-  };
+  const targetLower = target.toLowerCase().trim();
+  const transcribedLower = transcribed.toLowerCase().trim();
+  
+  if (score >= 90) return "Excellent pronunciation! 🎉";
+  if (score >= 75) return "Good job! Your pronunciation is clear. 👍";
+  
+  // Provide specific feedback based on what they said
+  if (score >= 60) {
+    if (transcribedLower.includes(targetLower)) {
+      return "Good! I heard the word, but try to pronounce it more clearly. 📈";
+    }
+    return `Not bad! You said "${transcribed}" - keep practicing "${target}". 📈`;
+  }
+  
+  if (score >= 40) {
+    return `I heard "${transcribed}" but you're trying to say "${target}". Focus on the sounds and rhythm. 🎯`;
+  }
+  
+  return `I heard "${transcribed}" - listen to the reference audio for "${target}" and try again. 🔄`;
+};
 
   const playReferenceAudio = () => {
     if (referenceAudioRef.current) {
