@@ -1154,7 +1154,11 @@ export async function transcribeAudioWithElevenLabs(audioBlob: Blob): Promise<{
   }
 
   const formData = new FormData();
-  formData.append('audio', audioBlob);
+  // Convert Blob to File with proper filename and MIME type
+  const audioFile = new File([audioBlob], 'recording.webm', { 
+    type: audioBlob.type || 'audio/webm' 
+  });
+  formData.append('audio', audioFile);
 
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pronunciation-stt-processor`, {
     method: 'POST',
