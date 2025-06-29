@@ -13,8 +13,6 @@ export interface PronunciationExerciseData {
   user_vocabulary_id?: string;
   difficulty_level: string;
   language: string;
-  difficulty_level: string;
-  language: string;
 }
 
 interface PronunciationExerciseProps {
@@ -25,10 +23,7 @@ interface PronunciationExerciseProps {
     feedback: string;
     confidence?: number;
     user_vocabulary_id?: string;
-    confidence?: number;
-    user_vocabulary_id?: string;
   }) => void;
-  onNext?: () => void;
   onNext?: () => void;
 }
 
@@ -193,12 +188,6 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
         return;
       }
       
-      // Check if confidence is too low
-      if (confidence && confidence < 0.3) {
-        setError('Audio quality was poor. Please speak louder and clearer, then try again.');
-        return;
-      }
-      
       if (!text || text.trim().length === 0) {
         setError('No speech detected. Please try speaking more clearly.');
         return;
@@ -207,13 +196,22 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       setTranscription(text);
 
       // Use confidence to adjust accuracy scoring
-      const rawAccuracy = calculateAccuracyScore(exercise.word_or_phrase, text, exercise.language || 'english');
+      const rawAccuracy = calculateAccuracyScore(
+        exercise.word_or_phrase, 
+        text, 
+        exercise.language
+      );
       const confidenceBonus = confidence ? Math.min(10, confidence * 10) : 0;
       const accuracyScore = Math.min(100, rawAccuracy + confidenceBonus);
       setScore(accuracyScore);
 
       // Generate feedback
-      const feedbackText = generateFeedback(exercise.word_or_phrase, text, accuracyScore, confidence);
+      const feedbackText = generateFeedback(
+        exercise.word_or_phrase, 
+        text, 
+        accuracyScore, 
+        confidence
+      );
       setFeedback(feedbackText);
 
       // Mark as completed
@@ -236,32 +234,20 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
     }
   };
 
-  const calculateAccuracyScore = (target: string, transcribed: string, language: string): number => {
-    const normalizeText = (text: string, lang: string) => {
+  const calculateAccuracyScore = (target: string, transcribed: string, language?: string): number => {
+    const normalizeText = (text: string, lang?: string) => {
       const trimmed = text.trim();
       
-      if (['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(lang.toLowerCase())) {
+      // For CJK languages - preserve characters, minimal processing
+      if (lang && ['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(lang.toLowerCase())) {
+        // Remove spaces and basic punctuation only
         return trimmed
-          .replace(/[.,!?;:"'"'。、！？；：""'']/g, '')
-          .replace(/\s+/g, '');
+          .replace(/[.,!?;:"'"'。、！？；：""'']/g, '') 
+          .replace(/\s+/g, ''); // Remove all spaces for CJK
       }
       
-      return trimmed
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, ' ');
-    };
-      
-      if (['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(lang.toLowerCase())) {
-        return trimmed
-          .replace(/[.,!?;:"'"'。、！？；：""'']/g, '')
-          .replace(/\s+/g, '');
-      }
-      
-      return trimmed
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, ' ');
+      // For other languages - existing normalization
+      return trimmed.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
     };
     
     const targetNormalized = normalizeText(target, language);
@@ -270,49 +256,35 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
     // Exact match
     if (targetNormalized === transcribedNormalized) return 100;
 
-  
-    // ✅ NEW: More precise word boundary matching
-    if (['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(language.toLowerCase())) {
-      // For CJK languages, use character similarity
+    // For CJK languages, use character similarity directly
+    if (language && ['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(language.toLowerCase())) {
       const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
       return Math.max(0, Math.round(similarity * 100));
-    } else {
-      // For other languages, check word boundaries
-      const targetWords = targetNormalized.split(' ');
-      const transcribedWords = transcribedNormalized.split(' ');
-      
-      // Only give high score if transcription is very close to target
-      if (targetWords.length === transcribedWords.length) {
-        let matchedWords = 0;
-        for (let i = 0; i < targetWords.length; i++) {
-          if (targetWords[i] === transcribedWords[i]) {
-            matchedWords++;
-          }
-        }
-        
-        if (matchedWords === targetWords.length) return 100;
-        if (matchedWords / targetWords.length >= 0.8) {
-          return Math.round((matchedWords / targetWords.length) * 90);
-        }
-      // Only give high score if transcription is very close to target
-      if (targetWords.length === transcribedWords.length) {
-        let matchedWords = 0;
-        for (let i = 0; i < targetWords.length; i++) {
-          if (targetWords[i] === transcribedWords[i]) {
-            matchedWords++;
-          }
-        }
-        
-        if (matchedWords === targetWords.length) return 100;
-        if (matchedWords / targetWords.length >= 0.8) {
-          return Math.round((matchedWords / targetWords.length) * 90);
+    }
+
+    // For other languages - existing word-based logic with refinements
+    // Remove the problematic "includes" check that gave 85 for any substring
+    const targetWords = targetNormalized.split(' ');
+    const transcribedWords = transcribedNormalized.split(' ');
+    
+    // Word-based comparison for similar length phrases
+    if (Math.abs(targetWords.length - transcribedWords.length) <= 1) {
+      let matchedWords = 0;
+      for (const word of targetWords) {
+        if (transcribedWords.includes(word)) {
+          matchedWords++;
         }
       }
       
-      // Fallback to character similarity for partial matches
-      const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
-      return Math.max(0, Math.round(similarity * 50)); // Lower cap for non-exact matches
+      if (matchedWords > 0) {
+        const wordMatchScore = (matchedWords / targetWords.length) * 70;
+        return Math.round(wordMatchScore);
+      }
     }
+
+    // Fallback to character similarity
+    const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
+    return Math.max(0, Math.round(similarity * 100));
   };
 
   const calculateSimilarity = (str1: string, str2: string): number => {
@@ -340,36 +312,51 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
           matrix[j - 1][i - 1] + substitutionCost // substitution
         );
       }
-      
-      // Fallback to character similarity for partial matches
-      const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
-      return Math.max(0, Math.round(similarity * 50)); // Lower cap for non-exact matches
     }
-  if (confidence && confidence < 0.4) {
-    return "Audio quality was poor. Please speak louder and clearer, then try again. 🎤";
-  }
-  
-  // Perfect match
-  if (targetLower === transcribedLower) {
-    return "Perfect pronunciation! Excellent job! 🎉";
-  }
-  
-  // Low confidence = focus on clarity, not detailed comparison
-  if (confidence && confidence < 0.6) {
-    if (score >= 80) return "Great pronunciation! Try speaking a bit clearer for perfect recognition. ✨";
-    if (score >= 60) return "Good job! Try speaking more clearly for better accuracy. 👍";
-    if (score >= 40) return "Keep trying! Speak louder and more distinctly. 📢";
-    return "Speak more clearly and try again. 🎤";
-  }
-  
-  // High confidence = detailed feedback with comparisons
-  if (score >= 90) return "Excellent pronunciation! Very clear and accurate! 🎉";
-  if (score >= 75) return `Great job! You clearly said "${target}". 👍`;
-  if (score >= 60) return `Good effort! You said "${transcribed}" - keep practicing "${target}". 📈`;
-  if (score >= 40) return `You said "${transcribed}" but we need "${target}". Focus on each sound. 🎯`;
-  
-  return `You said "${transcribed}" but we need "${target}". Listen to the reference audio and try again. 🔄`;
-};
+    
+    return matrix[str2.length][str1.length];
+  };
+
+  const generateFeedback = (target: string, transcribed: string, score: number, confidence?: number): string => {
+    const targetLower = target.toLowerCase().trim();
+    const transcribedLower = transcribed.toLowerCase().trim();
+    
+    // Enhanced feedback considering both score AND confidence
+    
+    // Handle very low confidence first
+    if (confidence && confidence < 0.3) {
+      return "Audio quality was very poor. Please speak louder and more clearly, then try again. 🎤";
+    }
+    
+    // Perfect match
+    if (targetLower === transcribedLower) {
+      return confidence && confidence > 0.8 
+        ? "Perfect pronunciation! Crystal clear! 🎉" 
+        : "Perfect pronunciation! Try speaking a bit clearer for even better recognition. ✨";
+    }
+    
+    // Low confidence scenarios - focus on clarity, not pronunciation details
+    if (confidence && confidence < 0.6) {
+      if (score >= 80) return "Great pronunciation! Try speaking more clearly for perfect recognition. 📢";
+      if (score >= 60) return "Good effort! Speak louder and more distinctly for better results. 🔊";
+      if (score >= 40) return "Keep trying! Make sure to speak clearly and at normal volume. 📢";
+      return "Audio wasn't clear enough. Speak louder and more slowly. 🎤";
+    }
+    
+    // High confidence - detailed pronunciation feedback
+    if (confidence && confidence >= 0.6) {
+      if (score >= 90) return "Excellent pronunciation! Very clear and accurate! 🎉";
+      if (score >= 75) return `Great job! You said "${transcribed}" clearly. Small refinements will make it perfect. 👍`;
+      if (score >= 60) return `Good effort! You said "${transcribed}" - practice the target "${target}" a few more times. 📈`;
+      if (score >= 40) return `You said "${transcribed}" but we need "${target}". Focus on each sound carefully. 🎯`;
+      if (score >= 20) return `You said "${transcribed}" but we need "${target}". Listen to the reference audio and try to match the sounds. 🔄`;
+    }
+    
+    // Fallback for unknown confidence
+    if (score >= 80) return "Great pronunciation! 👍";
+    if (score >= 60) return "Good effort! Keep practicing. 📈";
+    return `You said "${transcribed}" but we need "${target}". Listen to the reference and try again. 🔄`;
+  };
 
   const playReferenceAudio = () => {
     if (referenceAudioRef.current) {
@@ -377,36 +364,13 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
         console.error('Error playing audio:', error);
         setError('Could not play reference audio. Please check your connection.');
       });
-  const generateFeedback = (target: string, transcribed: string, score: number, confidence?: number): string => {
-  const targetLower = target.toLowerCase().trim();
-  const transcribedLower = transcribed.toLowerCase().trim();
-  
-  // Handle audio quality issues first
-  if (confidence && confidence < 0.4) {
-    return "Audio quality was poor. Please speak louder and clearer, then try again. 🎤";
-  }
-  
-  // Perfect match
-  if (targetLower === transcribedLower) {
-    return "Perfect pronunciation! Excellent job! 🎉";
-  }
-  
-  // Low confidence = focus on clarity, not detailed comparison
-  if (confidence && confidence < 0.6) {
-    if (score >= 80) return "Great pronunciation! Try speaking a bit clearer for perfect recognition. ✨";
-    if (score >= 60) return "Good job! Try speaking more clearly for better accuracy. 👍";
-    if (score >= 40) return "Keep trying! Speak louder and more distinctly. 📢";
-    return "Speak more clearly and try again. 🎤";
-  }
-  
-  // High confidence = detailed feedback with comparisons
-  if (score >= 90) return "Excellent pronunciation! Very clear and accurate! 🎉";
-  if (score >= 75) return `Great job! You clearly said "${target}". 👍`;
-  if (score >= 60) return `Good effort! You said "${transcribed}" - keep practicing "${target}". 📈`;
-  if (score >= 40) return `You said "${transcribed}" but we need "${target}". Focus on each sound. 🎯`;
-  
-  return `You said "${transcribed}" but we need "${target}". Listen to the reference audio and try again. 🔄`;
-};
+    }
+  };
+
+  const resetExercise = () => {
+    setTranscription('');
+    setScore(null);
+    setFeedback('');
     setError(null);
     setHasCompleted(false);
   };
@@ -540,14 +504,6 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
-                {onNext && (
-                  <Button 
-                    onClick={onNext}
-                    className="button-gradient-primary"
-                  >
-                    Next Exercise
-                  </Button>
-                )}
                 {onNext && (
                   <Button 
                     onClick={onNext}
