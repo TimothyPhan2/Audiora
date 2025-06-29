@@ -430,6 +430,14 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
+                {onNext && (
+                  <Button 
+                    onClick={onNext}
+                    className="button-gradient-primary"
+                  >
+                    Next Exercise
+                  </Button>
+                )}
               </div>
             )}
           </div>
