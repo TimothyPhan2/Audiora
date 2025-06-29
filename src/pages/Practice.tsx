@@ -657,13 +657,6 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       ...result
     }];
     setPronunciationResults(newResults);
-
-    // Move to next exercise or complete
-    if (currentPronunciationIndex < pronunciationExercises.length - 1) {
-      setCurrentPronunciationIndex(currentPronunciationIndex + 1);
-    } else {
-      setPronunciationCompleted(true);
-    }
   };
 
   const handleTryAgain = () => {
