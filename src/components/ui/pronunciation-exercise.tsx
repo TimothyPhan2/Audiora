@@ -24,7 +24,6 @@ interface PronunciationExerciseProps {
   onNext?: () => void;
 }
 
-export function PronunciationExercise({ exercise, onComplete }: PronunciationExerciseProps) {
 export function PronunciationExercise({ exercise, onComplete, onNext }: PronunciationExerciseProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
