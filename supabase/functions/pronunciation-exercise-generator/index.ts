@@ -179,9 +179,16 @@ IMPORTANT: word_or_phrase should be SHORT - maximum 1-3 words for pronunciation 
 
 For each exercise, provide:
 - word_or_phrase: ONLY the target word or short phrase to pronounce (1-3 words max, no sentences)
+- word_or_phrase: ONLY the target word or short phrase to pronounce (1-3 words max, no sentences)
 - phonetic_transcription: IPA notation if applicable
 - context_sentence: A separate example sentence using the word (different from word_or_phrase)
-- user_vocabulary_id: Include if word exists in user's vocabulary
+IMPORTANT: word_or_phrase should be SHORT - maximum 1-3 words for pronunciation practice.
+
+DIFFICULTY GUIDELINES:
+- Beginner: Simple vocabulary, basic sounds, clear pronunciation patterns
+- Intermediate: Moderate vocabulary, some challenging sounds, rhythm patterns  
+- Advanced: Complex vocabulary, difficult sounds, advanced pronunciation features
+- Fluent: Highly nuanced vocabulary, complex idiomatic expressions, advanced phonetic challenges, natural rhythm/intonation
 
 EXAMPLES:
 ✅ Good word_or_phrase: "hello", "beautiful", "in love"
@@ -234,7 +241,7 @@ Deno.serve(async (req)=>{
       });
     }
     // Validate difficulty level
-    if (![
+    if (!['beginner', 'intermediate', 'advanced', 'fluent'].includes(difficulty.toLowerCase())) {
       'beginner',
       'intermediate',
       'advanced'
