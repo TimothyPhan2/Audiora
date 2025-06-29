@@ -62,6 +62,13 @@ interface PracticeProps {
   onAnswerSelect: (answer: string | null) => void;
   onShowResult: (show: boolean) => void;
   onMasteryUpdate?: (vocabularyItem: VocabularyItem, knewIt: boolean) => Promise<void>;
+  onPronunciationExerciseCompleted?: (result: { 
+    transcribed_text: string; 
+    accuracy_score: number; 
+    feedback: string; 
+    confidence?: number; 
+    user_vocabulary_id?: string; 
+  }) => void;
 }
 
 export function Practice({
@@ -76,7 +83,8 @@ export function Practice({
   onNext,
   onAnswerSelect,
   onShowResult,
-  onMasteryUpdate
+  onMasteryUpdate,
+  onPronunciationExerciseCompleted
 }: PracticeProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
@@ -266,6 +274,7 @@ export function Practice({
       transcribed_text: string;
       accuracy_score: number;
       feedback: string;
+      confidence?: number;
       user_vocabulary_id?: string;
     }) => {
       // For pronunciation, we consider it "correct" if score >= 70
@@ -273,24 +282,9 @@ export function Practice({
       onAnswer(`Score: ${result.accuracy_score}%`, isCorrect);
       onShowResult(true);
       
-      // Update vocabulary mastery if this is a review word or if onMasteryUpdate is available
-      if (onMasteryUpdate) {
-        const vocabItemForMasteryUpdate: VocabularyItem = {
-          id: pronunciationItem.id,
-          original: pronunciationItem.word_or_phrase,
-          translation: '', // We don't have translation in pronunciation exercise
-          context: pronunciationItem.context_sentence || '',
-          language: pronunciationItem.language,
-          difficulty_level: pronunciationItem.difficulty_level,
-          source: result.user_vocabulary_id ? 'review' : 'new',
-          user_vocabulary_entry_id: result.user_vocabulary_id,
-          songId: practiceData.songId
-        };
-        
-        // Call mastery update asynchronously
-        onMasteryUpdate(vocabItemForMasteryUpdate, isCorrect).catch(error => {
-          console.error('Failed to update vocabulary mastery:', error);
-        });
+      // Call the parent's completion handler
+      if (onPronunciationExerciseCompleted) {
+        onPronunciationExerciseCompleted(result);
       }
     };
 
