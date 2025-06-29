@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { checkAndAwardAchievements, ACHIEVEMENT_DEFINITIONS } from './achievements';
 
 interface TranslationResponse {
   translation?: string;
@@ -670,6 +671,21 @@ export async function updateUserVocabularyProgress(
 
   const isNewEntry = currentTimesPracticed === 0;
   console.log(`✅ ${isNewEntry ? 'Added new' : 'Updated existing'} user vocabulary: ${newMasteryScore}% mastery (${newTimesCorrect}/${newTimesPracticed})`);
+
+  // Check for new achievements after vocabulary update
+  try {
+    const newAchievements = await checkAndAwardAchievements();
+    
+    // Trigger achievement notifications if any new achievements were earned
+    if (newAchievements.length > 0) {
+      // Emit custom event for achievement notifications
+      window.dispatchEvent(new CustomEvent('achievementsEarned', {
+        detail: newAchievements.map(type => ACHIEVEMENT_DEFINITIONS[type])
+      }));
+    }
+  } catch (error) {
+    console.error('Error checking achievements after vocabulary update:', error);
+  }
 }
 
 
@@ -976,6 +992,19 @@ export async function saveQuizResultToDatabase(
     }
     
     console.log('✅ Quiz result saved successfully');
+    
+    // Check for new achievements after quiz completion
+    try {
+      const newAchievements = await checkAndAwardAchievements();
+      
+      if (newAchievements.length > 0) {
+        window.dispatchEvent(new CustomEvent('achievementsEarned', {
+          detail: newAchievements.map(type => ACHIEVEMENT_DEFINITIONS[type])
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking achievements after quiz completion:', error);
+    }
     
   } catch (error) {
     console.error('Error in saveQuizResultToDatabase:', error);
