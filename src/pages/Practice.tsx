@@ -1262,37 +1262,6 @@ if (listeningCompleted && listeningResults && songData) {
               <Volume2 className="w-4 h-4 mr-2" />
               Listening
             </Button>
-            <Button
-              onClick={() => {
-                setPracticeType('pronunciation');
-                // Reset state when switching to pronunciation
-                setCurrentIndex(0);
-                setSelectedAnswer(null);
-                setShowResult(false);
-                setCorrectAnswers([]);
-                setQuizCompleted(false);
-                setUserAnswers([]);
-                setPracticeData(null);
-                setVocabularyStartTime(null);
-                setVocabularyCompleted(false);
-                setVocabularyResults(null);
-                setVocabularyOutcomes([]);
-                setListeningStartTime(null);
-                setListeningCompleted(false);
-                setListeningResults(null);
-                // Pronunciation-specific resets (NEW)
-                setPronunciationExercises([]);
-                setCurrentPronunciationIndex(0);
-                setPronunciationResults([]);
-                setPronunciationCompleted(false);
-                setPronunciationStartTime(null);
-              }}
-              variant={practiceType === 'pronunciation' ? 'default' : 'outline'}
-              className={practiceType === 'pronunciation' ? 'button-gradient-primary' : ''}
-            >
-              <Mic className="w-4 h-4 mr-2" />
-              Pronunciation
-            </Button>
           </div>
         </div>
 
