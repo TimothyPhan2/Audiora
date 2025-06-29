@@ -310,12 +310,25 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       return "Keep trying! Speak more clearly and focus on the sounds. 🎯";
     }
     
-    // High confidence - provide definitive feedback based on accuracy
-    if (score >= 90) return "Excellent pronunciation! Perfect clarity and accuracy! 🎉";
-    if (score >= 75) return "Great job! Your pronunciation is clear and accurate. 👍";
-    if (score >= 60) return "Good effort! Keep practicing to improve accuracy. 📈";
-    if (score >= 40) return "Keep trying! Focus on the sounds and rhythm. 🎯";
-    return "Let's try again! Listen to the reference audio first. 🔄";
+    // High confidence - provide specific feedback using target and transcribed
+    if (score >= 90) {
+      return `Excellent pronunciation! You said "${transcribed}" which perfectly matches "${target}". 🎉`;
+    }
+    
+    if (score >= 75) {
+      return `Great job! You said "${transcribed}" which is very close to "${target}". Your pronunciation is clear! 👍`;
+    }
+    
+    if (score >= 60) {
+      return `Good effort! You said "${transcribed}" but we were looking for "${target}". Keep practicing the pronunciation! 📈`;
+    }
+    
+    if (score >= 40) {
+      return `Keep trying! You said "${transcribed}" but the target was "${target}". Focus on each sound in "${target}". 🎯`;
+    }
+    
+    // Very low score - provide detailed comparison
+    return `Let's try again! You said "${transcribed}" but we need "${target}". Listen to the reference audio and try to match the sounds exactly. 🔄`;
   };
 
   const playReferenceAudio = () => {
