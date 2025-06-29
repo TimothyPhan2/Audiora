@@ -1080,14 +1080,32 @@ export async function generatePronunciationExercises(
   language: string, 
   userVocabulary: any[]
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    throw new Error('User must be logged in');
+  }
 
-  const { data, error } = await supabase.functions.invoke('pronunciation-exercise-generator', {
-    body: { songId, difficulty, language, userVocabulary }
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pronunciation-exercise-generator`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      songId,
+      difficulty,
+      language,
+      userVocabulary
+    })
   });
 
-  if (error) throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to generate pronunciation exercises: ${errorText}`);
+  }
+
+  const data = await response.json();
   return data.exercises;
 }
 
@@ -1138,13 +1156,22 @@ export async function transcribeAudioWithElevenLabs(audioBlob: Blob): Promise<{
   const formData = new FormData();
   formData.append('audio', audioBlob);
 
-  const { data, error } = await supabase.functions.invoke('pronunciation-stt-processor', {
-    body: formData,
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pronunciation-stt-processor`, {
+    method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
-    }
+    },
+    body: formData
   });
 
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to transcribe audio: ${errorText}`);
+  }
+
+  const result = await response.json();
+  return {
+    text: result.text,
+    confidence: result.confidence
+  };
 }
