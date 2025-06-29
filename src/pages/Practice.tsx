@@ -665,6 +665,7 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     setCorrectAnswers([]);
     setQuizCompleted(false);
     setUserAnswers([]); // Reset user answers for quiz
+    setError(null);
     // Reset listening specific states
     setListeningStartTime(null);
     setListeningCompleted(false);
@@ -676,23 +677,15 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     setVocabularyResults(null);
     setVocabularyOutcomes([]);
     // Reset pronunciation specific states (NEW)
-    resetPronunciationPractice();
-    setQuizStartTime(new Date());
-  };
-
-  // Add reset function for pronunciation (NEW)
-  const resetPronunciationPractice = () => {
     setPronunciationExercises([]);
     setCurrentPronunciationIndex(0);
     setPronunciationResults([]);
     setPronunciationCompleted(false);
     setPronunciationStartTime(null);
-    setError(null);
-    // Re-generate content for a new session
-    if (songData?.song && userVocabulary.length > 0) {
-      generatePronunciationContent(userProficiencyLevel);
-    }
+    setQuizStartTime(new Date());
   };
+
+
 
   const handleBackToSong = () => {
     navigate(`/lessons/${songId}`);
@@ -1025,7 +1018,7 @@ if (listeningCompleted && listeningResults && songData) {
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                    onClick={resetPronunciationPractice}
+                    onClick={handleTryAgain}
                     className="button-gradient-primary"
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
