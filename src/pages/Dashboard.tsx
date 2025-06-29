@@ -12,7 +12,6 @@ import {
   TrendingUp, 
   Settings, 
   User,
-  Play,
   BookMarked,
   Brain,
   Flame,
