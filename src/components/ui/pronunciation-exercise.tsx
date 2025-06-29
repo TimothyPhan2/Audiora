@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Mic, MicOff, Volume2, RotateCcw, AlertCircle } from 'lucide-react';
@@ -12,6 +12,7 @@ export interface PronunciationExerciseData {
   context_sentence?: string;
   user_vocabulary_id?: string;
   difficulty_level: string;
+  language: string;
 }
 
 interface PronunciationExerciseProps {
