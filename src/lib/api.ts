@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { checkAndAwardAchievements, ACHIEVEMENT_DEFINITIONS } from './achievements';
+import { toast } from 'sonner';
 
 interface TranslationResponse {
   translation?: string;
@@ -678,10 +679,16 @@ export async function updateUserVocabularyProgress(
     
     // Trigger achievement notifications if any new achievements were earned
     if (newAchievements.length > 0) {
-      // Emit custom event for achievement notifications
-      window.dispatchEvent(new CustomEvent('achievementsEarned', {
-        detail: newAchievements.map(type => ACHIEVEMENT_DEFINITIONS[type])
-      }));
+      // Show toast notifications for each new achievement
+      newAchievements.forEach(type => {
+        const achievement = ACHIEVEMENT_DEFINITIONS[type];
+        if (achievement) {
+          toast.success(`🏆 Achievement Unlocked!`, {
+            description: `${achievement.title} - ${achievement.description}${achievement.rewards?.xp ? ` (+${achievement.rewards.xp} XP)` : ''}`,
+            duration: 5000,
+          });
+        }
+      });
     }
   } catch (error) {
     console.error('Error checking achievements after vocabulary update:', error);
@@ -998,9 +1005,16 @@ export async function saveQuizResultToDatabase(
       const newAchievements = await checkAndAwardAchievements();
       
       if (newAchievements.length > 0) {
-        window.dispatchEvent(new CustomEvent('achievementsEarned', {
-          detail: newAchievements.map(type => ACHIEVEMENT_DEFINITIONS[type])
-        }));
+        // Show toast notifications for each new achievement
+        newAchievements.forEach(type => {
+          const achievement = ACHIEVEMENT_DEFINITIONS[type];
+          if (achievement) {
+            toast.success(`🏆 Achievement Unlocked!`, {
+              description: `${achievement.title} - ${achievement.description}${achievement.rewards?.xp ? ` (+${achievement.rewards.xp} XP)` : ''}`,
+              duration: 5000,
+            });
+          }
+        });
       }
     } catch (error) {
       console.error('Error checking achievements after quiz completion:', error);
