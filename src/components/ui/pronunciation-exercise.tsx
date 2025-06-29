@@ -225,38 +225,58 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
     }
   };
 
-  const calculateAccuracyScore = (target: string, transcribed: string): number => {
-    const normalizeText = (text: string) => 
-      text.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+  const calculateAccuracyScore = (target: string, transcribed: string, language: string): number => {
+    const normalizeText = (text: string, lang: string) => {
+      const trimmed = text.trim();
+      
+      if (['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(lang.toLowerCase())) {
+        return trimmed
+          .replace(/[.,!?;:"'"'。、！？；：""'']/g, '')
+          .replace(/\s+/g, '');
+      }
+      
+      return trimmed
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ');
+    };
     
-    const targetNormalized = normalizeText(target);
-    const transcribedNormalized = normalizeText(transcribed);
+    const targetNormalized = normalizeText(target, language);
+    const transcribedNormalized = normalizeText(transcribed, language);
 
     // Exact match
     if (targetNormalized === transcribedNormalized) return 100;
 
-    // Check if target word is contained in transcription
-    if (transcribedNormalized.includes(targetNormalized)) return 85;
-
-    // Check if transcription contains target (word order might be different)
-    const targetWords = targetNormalized.split(' ');
-    const transcribedWords = transcribedNormalized.split(' ');
-    
-    let matchedWords = 0;
-    for (const word of targetWords) {
-      if (transcribedWords.includes(word)) {
-        matchedWords++;
+  
+    // ✅ NEW: More precise word boundary matching
+    if (['japanese', 'chinese', 'korean', 'mandarin', 'cantonese'].includes(language.toLowerCase())) {
+      // For CJK languages, use character similarity
+      const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
+      return Math.max(0, Math.round(similarity * 100));
+    } else {
+      // For other languages, check word boundaries
+      const targetWords = targetNormalized.split(' ');
+      const transcribedWords = transcribedNormalized.split(' ');
+      
+      // Only give high score if transcription is very close to target
+      if (targetWords.length === transcribedWords.length) {
+        let matchedWords = 0;
+        for (let i = 0; i < targetWords.length; i++) {
+          if (targetWords[i] === transcribedWords[i]) {
+            matchedWords++;
+          }
+        }
+        
+        if (matchedWords === targetWords.length) return 100;
+        if (matchedWords / targetWords.length >= 0.8) {
+          return Math.round((matchedWords / targetWords.length) * 90);
+        }
       }
+      
+      // Fallback to character similarity for partial matches
+      const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
+      return Math.max(0, Math.round(similarity * 50)); // Lower cap for non-exact matches
     }
-    
-    if (matchedWords > 0) {
-      const wordMatchScore = (matchedWords / targetWords.length) * 70;
-      return Math.round(wordMatchScore);
-    }
-
-    // Simple character similarity (Levenshtein-like)
-    const similarity = calculateSimilarity(targetNormalized, transcribedNormalized);
-    return Math.max(0, Math.round(similarity * 100));
   };
 
   const calculateSimilarity = (str1: string, str2: string): number => {
