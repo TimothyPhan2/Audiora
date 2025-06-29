@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
     // Forward to Eleven Labs STT with server-side API key
     const sttFormData = new FormData();
-    sttFormData.append('audio', audioBlob, audioFile.name || 'recording.webm');
+    sttFormData.append('file', audioBlob, audioFile.name || 'recording.webm');
     sttFormData.append('model_id', 'scribe_v1');
 
     const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
