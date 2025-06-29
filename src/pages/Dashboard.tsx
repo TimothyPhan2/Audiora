@@ -7,6 +7,7 @@ import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AchievementShowcase } from '@/components/dashboard/AchievementShowcase';
+import { DashboardAchievements } from '@/components/achievements/DashboardAchievements';
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -278,6 +279,9 @@ export function Dashboard() {
                 </Button>
               </div>
             </motion.div>
+
+            {/* Achievements Section */}
+            <DashboardAchievements />
 
             {/* Performance Metrics */}
             <motion.div 

@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store';
+import { AchievementNotification } from '@/components/achievements/AchievementNotification';
+import { Achievement } from '@/lib/achievements';
 
 // Layout components
 import { Header } from '@/components/layout/Header';
@@ -31,6 +33,8 @@ function AppContent() {
   const isProgressPage = pathname === '/progress';
   const isSettingsPage = pathname === '/settings';
   const { setSession } = useAuthStore();
+  const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
+  const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
 
   useEffect(() => {
     // Get initial session
@@ -47,6 +51,38 @@ function AppContent() {
 
     return () => subscription.unsubscribe();
   }, [setSession]);
+
+  useEffect(() => {
+    const handleAchievementsEarned = (event: CustomEvent) => {
+      const newAchievements = event.detail as Achievement[];
+      setAchievementQueue(prev => [...prev, ...newAchievements]);
+    };
+
+    window.addEventListener('achievementsEarned', handleAchievementsEarned);
+    
+    return () => {
+      window.removeEventListener('achievementsEarned', handleAchievementsEarned);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (achievementQueue.length > 0 && !currentAchievement) {
+      setCurrentAchievement(achievementQueue[0]);
+      setAchievementQueue(prev => prev.slice(1));
+    }
+  }, [achievementQueue, currentAchievement]);
+
+  const handleCloseAchievement = () => {
+    setCurrentAchievement(null);
+    
+    // Auto show next achievement after a delay
+    if (achievementQueue.length > 0) {
+      setTimeout(() => {
+        setCurrentAchievement(achievementQueue[0]);
+        setAchievementQueue(prev => prev.slice(1));
+      }, 500);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -70,6 +106,13 @@ function AppContent() {
       </main>
       {!isAuthPage && !isDashboardPage && !isPracticePage && !isProgressPage && !isSettingsPage && <Footer />}
       <Toaster position="top-right" duration={2500}/>
+      
+      {/* Achievement notification overlay */}
+      <AchievementNotification
+        achievement={currentAchievement}
+        isVisible={!!currentAchievement}
+        onClose={handleCloseAchievement}
+      />
     </div>
   );
 }
