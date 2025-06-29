@@ -288,47 +288,47 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
   };
 
   const generateFeedback = (target: string, transcribed: string, score: number, confidence?: number): string => {
-    // If confidence is very low, prioritize audio quality feedback
+    // Handle critical audio quality issues first
     if (confidence && confidence < 0.3) {
       return "Audio quality was poor. Please speak louder and clearer, then try again. 🎤";
     }
     
-    // If confidence is low-moderate, suggest improvement regardless of score
+    // Determine base feedback message based on accuracy score
+    let feedbackMessage: string;
+    
+    if (score >= 90) {
+      feedbackMessage = `Excellent pronunciation! You said "${transcribed}" which perfectly matches "${target}". 🎉`;
+    } else if (score >= 75) {
+      feedbackMessage = `Great job! You said "${transcribed}" which is very close to "${target}". Your pronunciation is clear! 👍`;
+    } else if (score >= 60) {
+      feedbackMessage = `Good effort! You said "${transcribed}" but we were looking for "${target}". Keep practicing the pronunciation! 📈`;
+    } else if (score >= 40) {
+      feedbackMessage = `Keep trying! You said "${transcribed}" but the target was "${target}". Focus on each sound in "${target}". 🎯`;
+    } else {
+      feedbackMessage = `Let's try again! You said "${transcribed}" but we need "${target}". Listen to the reference audio and try to match the sounds exactly. 🔄`;
+    }
+    
+    // Override with confidence-specific feedback if audio quality affects recognition
     if (confidence && confidence < 0.5) {
       if (score >= 70) {
-        return "Good pronunciation, but try speaking more clearly for better recognition. 🗣️";
+        feedbackMessage = "Good pronunciation, but try speaking more clearly for better recognition. 🗣️";
       } else {
-        return "The audio wasn't clear enough. Speak louder and more distinctly. 📢";
+        feedbackMessage = "The audio wasn't clear enough. Speak louder and more distinctly. 📢";
+      }
+    } else if (confidence && confidence < 0.7) {
+      // Moderate confidence - adjust feedback to mention clarity
+      if (score >= 85) {
+        feedbackMessage = "Great pronunciation! Try speaking a bit clearer for perfect recognition. ✨";
+      } else if (score >= 70) {
+        feedbackMessage = "Good job! Your pronunciation is mostly clear. Keep practicing! 👍";
+      } else if (score >= 50) {
+        feedbackMessage = "Not bad! Focus on clarity and try speaking more distinctly. 📈";
+      } else {
+        feedbackMessage = "Keep trying! Speak more clearly and focus on the sounds. 🎯";
       }
     }
     
-    // If confidence is moderate, provide balanced feedback
-    if (confidence && confidence < 0.7) {
-      if (score >= 85) return "Great pronunciation! Try speaking a bit clearer for perfect recognition. ✨";
-      if (score >= 70) return "Good job! Your pronunciation is mostly clear. Keep practicing! 👍";
-      if (score >= 50) return "Not bad! Focus on clarity and try speaking more distinctly. 📈";
-      return "Keep trying! Speak more clearly and focus on the sounds. 🎯";
-    }
-    
-    // High confidence - provide specific feedback using target and transcribed
-    if (score >= 90) {
-      return `Excellent pronunciation! You said "${transcribed}" which perfectly matches "${target}". 🎉`;
-    }
-    
-    if (score >= 75) {
-      return `Great job! You said "${transcribed}" which is very close to "${target}". Your pronunciation is clear! 👍`;
-    }
-    
-    if (score >= 60) {
-      return `Good effort! You said "${transcribed}" but we were looking for "${target}". Keep practicing the pronunciation! 📈`;
-    }
-    
-    if (score >= 40) {
-      return `Keep trying! You said "${transcribed}" but the target was "${target}". Focus on each sound in "${target}". 🎯`;
-    }
-    
-    // Very low score - provide detailed comparison
-    return `Let's try again! You said "${transcribed}" but we need "${target}". Listen to the reference audio and try to match the sounds exactly. 🔄`;
+    return feedbackMessage;
   };
 
   const playReferenceAudio = () => {
