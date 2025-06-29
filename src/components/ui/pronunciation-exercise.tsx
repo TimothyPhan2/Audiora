@@ -21,6 +21,7 @@ interface PronunciationExerciseProps {
     transcribed_text: string;
     accuracy_score: number;
     feedback: string;
+    confidence?: number;
   }) => void;
   onNext?: () => void;
 }
@@ -180,6 +181,12 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       // Transcribe with Eleven Labs STT via secure Edge Function
       const { text, confidence } = await transcribeAudioWithElevenLabs(audioBlob);
       
+      // Check if confidence is too low
+      if (confidence && confidence < 0.3) {
+        setError('Audio quality was poor. Please speak louder and clearer, then try again.');
+        return;
+      }
+      
       if (!text || text.trim().length === 0) {
         setError('No speech detected. Please try speaking more clearly.');
         return;
@@ -187,8 +194,10 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
 
       setTranscription(text);
 
-      // Calculate accuracy score
-      const accuracyScore = calculateAccuracyScore(exercise.word_or_phrase, text);
+      // Use confidence to adjust accuracy scoring
+      const rawAccuracy = calculateAccuracyScore(exercise.word_or_phrase, text);
+      const confidenceBonus = confidence ? Math.min(10, confidence * 10) : 0;
+      const accuracyScore = Math.min(100, rawAccuracy + confidenceBonus);
       setScore(accuracyScore);
 
       // Generate feedback
@@ -202,7 +211,8 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       onComplete({
         transcribed_text: text,
         accuracy_score: accuracyScore,
-        feedback: feedbackText
+        feedback: feedbackText,
+        confidence: confidence
       });
 
     } catch (error) {
