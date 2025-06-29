@@ -533,14 +533,13 @@ export async function addWordToVocabulary(word: string, translation: string, lan
 
 /**
  * Updates user vocabulary mastery based on practice results
- * Handles both review words and new words differently
+ * Consolidated function that handles both new and existing vocabulary using server-side upserts
  */
 export async function updateUserVocabularyProgress(
   vocabularyItem: { 
     word: string; 
-    translation: string; 
-    source: 'review' | 'new'; 
-    user_vocabulary_entry_id?: string;
+    translation?: string; // Made optional - will fetch if not provided
+    user_vocabulary_entry_id?: string; // For priority lookup
     language: string;
     songId?: string;
     difficulty_level?: string;
@@ -553,77 +552,47 @@ export async function updateUserVocabularyProgress(
     throw new Error('User must be authenticated to update vocabulary progress');
   }
 
-  if (vocabularyItem.source === 'review' && vocabularyItem.user_vocabulary_entry_id) {
-    // Update existing vocabulary progress
-    await updateExistingVocabularyProgress(vocabularyItem.user_vocabulary_entry_id, knewIt);
-  } else if (vocabularyItem.source === 'new') {
-    // Add new word to user vocabulary
-    await addNewVocabularyToUser(vocabularyItem, knewIt, user.id);
-  }
-}
+  console.log('🔄 Processing vocabulary update:', { 
+    word: vocabularyItem.word, 
+    knewIt, 
+    user_vocabulary_entry_id: vocabularyItem.user_vocabulary_entry_id 
+  });
 
-/**
- * Updates progress for existing vocabulary
- */
-async function updateExistingVocabularyProgress(
-  userVocabularyId: string, 
-  knewIt: boolean
-): Promise<void> {
-  if (!userVocabularyId || userVocabularyId === 'null') {
-    console.warn('Invalid user vocabulary ID provided for update');
-    return;
-  }
-  
-  // Fetch current progress
-  const { data: currentProgress, error: fetchError } = await supabase
-    .from('user_vocabulary')
-    .select('times_practiced, times_correct, mastery_score')
-    .eq('id', userVocabularyId)
-    .single();
-
-  if (fetchError) {
-    throw new Error('Failed to fetch current vocabulary progress: ' + fetchError.message);
-  }
-
-  // Calculate new values
-  const newTimesPracticed = (currentProgress.times_practiced || 0) + 1;
-  const newTimesCorrect = (currentProgress.times_correct || 0) + (knewIt ? 1 : 0);
-  const newMasteryScore = Math.round((newTimesCorrect / newTimesPracticed) * 100);
-
-  // Update the record
-  const { error: updateError } = await supabase
-    .from('user_vocabulary')
-    .update({
-      times_practiced: newTimesPracticed,
-      times_correct: newTimesCorrect,
-      mastery_score: newMasteryScore,
-      last_practiced_at: new Date().toISOString()
-    })
-    .eq('id', userVocabularyId);
-
-  if (updateError) {
-    throw new Error('Failed to update vocabulary progress: ' + updateError.message);
+  // Step 1: Ensure base vocabulary entry exists, fetch translation if needed
+  let translation = vocabularyItem.translation;
+  if (!translation) {
+    console.log('🔍 No translation provided, fetching from database or API...');
+    
+    // Try to fetch from existing vocabulary table first
+    const { data: existingVocab } = await supabase
+      .from('vocabulary')
+      .select('translation')
+      .eq('word', vocabularyItem.word.toLowerCase())
+      .eq('language', vocabularyItem.language)
+      .single();
+    
+    if (existingVocab?.translation) {
+      translation = existingVocab.translation;
+      console.log('✅ Found existing translation:', translation);
+    } else {
+      // Fallback to translation API
+      try {
+        translation = await translateWord(vocabularyItem.word, '', vocabularyItem.language);
+        console.log('✅ Generated new translation:', translation);
+      } catch (error) {
+        console.warn('⚠️ Translation failed, using empty string');
+        translation = '';
+      }
+    }
   }
 
-  console.log(`📈 Updated existing word mastery: ${newMasteryScore}% (${newTimesCorrect}/${newTimesPracticed})`);
-}
-
-/**
- * Adds new vocabulary word to user's collection
- */
-async function addNewVocabularyToUser(
-  vocabularyItem: any, 
-  knewIt: boolean, 
-  userId: string
-): Promise<void> {
-  console.log('Attempting to add new vocabulary to user:', { vocabularyItem, knewIt, userId });
-  // First, ensure word exists in vocabulary table
+  // Step 2: Upsert vocabulary entry
   const { data: vocabData, error: vocabError } = await supabase
     .from('vocabulary')
     .upsert({
       word: vocabularyItem.word.toLowerCase(),
       language: vocabularyItem.language,
-      translation: vocabularyItem.translation,
+      translation: translation,
       difficulty_level: vocabularyItem.difficulty_level || 'intermediate',
       is_premium: false,
     }, {
@@ -633,36 +602,76 @@ async function addNewVocabularyToUser(
     .single();
 
   if (vocabError) {
-    console.error('Supabase Error: Failed to upsert into vocabulary table:', vocabError);
+    console.error('❌ Failed to upsert vocabulary entry:', vocabError);
     throw new Error('Failed to create vocabulary entry: ' + vocabError.message);
   }
+
   if (!vocabData) {
-    console.error('Supabase Error: No data returned after upserting into vocabulary table.');
     throw new Error('Failed to create vocabulary entry: No data returned.');
   }
-  console.log('Successfully upserted word into vocabulary table. Vocab ID:', vocabData.id);
-  
-  // Add to user's vocabulary with initial progress
-  const initialMasteryScore = knewIt ? 100 : 0;
-  const { error: userVocabError } = await supabase
-    .from('user_vocabulary')
-    .insert({
-      user_id: userId,
-      vocabulary_id: vocabData.id,
-      mastery_score: initialMasteryScore,
-      times_practiced: 1,
-      times_correct: knewIt ? 1 : 0,
-      last_practiced_at: new Date().toISOString(),
-      learned_from_song_id: vocabularyItem.songId
-    });
 
- if (userVocabError) {
-    console.error('Supabase Error: Failed to insert into user_vocabulary table:', userVocabError);
-    throw new Error('Failed to add word to user vocabulary: ' + userVocabError.message);
+  console.log('✅ Vocabulary entry ready. Vocab ID:', vocabData.id);
+
+  // Step 3: Fetch current user_vocabulary progress
+  // Priority: user_vocabulary_entry_id > user_id + vocabulary_id lookup
+  let currentProgress = null;
+  
+  if (vocabularyItem.user_vocabulary_entry_id && vocabularyItem.user_vocabulary_entry_id !== 'null') {
+    console.log('🔍 Looking up by user_vocabulary_entry_id:', vocabularyItem.user_vocabulary_entry_id);
+    const { data } = await supabase
+      .from('user_vocabulary')
+      .select('times_practiced, times_correct, mastery_score')
+      .eq('id', vocabularyItem.user_vocabulary_entry_id)
+      .single();
+    currentProgress = data;
+  } else {
+    console.log('🔍 Looking up by user_id + vocabulary_id');
+    const { data } = await supabase
+      .from('user_vocabulary')
+      .select('times_practiced, times_correct, mastery_score')
+      .eq('user_id', user.id)
+      .eq('vocabulary_id', vocabData.id)
+      .single();
+    currentProgress = data;
   }
 
-  console.log(`✨ Successfully added new word to user_vocabulary with ${initialMasteryScore}% mastery`);
+  // Step 4: Calculate new progress values
+  const currentTimesPracticed = currentProgress?.times_practiced || 0;
+  const currentTimesCorrect = currentProgress?.times_correct || 0;
+  
+  const newTimesPracticed = currentTimesPracticed + 1;
+  const newTimesCorrect = currentTimesCorrect + (knewIt ? 1 : 0);
+  const newMasteryScore = Math.round((newTimesCorrect / newTimesPracticed) * 100);
+
+  console.log('📊 Progress calculation:', {
+    previous: { practiced: currentTimesPracticed, correct: currentTimesCorrect },
+    new: { practiced: newTimesPracticed, correct: newTimesCorrect, mastery: newMasteryScore }
+  });
+
+  // Step 5: Upsert user_vocabulary entry
+  const { error: upsertError } = await supabase
+    .from('user_vocabulary')
+    .upsert({
+      user_id: user.id,
+      vocabulary_id: vocabData.id,
+      mastery_score: newMasteryScore,
+      times_practiced: newTimesPracticed,
+      times_correct: newTimesCorrect,
+      last_practiced_at: new Date().toISOString(),
+      learned_from_song_id: vocabularyItem.songId
+    }, {
+      onConflict: 'user_id,vocabulary_id'
+    });
+
+  if (upsertError) {
+    console.error('❌ Failed to upsert user_vocabulary:', upsertError);
+    throw new Error('Failed to update user vocabulary progress: ' + upsertError.message);
+  }
+
+  const isNewEntry = currentTimesPracticed === 0;
+  console.log(`✅ ${isNewEntry ? 'Added new' : 'Updated existing'} user vocabulary: ${newMasteryScore}% mastery (${newTimesCorrect}/${newTimesPracticed})`);
 }
+
 
 export async function removeWordFromVocabulary(vocabularyId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
