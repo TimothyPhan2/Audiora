@@ -226,8 +226,6 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
         feedback: feedbackText,
         confidence: confidence,
         user_vocabulary_id: exercise.user_vocabulary_id
-        confidence: confidence,
-        user_vocabulary_id: exercise.user_vocabulary_id
       });
 
     } catch (error) {
