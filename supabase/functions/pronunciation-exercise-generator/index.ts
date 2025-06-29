@@ -30,7 +30,7 @@ const LANGUAGE_VOICE_MAPPING = {
   italian: "XfNU2rGpBa01ckF309OY", 
   german: "XfNU2rGpBa01ckF309OY",
   french: "XfNU2rGpBa01ckF309OY",
-  japanese: "D9MdulIxfrCUUJcGNQon",
+  japanese: "H6QPv2pQZDcGqLwDTIJQ",
   chinese: "6MoEUz34rbRrmmyxgRm4"
 };
 
