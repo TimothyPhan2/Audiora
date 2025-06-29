@@ -6,7 +6,6 @@ import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
-import { AchievementShowcase } from '@/components/dashboard/AchievementShowcase';
 import { DashboardAchievements } from '@/components/achievements/DashboardAchievements';
 import { 
   LayoutDashboard, 
@@ -321,20 +320,12 @@ export function Dashboard() {
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Achievements */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <AchievementShowcase />
-              </motion.div>
-
-              {/* Activity Feed */}
+              {/* Activity Feed - now takes full width or adjust grid */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
+                className="lg:col-span-2" // Make it span full width if you want
               >
                 <ActivityFeed />
               </motion.div>
