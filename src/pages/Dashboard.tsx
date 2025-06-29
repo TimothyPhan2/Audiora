@@ -134,16 +134,6 @@ export function Dashboard() {
     navigate('/lessons');
   };
 
-  const handlePracticeVocabulary = () => {
-    if (userStats.hasVocabulary) {
-      // If user has vocabulary, we could go to a general practice page
-      // For now, let's go to lessons to pick a song for practice
-      navigate('/lessons');
-    } else {
-      // Go to lessons to start learning vocabulary
-      navigate('/lessons');
-    }
-  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 overflow-hidden">
@@ -320,34 +310,18 @@ export function Dashboard() {
               transition={{ delay: 0.2 }}
             >
               <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button 
-                  onClick={handleContinueLearning}
-                  className="button-gradient-primary text-white h-12 flex items-center gap-2 text-sm sm:text-base"
-                >
-                  <Play className="h-4 w-4" />
-                  <span className="hidden sm:inline">Continue Learning</span>
-                  <span className="sm:hidden">Continue</span>
-                </Button>
-                <Button 
-                  onClick={handlePracticeVocabulary}
-                  variant="outline" 
-                  className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10 h-12 flex items-center gap-2 text-sm sm:text-base"
-                >
-                  <BookMarked className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {userStats.hasVocabulary ? 'Practice Vocabulary' : 'Start Learning'}
-                  </span>
-                  <span className="sm:hidden">
-                    {userStats.hasVocabulary ? 'Practice' : 'Start'}
-                  </span>
-                </Button>
-              </div>
-              {!userStats.hasVocabulary && (
-                <p className="text-xs text-text-cream400 mt-2 text-center">
-                  Start learning songs to build your vocabulary, then come back to practice!
-                </p>
-              )}
+               <Button 
+                onClick={handleContinueLearning}
+                className="button-gradient-primary text-white h-12 flex items-center gap-2 text-sm sm:text-base w-full"
+              >
+                <BookMarked className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {userStats.hasVocabulary ? 'Continue Learning' : 'Start Learning'}
+                </span>
+                <span className="sm:hidden">
+                  {userStats.hasVocabulary ? 'Continue' : 'Start'}
+                </span>
+              </Button>
             </motion.div>
 
             {/* Achievements Section */}
