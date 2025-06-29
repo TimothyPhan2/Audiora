@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar';
@@ -15,15 +14,15 @@ import {
   User,
   Play,
   BookMarked,
-  Headphones,
+  Brain,
   Flame,
   Clock,
   Volume2,
   BarChart3,
-  Mic
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store';
+import { getUserVocabulary, getUserStats, UserStats } from '@/lib/api';
 
 const sidebarLinks = [
   {
@@ -66,6 +65,19 @@ export function Dashboard() {
   const [open, setOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const [userStats, setUserStats] = useState<UserStats>({
+    vocabularyCount: 0,
+    completedSongs: 0,
+    completedQuizzes: 0,
+    streakDays: 5, // This could be calculated from user activity
+    totalXP: 0,
+    totalListeningTime: 0,
+    averageQuizScore: 0,
+    levelProgress: 0,
+    masteredWords: 0,
+    hasVocabulary: false
+  });
+
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -81,6 +93,34 @@ export function Dashboard() {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Fetch real user stats
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+      
+
+      try {
+        const realStats = await getUserStats();
+        setUserStats(realStats);
+      } catch (error) {
+        console.error('Failed to fetch user stats:', error);
+        // Fallback to basic stats if API fails
+        try {
+          const vocabularyData = await getUserVocabulary();
+          setUserStats(prevStats => ({
+            ...prevStats,
+            vocabularyCount: vocabularyData.length,
+            hasVocabulary: vocabularyData.length > 0,
+          }));
+        } catch (fallbackError) {
+          console.error('Fallback stats fetch failed:', fallbackError);
+        }
+      } 
+    };
+
+    fetchUserStats();
+  }, [user]);
+
   // Don't render anything while checking authentication/onboarding status
   if (!isAuthenticated || !user || user.learning_languages.length === 0 || !user.proficiency_level) {
     return null;
@@ -89,6 +129,21 @@ export function Dashboard() {
   const userLanguage = user.learning_languages[0] || 'spanish';
   const userLevel = user.proficiency_level?.toLowerCase() || 'beginner';
   const userName = user.username || 'Language Learner';
+
+  const handleContinueLearning = () => {
+    navigate('/lessons');
+  };
+
+  const handlePracticeVocabulary = () => {
+    if (userStats.hasVocabulary) {
+      // If user has vocabulary, we could go to a general practice page
+      // For now, let's go to lessons to pick a song for practice
+      navigate('/lessons');
+    } else {
+      // Go to lessons to start learning vocabulary
+      navigate('/lessons');
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2 overflow-hidden">
@@ -191,8 +246,8 @@ export function Dashboard() {
             <div className="flex items-center gap-2 sm:gap-4 ml-4">
               <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-accent-teal-500/20 rounded-lg">
                 <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
-                <span className="text-xs sm:text-sm font-medium text-text-cream100 hidden sm:inline">5 day streak</span>
-                <span className="text-xs font-medium text-text-cream100 sm:hidden">5d</span>
+                <span className="text-xs sm:text-sm font-medium text-text-cream100 hidden sm:inline">{userStats.streakDays} day streak</span>
+                <span className="text-xs font-medium text-text-cream100 sm:hidden">{userStats.streakDays}d</span>
               </div>
             </div>
           </div>
@@ -213,11 +268,15 @@ export function Dashboard() {
                 <div className="frosted-glass p-4 sm:p-6 rounded-xl border border-accent-teal-500/20 text-center">
                   <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Level Progress</h3>
                   <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto">
-                    <ProgressRing progress={68} size={140} />
+                    <ProgressRing progress={userStats.levelProgress} size={140} />
                   </div>
                   <div className="mt-4 space-y-2">
-                    <div className="text-sm text-text-cream300">Intermediate Level</div>
-                    <div className="text-xs text-text-cream400">32% to Advanced</div>
+                    <div className="text-sm text-text-cream300">{userLevel.charAt(0).toUpperCase() + userLevel.slice(1)} Level</div>
+                    <div className="text-xs text-text-cream400">
+                      {Math.round(100 - userStats.levelProgress)}% to {userLevel === 'beginner' ? 'Intermediate' : 
+                                                 userLevel === 'intermediate' ? 'Advanced' : 
+                                                 userLevel === 'advanced' ? 'Fluent' : 'Master'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -225,29 +284,30 @@ export function Dashboard() {
               {/* Quick Stats */}
               <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <MetricCard
-                  title="Weekly Streak"
-                  value="5 days"
+                  title="Learning Streak"
+                  value={`${userStats.streakDays} days`}
                   icon={Flame}
-                  trend={{ value: 25, isPositive: true }}
+                  trend={userStats.streakDays > 1 ? { value: userStats.streakDays, isPositive: true } : undefined}
                 />
                 <MetricCard
-                  title="Lessons Completed"
-                  value="23/45"
-                  subtitle="This month"
+                  title="Songs Completed"
+                  value={userStats.completedSongs.toString()}
+                  subtitle="Total"
                   icon={BookOpen}
                 />
                 <MetricCard
                   title="Vocabulary Learned"
-                  value="156"
-                  subtitle="Total words"
+                  value={userStats.vocabularyCount.toString()}
+                  subtitle={`${userStats.masteredWords} mastered`}
                   icon={BookMarked}
-                  trend={{ value: 12, isPositive: true }}
+                  trend={userStats.vocabularyCount > 10 ? { value: Math.round((userStats.masteredWords / userStats.vocabularyCount) * 100), isPositive: true } : undefined}
                 />
                 <MetricCard
-                  title="Listening Time"
-                  value="2.5h"
-                  subtitle="This week"
-                  icon={Headphones}
+                  title="Quiz Average"
+                  value={userStats.averageQuizScore > 0 ? `${userStats.averageQuizScore}%` : '--'}
+                  subtitle={`${userStats.completedQuizzes} completed`}
+                  icon={Brain}
+                  trend={userStats.averageQuizScore > 0 ? { value: userStats.averageQuizScore, isPositive: userStats.averageQuizScore >= 70 } : undefined}
                 />
               </div>
             </motion.div>
@@ -260,23 +320,34 @@ export function Dashboard() {
               transition={{ delay: 0.2 }}
             >
               <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Button className="button-gradient-primary text-white h-12 flex items-center gap-2 text-sm sm:text-base">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button 
+                  onClick={handleContinueLearning}
+                  className="button-gradient-primary text-white h-12 flex items-center gap-2 text-sm sm:text-base"
+                >
                   <Play className="h-4 w-4" />
                   <span className="hidden sm:inline">Continue Learning</span>
                   <span className="sm:hidden">Continue</span>
                 </Button>
-                <Button variant="outline" className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10 h-12 flex items-center gap-2 text-sm sm:text-base">
+                <Button 
+                  onClick={handlePracticeVocabulary}
+                  variant="outline" 
+                  className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10 h-12 flex items-center gap-2 text-sm sm:text-base"
+                >
                   <BookMarked className="h-4 w-4" />
-                  <span className="hidden sm:inline">Practice Vocabulary</span>
-                  <span className="sm:hidden">Vocabulary</span>
-                </Button>
-                <Button variant="outline" className="bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10 h-12 flex items-center gap-2 text-sm sm:text-base">
-                  <Headphones className="h-4 w-4" />
-                  <span className="hidden sm:inline">Listening Exercise</span>
-                  <span className="sm:hidden">Listening</span>
+                  <span className="hidden sm:inline">
+                    {userStats.hasVocabulary ? 'Practice Vocabulary' : 'Start Learning'}
+                  </span>
+                  <span className="sm:hidden">
+                    {userStats.hasVocabulary ? 'Practice' : 'Start'}
+                  </span>
                 </Button>
               </div>
+              {!userStats.hasVocabulary && (
+                <p className="text-xs text-text-cream400 mt-2 text-center">
+                  Start learning songs to build your vocabulary, then come back to practice!
+                </p>
+              )}
             </motion.div>
 
             {/* Achievements Section */}
@@ -290,102 +361,42 @@ export function Dashboard() {
               transition={{ delay: 0.3 }}
             >
               <MetricCard
-                title="Listening Accuracy"
-                value="87%"
-                subtitle="Last 7 days"
+                title="Listening Time"
+                value={`${userStats.totalListeningTime}min`}
+                subtitle="Total"
                 icon={Volume2}
-                trend={{ value: 5, isPositive: true }}
               />
               <MetricCard
-                title="Quiz Scores"
-                value="92%"
-                subtitle="Average"
+                title="Mastery Rate"
+                value={userStats.vocabularyCount > 0 ? `${Math.round((userStats.masteredWords / userStats.vocabularyCount) * 100)}%` : '--'}
+                subtitle="Words mastered"
                 icon={BarChart3}
-                trend={{ value: 8, isPositive: true }}
               />
               <MetricCard
-                title="Speaking Practice"
-                value="45min"
-                subtitle="This week"
-                icon={Mic}
+                title="Study Streak"
+                value={`${userStats.streakDays} days`}
+                subtitle="Current"
+                icon={Flame}
               />
               <MetricCard
-                title="Study Time"
-                value="3.2h"
-                subtitle="Daily average"
+                title="Total Sessions"
+                value={(userStats.completedSongs + userStats.completedQuizzes).toString()}
+                subtitle="Songs + Quizzes"
                 icon={Clock}
-                trend={{ value: 15, isPositive: true }}
               />
             </motion.div>
 
             {/* Bottom Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Activity Feed - now takes full width or adjust grid */}
+            <div className="grid grid-cols-1 gap-6">
+              {/* Activity Feed - now takes full width */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="lg:col-span-2" // Make it span full width if you want
+                transition={{ delay: 0.4 }}
               >
                 <ActivityFeed />
               </motion.div>
             </div>
-
-            {/* Audio Statistics */}
-            <motion.div 
-              className="frosted-glass p-4 sm:p-6 rounded-xl border border-accent-teal-500/20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Audio Learning Statistics</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-accent-teal-400 mb-2">12.5h</div>
-                  <div className="text-xs sm:text-sm text-text-cream300">Total Listening Time</div>
-                  <div className="text-xs text-text-cream400 mt-1">This month</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-accent-mint-400 mb-2">89%</div>
-                  <div className="text-xs sm:text-sm text-text-cream300">Pronunciation Accuracy</div>
-                  <div className="text-xs text-text-cream400 mt-1">Last session</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-accent-persian-500 mb-2">23</div>
-                  <div className="text-xs sm:text-sm text-text-cream300">Songs Completed</div>
-                  <div className="text-xs text-text-cream400 mt-1">All time</div>
-                </div>
-              </div>
-              
-              {/* Audio Waveform Visualization */}
-              <div className="mt-6 p-4 bg-base-dark3/30 rounded-lg">
-                <div className="flex items-center justify-center gap-1 h-12 sm:h-16">
-                  {Array.from({ length: 30 }, (_, i) => (
-                    <motion.div
-                      key={i}
-                      className="bg-gradient-to-t from-accent-teal-400 to-accent-mint-400 rounded-full"
-                      style={{
-                        width: '3px',
-                        height: `${Math.random() * 60 + 10}%`,
-                      }}
-                      initial={{ height: '10%' }}
-                      animate={{ 
-                        height: `${Math.random() * 60 + 10}%`,
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatType: 'reverse',
-                        delay: i * 0.1,
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="text-center mt-2">
-                  <div className="text-xs text-text-cream400">Recent pronunciation practice waveform</div>
-                </div>
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>
