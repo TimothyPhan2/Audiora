@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { QuizCard } from '@/components/ui/quiz-card'
 import { ListeningExercise } from '@/components/ui/listening-exercise'
-import { PronunciationExercise } from '@/components/ui/pronunciation-exercise'
+import { PronunciationExercise, PronunciationExerciseData } from '@/components/ui/pronunciation-exercise'
 
 // Types for practice content
 interface VocabularyItem {
@@ -37,15 +37,7 @@ interface ListeningExerciseData {
   difficulty_level: string;
 }
 
-interface PronunciationExerciseData {
-  id: string;
-  word_or_phrase: string;
-  phonetic_transcription?: string;
-  reference_audio_url?: string;
-  difficulty_level: string;
-  language: string;
-  context?: string;
-}
+
 
 interface PracticeData {
   questions?: QuizQuestion[];
