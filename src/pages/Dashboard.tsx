@@ -309,7 +309,7 @@ export function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Quick Actions</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-text-cream100 mb-4">Quick Action</h3>
                <Button 
                 onClick={handleContinueLearning}
                 className="button-gradient-primary text-white h-12 flex items-center gap-2 text-sm sm:text-base w-full"
