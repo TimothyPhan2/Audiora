@@ -21,7 +21,7 @@ const LANGUAGE_VOICE_MAPPING = {
   italian: "XfNU2rGpBa01ckF309OY",
   german: "XfNU2rGpBa01ckF309OY",
   french: "XfNU2rGpBa01ckF309OY",
-  japanese: "H6QPv2pQZDcGqLwDTIJQ",
+  japanese: "8EkOjt4xTPGMclNlh1pk",
   chinese: "6MoEUz34rbRrmmyxgRm4"
 };
 // Gemini API response schema
