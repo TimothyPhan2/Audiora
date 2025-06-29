@@ -262,9 +262,6 @@ useEffect(() => {
         await generateListeningContent(userProficiencyLevel);
       } else if (practiceType === 'pronunciation') {
         await generatePronunciationContent(userProficiencyLevel); // CALL NEW FUNCTION
-      } else if (practiceType === 'pronunciation-mock') {
-        // For now, use mock data for pronunciation
-        generateMockContent(practiceType);
       } else {
         await generateNewContent(userProficiencyLevel);
       }
@@ -378,52 +375,6 @@ useEffect(() => {
       setIsGenerating(false);
     }
   };
-
-  // Add this function
-const generateMockContent = (type: 'listening' | 'pronunciation') => {
-  if (!songData?.song) return;
-
-  if (type === 'listening') {
-    const mockListeningExercises = [
-      {
-        id: 'listen-1',
-        audio_url: 'mock-audio-url-1', // Replace with actual mock audio URLs if available
-        question: `What is the speaker saying in ${songData.song.title}?`,
-        options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correct_answer: 'Option A',
-        explanation: 'This is the correct interpretation of the audio.',
-        difficulty_level: 'beginner',
-      },
-      {
-        id: 'listen-2',
-        audio_url: 'mock-audio-url-2',
-        question: `Which phrase best describes the mood of the music in ${songData.song.title}?`,
-        options: ['Happy and upbeat', 'Sad and melancholic', 'Energetic and fast', 'Calm and soothing'],
-        correct_answer: 'Calm and soothing',
-        explanation: 'The music has a slow tempo and soft instrumentation.',
-        difficulty_level: 'intermediate',
-      },
-      {
-        id: 'listen-3',
-        audio_url: 'mock-audio-url-3',
-        question: `What is the cultural reference implied in this part of ${songData.song.title}?`,
-        options: ['A traditional festival', 'A historical event', 'A common idiom', 'A famous landmark'],
-        correct_answer: 'A traditional festival',
-        explanation: 'The lyrics mention elements commonly associated with [specific festival].',
-        difficulty_level: 'advanced',
-      },
-    ];
-    setPracticeData({
-      listening: mockListeningExercises,
-      songId: songData.song.id,
-      practiceType: type,
-      timestamp: new Date().toISOString(),
-    });
-  } else if (type === 'pronunciation') {
-    // Mock pronunciation removed - handled by generatePronunciationContent
-  }
-  setIsGenerating(false);
-};
 
   
 
@@ -1386,6 +1337,8 @@ if (listeningCompleted && listeningResults && songData) {
               <PronunciationExercise
                 exercise={pronunciationExercises[currentPronunciationIndex]}
                 onComplete={completePronunciationExercise}
+                onNext={currentPronunciationIndex < pronunciationExercises.length - 1 ? 
+                  () => setCurrentPronunciationIndex(prev => prev + 1) : undefined}
               />
             </div>
           ) : (
