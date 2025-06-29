@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Mic, MicOff, Volume2, RotateCcw, AlertCircle } from 'lucide-react';
@@ -12,6 +12,7 @@ export interface PronunciationExerciseData {
   context_sentence?: string;
   user_vocabulary_id?: string;
   difficulty_level: string;
+  language: string;
 }
 
 interface PronunciationExerciseProps {
@@ -191,7 +192,7 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       setScore(accuracyScore);
 
       // Generate feedback
-      const feedbackText = generateFeedback(exercise.word_or_phrase, text, accuracyScore);
+      const feedbackText = generateFeedback(exercise.word_or_phrase, text, accuracyScore, confidence);
       setFeedback(feedbackText);
 
       // Mark as completed
@@ -276,10 +277,33 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
     return matrix[str2.length][str1.length];
   };
 
-  const generateFeedback = (target: string, transcribed: string, score: number): string => {
-    if (score >= 90) return "Excellent pronunciation! 🎉";
-    if (score >= 75) return "Good job! Your pronunciation is clear. 👍";
-    if (score >= 60) return "Not bad! Keep practicing for better clarity. 📈";
+  const generateFeedback = (target: string, transcribed: string, score: number, confidence?: number): string => {
+    // If confidence is very low, prioritize audio quality feedback
+    if (confidence && confidence < 0.3) {
+      return "Audio quality was poor. Please speak louder and clearer, then try again. 🎤";
+    }
+    
+    // If confidence is low-moderate, suggest improvement regardless of score
+    if (confidence && confidence < 0.5) {
+      if (score >= 70) {
+        return "Good pronunciation, but try speaking more clearly for better recognition. 🗣️";
+      } else {
+        return "The audio wasn't clear enough. Speak louder and more distinctly. 📢";
+      }
+    }
+    
+    // If confidence is moderate, provide balanced feedback
+    if (confidence && confidence < 0.7) {
+      if (score >= 85) return "Great pronunciation! Try speaking a bit clearer for perfect recognition. ✨";
+      if (score >= 70) return "Good job! Your pronunciation is mostly clear. Keep practicing! 👍";
+      if (score >= 50) return "Not bad! Focus on clarity and try speaking more distinctly. 📈";
+      return "Keep trying! Speak more clearly and focus on the sounds. 🎯";
+    }
+    
+    // High confidence - provide definitive feedback based on accuracy
+    if (score >= 90) return "Excellent pronunciation! Perfect clarity and accuracy! 🎉";
+    if (score >= 75) return "Great job! Your pronunciation is clear and accurate. 👍";
+    if (score >= 60) return "Good effort! Keep practicing to improve accuracy. 📈";
     if (score >= 40) return "Keep trying! Focus on the sounds and rhythm. 🎯";
     return "Let's try again! Listen to the reference audio first. 🔄";
   };
