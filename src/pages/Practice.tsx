@@ -620,7 +620,7 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       user_vocabulary_id?: string;
     }
   ) => {
-    const currentExercise = pronunciationExercises.[currentPronunciationIndex];
+    const currentExercise = pronunciationExercises[currentPronunciationIndex];
     if (!currentExercise) return;
 
     // Determine if this was correct (70% threshold)
