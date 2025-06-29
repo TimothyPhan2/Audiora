@@ -102,6 +102,9 @@ const [vocabularyOutcomes, setVocabularyOutcomes] = useState<boolean[]>([]); // 
   const [pronunciationResults, setPronunciationResults] = useState<any[]>([]);
   const [pronunciationCompleted, setPronunciationCompleted] = useState(false);
   const [pronunciationStartTime, setPronunciationStartTime] = useState<Date | null>(null);
+
+  
+  const [userProficiencyLevel, setUserProficiencyLevel] = useState<string>('intermediate');
   
   useEffect(() => {
     if (songData?.song) {
@@ -225,7 +228,8 @@ useEffect(() => {
         console.error('Error fetching user profile:', profileError);
       }
   
-      const userProficiencyLevel = userProfile?.proficiency_level || 'intermediate';
+      const userProficiencyLevel = userProfile?.proficiency_level.toLowerCase() || 'intermediate';
+      setUserProficiencyLevel(userProficiencyLevel);
       console.log('👤 User proficiency level:', userProficiencyLevel);
 
       
@@ -686,7 +690,6 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     setError(null);
     // Re-generate content for a new session
     if (songData?.song && userVocabulary.length > 0) {
-      const userProficiencyLevel = 'intermediate'; // Default or get from user profile
       generatePronunciationContent(userProficiencyLevel);
     }
   };
@@ -706,7 +709,6 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     }
     // Add this for pronunciation (NEW)
     if (practiceType === 'pronunciation' && songData?.song && userVocabulary.length > 0) {
-      const userProficiencyLevel = 'intermediate'; // Default or get from user profile
       generatePronunciationContent(userProficiencyLevel);
     }
   }, [practiceData, practiceType, songData, userVocabulary]); // Add userVocabulary to dependencies
