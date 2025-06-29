@@ -270,10 +270,14 @@ export function Practice({
     if (!currentItem) return null;
     const pronunciationItem = currentItem as PronunciationExerciseData;
     
-    const handlePronunciationComplete = (score: number) => {
+    const handlePronunciationComplete = (result: {
+      transcribed_text: string;
+      accuracy_score: number;
+      feedback: string;
+    }) => {
       // For pronunciation, we consider it "correct" if score >= 70
-      const isCorrect = score >= 70;
-      onAnswer(`Score: ${score}%`, isCorrect);
+      const isCorrect = result.accuracy_score >= 70;
+      onAnswer(`Score: ${result.accuracy_score}%`, isCorrect);
       onShowResult(true);
     };
 

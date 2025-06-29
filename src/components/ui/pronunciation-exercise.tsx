@@ -11,6 +11,7 @@ export interface PronunciationExerciseData {
   reference_audio_url: string;
   context_sentence?: string;
   user_vocabulary_id?: string;
+  difficulty_level: string;
 }
 
 interface PronunciationExerciseProps {
@@ -20,9 +21,11 @@ interface PronunciationExerciseProps {
     accuracy_score: number;
     feedback: string;
   }) => void;
+  onNext?: () => void;
 }
 
 export function PronunciationExercise({ exercise, onComplete }: PronunciationExerciseProps) {
+export function PronunciationExercise({ exercise, onComplete, onNext }: PronunciationExerciseProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [transcription, setTranscription] = useState<string>('');
@@ -428,6 +431,14 @@ export function PronunciationExercise({ exercise, onComplete }: PronunciationExe
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
+                {onNext && (
+                  <Button 
+                    onClick={onNext}
+                    className="button-gradient-primary"
+                  >
+                    Next Exercise
+                  </Button>
+                )}
               </div>
             )}
           </div>

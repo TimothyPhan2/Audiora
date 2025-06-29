@@ -1129,8 +1129,20 @@ export async function transcribeAudioWithElevenLabs(audioBlob: Blob): Promise<{
   text: string;
   confidence?: number;
 }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    throw new Error('User must be logged in');
+  }
+
+  const formData = new FormData();
+  formData.append('audio', audioBlob);
+
   const { data, error } = await supabase.functions.invoke('pronunciation-stt-processor', {
-    body: audioBlob
+    body: formData,
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+    }
   });
 
   if (error) throw error;
