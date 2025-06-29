@@ -196,7 +196,7 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
       setTranscription(text);
 
       // Use confidence to adjust accuracy scoring
-      const rawAccuracy = calculateAccuracyScore(exercise.word_or_phrase, text);
+      const rawAccuracy = calculateAccuracyScore(exercise.word_or_phrase, text, exercise.language || 'english');
       const confidenceBonus = confidence ? Math.min(10, confidence * 10) : 0;
       const accuracyScore = Math.min(100, rawAccuracy + confidenceBonus);
       setScore(accuracyScore);
