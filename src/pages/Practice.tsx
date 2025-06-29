@@ -691,7 +691,7 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
     navigate(`/lessons/${songId}`);
   };
 
-  useEffect(() => {
+ useEffect(() => {
     if (practiceData?.questions) {
       console.log('📊 Quiz loaded - Total questions:', practiceData.questions.length);
       console.log('📊 Questions preview:', practiceData.questions.map((q, i) => `${i}: ${q.question.substring(0, 50)}...`));
@@ -700,11 +700,17 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       console.log('📚 Vocabulary loaded - Total words:', practiceData.vocabulary.length);
       console.log('📚 Vocabulary preview:', practiceData.vocabulary.map((v, i) => `${i}: ${v.word}`));
     }
-    // Add this for pronunciation (NEW)
-    if (practiceType === 'pronunciation' && songData?.song && userVocabulary.length > 0) {
+    // Add condition to prevent multiple calls
+    if (
+      practiceType === 'pronunciation' && 
+      songData?.song && 
+      userVocabulary.length > 0 &&
+      pronunciationExercises.length === 0 && // ← Only generate if not already loaded
+      !isGenerating // ← And not currently generating
+    ) {
       generatePronunciationContent(userProficiencyLevel);
     }
-  }, [practiceData, practiceType, songData, userVocabulary]); // Add userVocabulary to dependencies
+  }, [practiceData, practiceType, songData, userVocabulary, pronunciationExercises.length, isGenerating]);
   
   if (songLoading) {
     return (
