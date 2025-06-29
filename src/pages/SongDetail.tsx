@@ -303,13 +303,6 @@ export function SongDetail() {
                   <Volume2 className="w-5 h-5" />
                  Listening Exercise
                 </Link>
-                <Link 
-                  to={`/practice/${songId}?type=pronunciation`}
-                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
-                >
-                  <Mic className="w-5 h-5" />
-                 Pronunciation Practice
-                </Link>
               </div>
             </div>
           </motion.div>
