@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle, BookOpen, Brain, Volume2, Mic } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, BookOpen, Brain, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongPlayer } from '@/components/songs/SongPlayer';
 import { supabase } from '@/lib/supabase';
