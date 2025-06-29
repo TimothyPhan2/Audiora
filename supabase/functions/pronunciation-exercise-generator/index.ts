@@ -236,6 +236,7 @@ DIFFICULTY GUIDELINES:
 - Beginner: Simple vocabulary, basic sounds, clear pronunciation patterns
 - Intermediate: Moderate vocabulary, some challenging sounds, rhythm patterns
 - Advanced: Complex vocabulary, difficult sounds, advanced pronunciation features
+IMPORTANT: word_or_phrase should be SHORT - maximum 1-3 words for pronunciation practice.
 
 For each exercise, provide:
 - word_or_phrase: The target word/phrase to pronounce (from song or user vocabulary)
@@ -243,150 +244,18 @@ For each exercise, provide:
 - context_sentence: Example sentence using the word in context
 - user_vocabulary_id: Include if word exists in user's vocabulary for progress tracking
 
-Return the response in JSON format matching the schema.`;
+- word_or_phrase: ONLY the target word or short phrase to pronounce (1-3 words max, no sentences)
+- phonetic_transcription: IPA notation if applicable
+- context_sentence: A separate example sentence using the word (different from word_or_phrase)
+- user_vocabulary_id: Include if word exists in user's vocabulary
+
+  EXAMPLES:
+  ✅ Good word_or_phrase: "hello", "beautiful", "in love"
+  ❌ Bad word_or_phrase: "She said hello to me", "I think you are beautiful";
+  Return the response in JSON format matching the schema.`;
 }
 
-function getVoiceForLanguage(language: string): string {
-  return LANGUAGE_VOICE_MAPPING[language.toLowerCase() as keyof typeof LANGUAGE_VOICE_MAPPING] || 'XfNU2rGpBa01ckF309OY';
-}
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
-  }
-
-  try {
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response('Authorization required', { status: 401, headers: corsHeaders });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return new Response('Invalid token', { status: 401, headers: corsHeaders });
-    }
-
-    // Parse request body
-    const requestData: GenerateRequest = await req.json();
-    const { songId, difficulty, language, userVocabulary } = requestData;
-
-    // Validate required fields
-    if (!songId || !difficulty || !language) {
-      return new Response('Missing required fields: songId, difficulty, language', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Validate difficulty level
-    if (!['beginner', 'intermediate', 'advanced'].includes(difficulty.toLowerCase())) {
-      return new Response('Invalid difficulty level', { status: 400, headers: corsHeaders });
-    }
-
-    // Get voice ID for the language
-    const voiceId = getVoiceForLanguage(language);
-    if (!voiceId) {
-      return new Response(`Unsupported language: ${language}`, { status: 400, headers: corsHeaders });
-    }
-
-    // Check if pronunciation exercises already exist (caching)
-    const { data: existingExercises } = await supabase
-      .from('pronunciation_exercises')
-      .select('*')
-      .eq('song_id', songId)
-      .eq('difficulty_level', difficulty);
-
-    if (existingExercises && existingExercises.length > 0) {
-      console.log('Returning cached pronunciation exercises');
-      return new Response(JSON.stringify({ exercises: existingExercises }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Fetch song data if not provided
-    const { data: songData, error: songError } = await supabase
-      .from('songs')
-      .select(`
-        title,
-        artist,
-        lyrics (text)
-      `)
-      .eq('id', songId)
-      .single();
-
-    if (songError || !songData) {
-      return new Response('Song not found', { status: 404, headers: corsHeaders });
-    }
-
-    const songLyrics = songData.lyrics?.map((l: any) => l.text).join('\n') || '';
-
-    if (!songLyrics) {
-      return new Response('No lyrics available for this song', { status: 400, headers: corsHeaders });
-    }
-
-    console.log(`🎤 Generating pronunciation exercises for song: ${songData.title} (${language}, ${difficulty})`);
-
-    // Step 1: Generate exercise content with Gemini
-    const prompt = createPronunciationExercisePrompt(
-      songData.title, 
-      songData.artist, 
-      songLyrics, 
-      language, 
-      difficulty, 
-      userVocabulary
-    );
-    const exerciseData = await callGeminiAPI(prompt);
-
-    console.log(`✅ Generated ${exerciseData.exercises.length} exercises`);
-
-    // Step 2-4: Process each exercise
-    const exerciseResults: Array<{
-      id: string;
-      word_or_phrase: string;
-      phonetic_transcription?: string;
-      reference_audio_url: string;
-      difficulty_level: string;
-      language: string;
-      context_sentence?: string;
-      user_vocabulary_id?: string;
-    }> = [];
-
-    for (let i = 0; i < exerciseData.exercises.length; i++) {
-      const exercise = exerciseData.exercises[i];
-      
-      console.log(`🎵 Processing exercise ${i + 1}: "${exercise.word_or_phrase}"`);
-      
-      try {
-        // Generate audio for this exercise
-        const audioBuffer = await callElevenLabsTTS(exercise.word_or_phrase, voiceId);
-        
-        // Upload audio to storage with unique filename
-        const filename = `pronunciation-exercise-${songId}-${i + 1}-${crypto.randomUUID()}.mp3`;
-        const audioUrl = await uploadAudioToStorage(audioBuffer, filename);
-        
-        console.log(`📁 Uploaded audio ${i + 1} to storage: ${filename}`);
-        
-        // Save exercise to database  
-        const exerciseId = await saveExerciseToDatabase(songId, exercise, audioUrl, difficulty, language);
-        
-        // Add to results
-        exerciseResults.push({
-          id: exerciseId,
-          word_or_phrase: exercise.word_or_phrase,
-          phonetic_transcription: exercise.phonetic_transcription,
-          reference_audio_url: audioUrl,
-          difficulty_level: difficulty,
-          language: language,
-          context_sentence: exercise.context_sentence,
-          user_vocabulary_id: exercise.user_vocabulary_id
-        });
         
         console.log(`✅ Completed exercise ${i + 1}/${exerciseData.exercises.length} with ID: ${exerciseId}`);
       } catch (error) {
