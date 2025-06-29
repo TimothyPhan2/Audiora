@@ -169,7 +169,6 @@ useEffect(() => {
       await updateUserVocabularyProgress({
         word: vocabularyItem.word,
         translation: vocabularyItem.translation,
-        source: vocabularyItem.source,
         user_vocabulary_entry_id: vocabularyItem.user_vocabulary_id,
         language: songData?.song.language || '',
         songId: songData?.song.id,
@@ -621,7 +620,7 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       user_vocabulary_id?: string;
     }
   ) => {
-    const currentExercise = practiceData?.pronunciation?.[currentIndex];
+    const currentExercise = pronunciationExercises.[currentPronunciationIndex];
     if (!currentExercise) return;
 
     // Determine if this was correct (70% threshold)
@@ -1345,6 +1344,7 @@ if (listeningCompleted && listeningResults && songData) {
               </div>
 
               <PronunciationExercise
+                key={currentPronunciationIndex}
                 exercise={pronunciationExercises[currentPronunciationIndex]}
                 onComplete={completePronunciationExercise}
                 onNext={currentPronunciationIndex < pronunciationExercises.length - 1 ? 
