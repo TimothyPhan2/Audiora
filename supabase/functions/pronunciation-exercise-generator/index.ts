@@ -200,7 +200,7 @@ Return the response in JSON format matching the schema.`;
 function getVoiceForLanguage(language) {
   return LANGUAGE_VOICE_MAPPING[language.toLowerCase()] || 'XfNU2rGpBa01ckF309OY';
 }
-Deno.serve(async (req)=>{
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -280,7 +280,7 @@ Deno.serve(async (req)=>{
         headers: corsHeaders
       });
     }
-    const songLyrics = songData.lyrics?.map((l)=>l.text).join('\n') || '';
+    const songLyrics = songData.lyrics?.map((l) => l.text).join('\n') || '';
     if (!songLyrics) {
       return new Response('No lyrics available for this song', {
         status: 400,
@@ -294,7 +294,7 @@ Deno.serve(async (req)=>{
     console.log(`✅ Generated ${exerciseData.exercises.length} exercises`);
     // Step 2-4: Process each exercise
     const exerciseResults = [];
-    for(let i = 0; i < exerciseData.exercises.length; i++){
+    for (let i = 0; i < exerciseData.exercises.length; i++) {
       const exercise = exerciseData.exercises[i];
       console.log(`🎵 Processing exercise ${i + 1}: "${exercise.word_or_phrase}"`);
       try {
@@ -320,7 +320,7 @@ Deno.serve(async (req)=>{
         console.log(`✅ Completed exercise ${i + 1}/${exerciseData.exercises.length} with ID: ${exerciseId}`);
       } catch (error) {
         console.error(`Error processing exercise ${i + 1}:`, error);
-      // Continue with next exercise instead of failing completely
+        // Continue with next exercise instead of failing completely
       }
     }
     console.log(`🎉 Successfully generated ${exerciseResults.length} pronunciation exercises!`);
