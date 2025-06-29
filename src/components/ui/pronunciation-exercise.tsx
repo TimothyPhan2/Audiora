@@ -564,5 +564,3 @@ export function PronunciationExercise({ exercise, onComplete, onNext }: Pronunci
     </Card>
   );
 }
-
-export default PronunciationExercise;
