@@ -621,56 +621,49 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
       user_vocabulary_id?: string;
     }
   ) => {
-    try {
-      // Get current exercise data
-      const currentExercise = pronunciationExercises[currentIndex];
-      if (!currentExercise) {
-        console.error('No current pronunciation exercise found');
-        return;
-      }
+    const currentExercise = practiceData?.pronunciation?.[currentIndex];
+    if (!currentExercise) return;
 
-      // Determine if this was correct (70% threshold)
-      const isCorrect = result.accuracy_score >= 70;
+    // Determine if this was correct (70% threshold)
+    const isCorrect = result.accuracy_score >= 70;
 
-      // Update vocabulary mastery if this is a review word or new word
-      if (result.user_vocabulary_id || currentExercise.word_or_phrase) {
-        await updateUserVocabularyProgress({
-          word: currentExercise.word_or_phrase,
-          translation: '', // We don't have translation in pronunciation exercise
-          source: result.user_vocabulary_id ? 'review' : 'new',
-          user_vocabulary_entry_id: result.user_vocabulary_id,
-          language: songData?.song.language || '',
-          songId: songData?.song.id,
-          difficulty_level: currentExercise.difficulty_level
-        }, isCorrect);
-      }
+    // Save result to database if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await savePronunciationResult({
+        pronunciation_exercise_id: currentExercise.id,
+        transcribed_text: result.transcribed_text,
+        accuracy_score: result.accuracy_score,
+        feedback: result.feedback,
+      });
+    }
 
-      // Save result to database if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await savePronunciationResult({
-          pronunciation_exercise_id: currentExercise.id,
-          transcribed_text: result.transcribed_text,
-          accuracy_score: result.accuracy_score,
-          feedback: result.feedback,
-        });
-      }
+    // Update vocabulary mastery - simplified call
+    if (currentExercise.word_or_phrase) {
+      console.log('📚 Processing vocabulary update for:', currentExercise.word_or_phrase);
+      
+      await updateUserVocabularyProgress({
+        word: currentExercise.word_or_phrase,
+        translation: '', // Let the API function handle translation retrieval
+        user_vocabulary_entry_id: result.user_vocabulary_id, // For priority lookup
+        language: songData?.song.language || '',
+        songId: songData?.song.id,
+        difficulty_level: currentExercise.difficulty_level
+      }, isCorrect);
+    }
 
-      // Track results locally
-      const newResults = [...pronunciationResults, {
-        exercise: currentExercise,
-        ...result
-      }];
-      setPronunciationResults(newResults);
+    // Track results locally
+    const newResults = [...pronunciationResults, {
+      exercise: currentExercise,
+      ...result
+    }];
+    setPronunciationResults(newResults);
 
-      // Move to next exercise or complete
-      if (currentPronunciationIndex < pronunciationExercises.length - 1) {
-        setCurrentPronunciationIndex(currentPronunciationIndex + 1);
-      } else {
-        setPronunciationCompleted(true);
-      }
-    } catch (error) {
-      console.error('Error saving pronunciation result:', error);
+    // Move to next exercise or complete
+    if (currentPronunciationIndex < pronunciationExercises.length - 1) {
+      setCurrentPronunciationIndex(currentPronunciationIndex + 1);
+    } else {
+      setPronunciationCompleted(true);
     }
   };
 
