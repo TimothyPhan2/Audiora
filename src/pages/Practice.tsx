@@ -612,21 +612,54 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
 };
 
   // Add pronunciation completion handler (NEW)
-  const completePronunciationExercise = async (result: {
-    transcribed_text: string;
-    accuracy_score: number;
-    feedback: string;
-  }) => {
-    const currentExercise = pronunciationExercises[currentPronunciationIndex];
-    
+  const completePronunciationExercise = async (
+    result: {
+      transcribed_text: string;
+      accuracy_score: number;
+      feedback: string;
+      confidence?: number;
+      user_vocabulary_id?: string;
+    }
+  ) => {
     try {
-      // Save result to database
-      await savePronunciationResult({
-        pronunciation_exercise_id: currentExercise.id,
-        transcribed_text: result.transcribed_text,
-        accuracy_score: result.accuracy_score,
-        feedback: result.feedback
-      });
+      // Get current exercise data
+      const currentExercise = pronunciationExercises[currentIndex];
+      if (!currentExercise) {
+        console.error('No current pronunciation exercise found');
+        return;
+      }
+
+      // Determine if this was correct (70% threshold)
+      const isCorrect = result.accuracy_score >= 70;
+
+      // Update vocabulary mastery if this is a review word or new word
+      if (result.user_vocabulary_id || currentExercise.word_or_phrase) {
+        const vocabItemForMasteryUpdate: VocabularyItem = {
+          id: currentExercise.id,
+          original: currentExercise.word_or_phrase,
+          translation: '', // We don't have translation in pronunciation exercise
+          context: currentExercise.context_sentence || '',
+          language: currentExercise.language,
+          difficulty_level: currentExercise.difficulty_level,
+          source: result.user_vocabulary_id ? 'review' : 'new',
+          user_vocabulary_entry_id: result.user_vocabulary_id,
+          songId: songData?.song?.id
+        };
+        
+        // Call mastery update
+        await updateUserVocabularyProgress(vocabItemForMasteryUpdate, isCorrect);
+      }
+
+      // Save result to database if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await savePronunciationResult({
+          pronunciation_exercise_id: currentExercise.id,
+          transcribed_text: result.transcribed_text,
+          accuracy_score: result.accuracy_score,
+          feedback: result.feedback,
+        });
+      }
 
       // Track results locally
       const newResults = [...pronunciationResults, {
@@ -634,18 +667,6 @@ const handleAnswer = (answer: string, isCorrect: boolean) => {
         ...result
       }];
       setPronunciationResults(newResults);
-
-      // Update vocabulary progress if applicable
-      if (currentExercise.user_vocabulary_id) {
-        await updateUserVocabularyProgress({
-          word: currentExercise.word_or_phrase,
-          translation: '', // Translation is not directly available here, can be empty or fetched if needed
-          source: 'review',
-          user_vocabulary_id: currentExercise.user_vocabulary_id,
-          language: songData?.song.language || '',
-          difficulty_level: currentExercise.difficulty_level
-        }, result.accuracy_score >= 70); // Consider 70+ as correct
-      }
 
       // Move to next exercise or complete
       if (currentPronunciationIndex < pronunciationExercises.length - 1) {
@@ -1372,7 +1393,7 @@ if (listeningCompleted && listeningResults && songData) {
             onNext={handleNext}
             onAnswerSelect={setSelectedAnswer}
             onShowResult={setShowResult}
-            onMasteryUpdate={handleMasteryUpdate}
+            onPronunciationExerciseCompleted={completePronunciationExercise}
           />
         ) : (
           <Card className="p-8 text-center">
