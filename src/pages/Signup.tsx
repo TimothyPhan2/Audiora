@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 import { useEffect } from 'react';
 
 export function Signup() {

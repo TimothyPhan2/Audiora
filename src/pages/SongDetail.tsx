@@ -4,8 +4,8 @@ import { ArrowLeft, Loader2, AlertCircle, BookOpen, Brain, Volume2 } from 'lucid
 import { Button } from '@/components/ui/button';
 import { SongPlayer } from '@/components/songs/SongPlayer';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/store';
-import { batchTranslateLyrics } from '@/lib/api';
+import { useAuthStore } from '@/stores/authStore';
+import { batchTranslateLyrics } from '@/lib/api/';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';

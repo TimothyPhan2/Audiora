@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingForm } from '@/components/auth/OnboardingForm';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 
 export function Onboarding() {
   const navigate = useNavigate();

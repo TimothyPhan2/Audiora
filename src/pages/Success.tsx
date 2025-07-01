@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Music, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getUserSubscription } from '@/lib/stripe';
 import { getProductByPriceId } from '@/stripe-config';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 
 export function Success() {
   const navigate = useNavigate();

@@ -20,7 +20,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 import { getUserVocabulary, getUserStats, UserStats } from '@/lib/api';
 
 const sidebarLinks = [

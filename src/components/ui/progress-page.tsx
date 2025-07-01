@@ -14,7 +14,7 @@ import {
   Award,
   Loader2
 } from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 import { getUserStats, getUserActivity, UserStats, ActivityItem } from '@/lib/api';
 import { cn } from '@/lib/utils';
 

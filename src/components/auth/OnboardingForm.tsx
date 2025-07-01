@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore } from '@/stores/authStore';
 import { SupportedLanguage, ProficiencyLevel } from '@/lib/types';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
