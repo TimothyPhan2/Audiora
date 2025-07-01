@@ -571,7 +571,7 @@ export async function updateUserVocabularyProgress(
       .select('translation')
       .eq('word', vocabularyItem.word.toLowerCase())
       .eq('language', vocabularyItem.language)
-      .single();
+      .maybeSingle();
     
     if (existingVocab?.translation) {
       translation = existingVocab.translation;

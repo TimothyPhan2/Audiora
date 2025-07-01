@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase } from './supabase';
 import { 
   AuthFormData, 
   PreferenceUpdate,
@@ -10,32 +10,10 @@ import {
   User, 
   VocabularyItem 
 } from './types';
-import { mockSongs, mockVocabulary } from './mockData';
+import { mockSongs } from './mockData';
 import { getUserVocabulary, removeWordFromVocabulary } from './api';
 
-// Mock functions for when Supabase is not configured
-const mockGetUserVocabulary = async (): Promise<any[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Transform mock vocabulary to match expected format
-  return mockVocabulary.map(item => ({
-    vocabulary: {
-      id: item.id,
-      word: item.original,
-      translation: item.translation,
-      language: item.language,
-      difficulty_level: item.difficulty_level || 'beginner'
-    },
-    learned_from_song_id: item.songId
-  }));
-};
 
-const mockRemoveWordFromVocabulary = async (wordId: string): Promise<void> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  console.log(`Mock: Removed word with ID ${wordId}`);
-};
 
 interface AuthState {
   user: User | null;
@@ -104,13 +82,6 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       
       login: async (data: AuthFormData) => {
-        if (!isSupabaseConfigured) {
-          set({ 
-            error: 'Authentication not available - Supabase not configured', 
-            isLoading: false 
-          });
-          throw new Error('Authentication not available - Supabase not configured');
-        }
         
         set({ isLoading: true, error: null });
         
@@ -139,13 +110,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       signup: async (data: AuthFormData) => {
-        if (!isSupabaseConfigured) {
-          set({ 
-            error: 'Authentication not available - Supabase not configured', 
-            isLoading: false 
-          });
-          throw new Error('Authentication not available - Supabase not configured');
-        }
+    
         
         set({ isLoading: true, error: null });
         
@@ -194,13 +159,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signInWithGoogle: async () => {
-        if (!isSupabaseConfigured) {
-          set({ 
-            error: 'Authentication not available - Supabase not configured', 
-            isLoading: false 
-          });
-          throw new Error('Authentication not available - Supabase not configured');
-        }
+      
         
         set({ isLoading: true, error: null });
         
@@ -227,14 +186,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateUserPreferences: async (data: PreferenceUpdate) => {
-        if (!isSupabaseConfigured) {
-          set({ 
-            error: 'User preferences update not available - Supabase not configured', 
-            isLoading: false 
-          });
-          throw new Error('User preferences update not available - Supabase not configured');
-        }
-        
+  
         set({ isLoading: true, error: null });
         
         try {
@@ -271,10 +223,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       fetchUser: async (): Promise<User | null> => {
-        if (!isSupabaseConfigured) {
-          set({ user: null, isAuthenticated: false });
-          return null;
-        }
+  
         
         const { maxRetries, retryDelayMs, backoffMultiplier } = FETCH_USER_CONFIG;
         let lastError: Error | null = null;
@@ -450,15 +399,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       logout: async () => {
-        if (!isSupabaseConfigured) {
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
-            session: null,
-            error: null 
-          });
-          return;
-        }
+    
         
         try {
           await supabase.auth.signOut();
@@ -482,9 +423,9 @@ export const useAuthStore = create<AuthState>()(
         if (session) {
           // Wait for user data to be fetched with retry logic
           try {
-            if (isSupabaseConfigured) {
+            
               await get().fetchUser();
-            }
+            
           } catch (error) {
             console.error('Error fetching user in setSession:', error);
             // Don't throw here - let the component handle the error state
@@ -588,22 +529,11 @@ export const useVocabularyStore = create<VocabularyState>()((set, get) => ({
     if (!exists) {
       set({ savedWords: [...savedWords, word] });
       
-      // If Supabase is not configured, just keep it in memory
-      if (!isSupabaseConfigured) {
-        console.log('Mock: Added word to vocabulary:', word.original);
-      }
+  
     }
   },
   
   removeWord: (wordId: string) => {
-    if (!isSupabaseConfigured) {
-      // Mock implementation - just remove from memory
-      const { savedWords } = get();
-      const updatedWords = savedWords.filter(w => w.id !== wordId);
-      set({ savedWords: updatedWords });
-      console.log('Mock: Removed word from vocabulary:', wordId);
-      return;
-    }
     
     const removeWordAsync = async () => {
       try {
@@ -620,14 +550,9 @@ export const useVocabularyStore = create<VocabularyState>()((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      let vocabularyData;
+     
+        const vocabularyData = await getUserVocabulary();
       
-      if (!isSupabaseConfigured) {
-        // Use mock data when Supabase is not configured
-        vocabularyData = await mockGetUserVocabulary();
-      } else {
-        vocabularyData = await getUserVocabulary();
-      }
       
       // Transform the data to match VocabularyItem interface
       const savedWords: VocabularyItem[] = vocabularyData.map(item => ({
