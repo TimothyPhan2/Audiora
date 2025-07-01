@@ -281,7 +281,7 @@ export function SongDetail() {
           >
             <div className="frosted-glass rounded-xl border border-accent-teal-500/20 p-6">
               <h3 className="text-xl font-semibold text-text-cream100 mb-4">Practice with this Song</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 grid-rows-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link 
                   to={`/practice/${songId}?type=vocabulary`}
                   className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
@@ -298,9 +298,9 @@ export function SongDetail() {
                 </Link>
                 <Link 
                   to={`/practice/${songId}?type=listening`}
-                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-6 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2 sm:col-span-2 sm:py-8"
+                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
                 >
-                  <Volume2 className="w-6 h-6" />
+                  <Volume2 className="w-5 h-5" />
                  Listening Exercise
                 </Link>
               </div>
