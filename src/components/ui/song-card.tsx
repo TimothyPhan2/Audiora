@@ -20,13 +20,6 @@ const languageFlags = {
   german: '🇩🇪'
 };
 
-const levelColors = {
-  beginner: 'bg-green-500/20 text-green-400 border-green-500/30',
-  intermediate: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  advanced: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  fluent: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-};
-
 export function SongCard({ song, progress = 0, onStartLesson, className }: SongCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -79,16 +72,6 @@ export function SongCard({ song, progress = 0, onStartLesson, className }: SongC
             <span className="text-xs text-white font-medium capitalize">
               {song.language}
             </span>
-          </div>
-        </div>
-
-        {/* Proficiency level */}
-        <div className="absolute top-3 right-3">
-          <div className={cn(
-            "px-2 py-1 rounded-full text-xs font-medium border",
-            levelColors[song.level as keyof typeof levelColors]
-          )}>
-            {song.level.charAt(0).toUpperCase() + song.level.slice(1)}
           </div>
         </div>
 

@@ -1,67 +1,90 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Grid, List, Music, X } from 'lucide-react';
+import { Search, Filter, Grid, List, Music, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { SongCard } from '@/components/ui/song-card';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { mockLessonsData, genreOptions, languageOptions, levelOptions, durationOptions } from '@/lib/mockLessonsData';
+import { getSongs, SongWithExtras, filterSongs } from '@/lib/api';
+import { languageOptions, levelOptions, genreOptions, durationOptions } from '@/lib/mockLessonsData';
+import { useAuthStore } from '@/stores/authStore';
 
 export function Lessons() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  
+  // Initialize language filter with user's preference
+  const userPreferredLanguage = user?.learning_languages?.[0] || 'all';
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('all');
+  const [selectedLanguage, setSelectedLanguage] = useState(userPreferredLanguage);
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [selectedDuration, setSelectedDuration] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  // New state for managing songs data
+  const [songs, setSongs] = useState<SongWithExtras[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter and search logic
+  // Update selectedLanguage when user changes
+  useEffect(() => {
+    if (user?.learning_languages?.[0]) {
+      setSelectedLanguage(user.learning_languages[0]);
+    }
+  }, [user]);
+
+  // Fetch songs from database on component mount
+  useEffect(() => {
+    const fetchSongs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const songsData = await getSongs();
+        setSongs(songsData);
+      } catch (err) {
+        console.error('Error fetching songs:', err);
+        setError('Failed to load songs. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSongs();
+  }, []);
+
+  // Filter and search logic using the new filterSongs function
   const filteredSongs = useMemo(() => {
-    return mockLessonsData.filter(song => {
-      const matchesSearch = searchQuery === '' || 
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesLanguage = selectedLanguage === 'all' || song.language === selectedLanguage;
-      const matchesLevel = selectedLevel === 'All' || song.level === selectedLevel.toLowerCase();
-      const matchesGenre = selectedGenre === 'All' || song.genre === selectedGenre.toLowerCase();
-      
-      const matchesDuration = selectedDuration === 'All' || (() => {
-        const duration = song.duration;
-        const minutes = parseInt(duration.split(':')[0]);
-        switch (selectedDuration) {
-          case 'Short (< 3 min)': return minutes < 3;
-          case 'Medium (3-4 min)': return minutes >= 3 && minutes <= 4;
-          case 'Long (> 4 min)': return minutes > 4;
-          default: return true;
-        }
-      })();
-
-      return matchesSearch && matchesLanguage && matchesLevel && matchesGenre && matchesDuration;
+    return filterSongs(songs, {
+      searchQuery,
+      language: selectedLanguage,
+      level: selectedLevel,
+      genre: selectedGenre,
+      duration: selectedDuration
     });
-  }, [searchQuery, selectedLanguage, selectedLevel, selectedGenre, selectedDuration]);
+  }, [songs, searchQuery, selectedLanguage, selectedLevel, selectedGenre, selectedDuration]);
 
   const handleStartLesson = (songId: string) => {
     navigate(`/lessons/${songId}`);
   };
 
   const clearAllFilters = () => {
-    setSelectedLanguage('all');
+    setSelectedLanguage(userPreferredLanguage);
     setSelectedLevel('All');
     setSelectedGenre('All');
     setSelectedDuration('All');
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedLanguage !== 'all' || selectedLevel !== 'All' || 
+  const hasActiveFilters = selectedLanguage !== userPreferredLanguage || selectedLevel !== 'All' || 
                           selectedGenre !== 'All' || selectedDuration !== 'All' || searchQuery !== '';
 
   const activeFilterCount = [
-    selectedLanguage !== 'all',
+    selectedLanguage !== userPreferredLanguage,
     selectedLevel !== 'All',
     selectedGenre !== 'All',
     selectedDuration !== 'All'
@@ -216,7 +239,7 @@ export function Lessons() {
             {/* View Toggle and Results Count */}
             <div className="flex items-center gap-4">
               <div className="text-sm text-text-cream400">
-                Showing {filteredSongs.length} lessons
+                {loading ? 'Loading...' : `Showing ${filteredSongs.length} lessons`}
               </div>
               <div className="flex items-center gap-1 bg-base-dark3/60 rounded-lg p-1">
                 <Button
@@ -343,45 +366,88 @@ export function Lessons() {
           </SheetContent>
         </Sheet>
 
-        {/* Results */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {filteredSongs.length === 0 ? (
-            <div className="text-center py-16">
-              <Music className="w-16 h-16 text-text-cream400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-text-cream200 mb-2">No lessons found</h3>
-              <p className="text-text-cream400 mb-4">Try adjusting your search or filters</p>
-              <Button onClick={clearAllFilters} className="button-gradient-primary">
-                Clear Filters
+        {/* Loading State */}
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center py-16"
+          >
+            <div className="flex items-center gap-3 text-text-cream200">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span>Loading songs...</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-16"
+          >
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Songs</h3>
+              <p className="text-red-300 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="button-gradient-primary"
+              >
+                Try Again
               </Button>
             </div>
-          ) : (
-            <div className={
-              viewMode === 'grid'
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                : "space-y-4"
-            }>
-              {filteredSongs.map((song, index) => (
-                <motion.div
-                  key={song.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <SongCard
-                    song={song}
-                    progress={song.progress}
-                    onStartLesson={handleStartLesson}
-                    className={viewMode === 'list' ? 'flex flex-row items-center' : ''}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
+
+        {/* Results - Only show when not loading and no error */}
+        {!loading && !error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {filteredSongs.length === 0 ? (
+              <div className="text-center py-16">
+                <Music className="w-16 h-16 text-text-cream400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-text-cream200 mb-2">No lessons found</h3>
+                <p className="text-text-cream400 mb-4">
+                  {songs.length === 0 
+                    ? "No songs available at the moment" 
+                    : "Try adjusting your search or filters"
+                  }
+                </p>
+                {hasActiveFilters && (
+                  <Button onClick={clearAllFilters} className="button-gradient-primary">
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className={
+                viewMode === 'grid'
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  : "space-y-4"
+              }>
+                {filteredSongs.map((song, index) => (
+                  <motion.div
+                    key={song.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <SongCard
+                      song={song}
+                      progress={song.progress}
+                      onStartLesson={handleStartLesson}
+                      className={viewMode === 'list' ? 'flex flex-row items-center' : ''}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );
