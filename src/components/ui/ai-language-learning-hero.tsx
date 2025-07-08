@@ -322,7 +322,7 @@ function AILanguageLearningHero() {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
       {/* Positioned Bolt Logo */}
-      <a 
+      {/* <a 
         href="https://bolt.new/" 
         target="_blank" 
         rel="noopener noreferrer"
@@ -333,7 +333,7 @@ function AILanguageLearningHero() {
           alt="Powered by Bolt.new" 
           className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 object-contain"
         />
-      </a>
+      </a> */}
 
       {/* Background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-500/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />
