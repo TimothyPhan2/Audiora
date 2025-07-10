@@ -17,7 +17,9 @@ const languageFlags = {
   spanish: '🇪🇸',
   french: '🇫🇷',
   italian: '🇮🇹',
-  german: '🇩🇪'
+  german: '🇩🇪',
+  japanese: '🇯🇵',
+  chinese: '🇨🇳'
 };
 
 export function SongCard({ song, progress = 0, onStartLesson, className }: SongCardProps) {
@@ -67,7 +69,7 @@ export function SongCard({ song, progress = 0, onStartLesson, className }: SongC
         <div className="absolute top-3 left-3">
           <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
             <span className="text-lg">
-              {languageFlags[song.language as keyof typeof languageFlags] || '🌍'}
+              {languageFlags[song.language as keyof typeof languageFlags]}
             </span>
             <span className="text-xs text-white font-medium capitalize">
               {song.language}

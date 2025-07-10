@@ -303,8 +303,8 @@ function FloatingShape({
 // Main Hero Component
 function AILanguageLearningHero() {
   
-  const languages = ["Spanish", "French", "German", "Italian", "Portuguese", "Japanese"];
-  const musicGenres = ["Pop", "Rock", "Jazz", "Classical", "Hip-Hop", "Folk"];
+  const languages = ["Spanish", "French", "German", "Italian", "Chinese", "Japanese"];
+  const musicGenres = ["Pop", "Rock", "Jazz", "Hip-Hop", "Electronic"];
 
   const fadeUpVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -321,19 +321,6 @@ function AILanguageLearningHero() {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
-      {/* Positioned Bolt Logo */}
-      {/* <a 
-        href="https://bolt.new/" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="absolute top-4 right-4 z-20 hover:opacity-80 transition-opacity duration-300"
-      >
-        <img 
-          src="/white_circle_360x360.png" 
-          alt="Powered by Bolt.new" 
-          className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 object-contain"
-        />
-      </a> */}
 
       {/* Background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-teal-500/[0.05] via-transparent to-accent-persian-500/[0.05] blur-3xl" />

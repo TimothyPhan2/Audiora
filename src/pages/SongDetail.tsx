@@ -258,7 +258,7 @@ export function SongDetail() {
               {song.title}
             </h1>
             <p className="text-text-cream300 text-sm sm:text-base">
-              by {song.artist} • {song.language.charAt(0).toUpperCase() + song.language.slice(1)} • {song.difficulty_level.charAt(0).toUpperCase() + song.difficulty_level.slice(1)}
+              by {song.artist} • {song.language.charAt(0).toUpperCase() + song.language.slice(1)}
             </p>
             {isTranslating && (
               <div className="flex items-center gap-2 mt-2 text-accent-teal-400 text-sm">

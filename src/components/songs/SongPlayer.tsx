@@ -112,6 +112,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false); 
   const [hoveredWord, setHoveredWord] = useState<{
     word: string;
     context: string;
@@ -155,6 +156,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+      setHasStartedPlaying(false);
     };
 
     const handleLoadStart = () => {
@@ -182,13 +184,13 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
 
   // Auto-scroll to active lyric
   useEffect(() => {
-    if (activeLyricIndex >= 0 && lyricsRefs.current[activeLyricIndex]) {
+    if (hasStartedPlaying && activeLyricIndex >= 0 && lyricsRefs.current[activeLyricIndex]) {
       lyricsRefs.current[activeLyricIndex]?.scrollIntoView({
         behavior: 'smooth',
         block: 'center'
       });
     }
-  }, [activeLyricIndex]);
+  }, [activeLyricIndex, hasStartedPlaying]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -198,6 +200,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
       audio.pause();
     } else {
       audio.play();
+      setHasStartedPlaying(true);
     }
     setIsPlaying(!isPlaying);
   };
@@ -355,12 +358,6 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
               whileHover={{ scale: 1.05 }}
             >
               {song.language.charAt(0).toUpperCase() + song.language.slice(1)}
-            </motion.span>
-            <motion.span 
-              className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
-              whileHover={{ scale: 1.05 }}
-            >
-              {song.difficulty_level.charAt(0).toUpperCase() + song.difficulty_level.slice(1)}
             </motion.span>
             <motion.span 
               className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"

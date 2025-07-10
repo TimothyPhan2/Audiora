@@ -254,7 +254,9 @@ export const languageOptions = [
   { value: 'spanish', label: 'Spanish', flag: '🇪🇸' },
   { value: 'french', label: 'French', flag: '🇫🇷' },
   { value: 'italian', label: 'Italian', flag: '🇮🇹' },
-  { value: 'german', label: 'German', flag: '🇩🇪' }
+  { value: 'german', label: 'German', flag: '🇩🇪' },
+  { value: 'japanese', label: 'Japanese', flag: '🇯🇵' },
+  { value: 'chinese', label: 'Chinese', flag: '🇨🇳' }
 ];
 export const levelOptions = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 export const durationOptions = ['All', 'Short (< 3 min)', 'Medium (3-4 min)', 'Long (> 4 min)'];

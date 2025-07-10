@@ -1,32 +1,30 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Grid, List, Music, X, Loader2 } from 'lucide-react';
+import { Search, Filter, Grid, List, Music, Loader2, ChevronDown } from 'lucide-react'; // Add ChevronDown
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { SongCard } from '@/components/ui/song-card';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { getSongs, SongWithExtras, filterSongs } from '@/lib/api';
-import { languageOptions, levelOptions, genreOptions, durationOptions } from '@/lib/mockLessonsData';
+import { languageOptions } from '@/lib/mockLessonsData';
 import { useAuthStore } from '@/stores/authStore';
 
 export function Lessons() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  
+
   // Initialize language filter with user's preference
   const userPreferredLanguage = user?.learning_languages?.[0] || 'all';
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState(userPreferredLanguage);
-  const [selectedLevel, setSelectedLevel] = useState('All');
-  const [selectedGenre, setSelectedGenre] = useState('All');
-  const [selectedDuration, setSelectedDuration] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
-  // New state for managing songs data
+  const [showOtherLanguages, setShowOtherLanguages] = useState(false); // Add this state
+
+  // Songs data state
   const [songs, setSongs] = useState<SongWithExtras[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +35,12 @@ export function Lessons() {
       setSelectedLanguage(user.learning_languages[0]);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (selectedLanguage === userPreferredLanguage || selectedLanguage === 'all') {
+      setShowOtherLanguages(false);
+    }
+  }, [selectedLanguage, userPreferredLanguage]);
 
   // Fetch songs from database on component mount
   useEffect(() => {
@@ -57,16 +61,16 @@ export function Lessons() {
     fetchSongs();
   }, []);
 
-  // Filter and search logic using the new filterSongs function
+  // Simplified filter logic - only language and search
   const filteredSongs = useMemo(() => {
     return filterSongs(songs, {
       searchQuery,
       language: selectedLanguage,
-      level: selectedLevel,
-      genre: selectedGenre,
-      duration: selectedDuration
+      level: 'All', // Default values for removed filters
+      genre: 'All',
+      duration: 'All'
     });
-  }, [songs, searchQuery, selectedLanguage, selectedLevel, selectedGenre, selectedDuration]);
+  }, [songs, searchQuery, selectedLanguage]);
 
   const handleStartLesson = (songId: string) => {
     navigate(`/lessons/${songId}`);
@@ -74,21 +78,17 @@ export function Lessons() {
 
   const clearAllFilters = () => {
     setSelectedLanguage(userPreferredLanguage);
-    setSelectedLevel('All');
-    setSelectedGenre('All');
-    setSelectedDuration('All');
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedLanguage !== userPreferredLanguage || selectedLevel !== 'All' || 
-                          selectedGenre !== 'All' || selectedDuration !== 'All' || searchQuery !== '';
+  const hasActiveFilters = selectedLanguage !== userPreferredLanguage || searchQuery !== '';
 
-  const activeFilterCount = [
-    selectedLanguage !== userPreferredLanguage,
-    selectedLevel !== 'All',
-    selectedGenre !== 'All',
-    selectedDuration !== 'All'
-  ].filter(Boolean).length;
+  // Separate languages into primary and others
+  const primaryLanguage = languageOptions.find(lang => lang.value === userPreferredLanguage);
+  const otherLanguages = languageOptions.filter(lang =>
+    lang.value !== userPreferredLanguage && lang.value !== 'all'
+  );
+  const allLanguagesOption = languageOptions.find(lang => lang.value === 'all');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-dark2 via-base-dark3 to-base-dark2">
@@ -128,11 +128,11 @@ export function Lessons() {
 
           {/* Desktop Filter Controls */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Desktop Filters - Hidden on Mobile */}
+            {/* Desktop Language Filters - Modified */}
             <div className="hidden lg:flex flex-1 flex-col gap-4">
               {/* Filter Header with Clear All */}
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-text-cream200">Filter by:</h3>
+                <h3 className="text-sm font-medium text-text-cream200">Language Selection:</h3>
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
@@ -140,76 +140,94 @@ export function Lessons() {
                     onClick={clearAllFilters}
                     className="text-accent-teal-400 hover:text-accent-teal-300 text-xs h-auto p-1"
                   >
-                    Clear All
+                    Reset to My Language
                   </Button>
                 )}
               </div>
 
-              {/* Organized Filter Groups */}
-              <div className="space-y-3">
-                {/* Language Filters */}
+              <div className="space-y-4">
+                {/* Quick Browse Section */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">Language</label>
-                  <div className="flex flex-wrap gap-2">
-                    {languageOptions.map((lang) => (
+                  <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">Quick Browse</label>
+                  <div className="flex gap-2">
+                    {allLanguagesOption && (
                       <FilterChip
-                        key={lang.value}
-                        label={`${lang.flag} ${lang.label}`}
-                        isActive={selectedLanguage === lang.value}
-                        onClick={() => setSelectedLanguage(lang.value)}
+                        key={allLanguagesOption.value}
+                        label={`${allLanguagesOption.flag} ${allLanguagesOption.label}`}
+                        isActive={selectedLanguage === allLanguagesOption.value}
+                        onClick={() => setSelectedLanguage(allLanguagesOption.value)}
+                        className={selectedLanguage === allLanguagesOption.value ? 'ring-2 ring-accent-teal-400' : ''}
                       />
-                    ))}
+                    )}
                   </div>
                 </div>
 
-                {/* Level Filters */}
+                {/* Primary Learning Language */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">Proficiency Level</label>
-                  <div className="flex flex-wrap gap-2">
-                    {levelOptions.map((level) => (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">My Learning Language</label>
+                    <span className="text-xs bg-accent-teal-500/20 text-accent-teal-400 px-2 py-1 rounded border border-accent-teal-500/30">
+                      Primary
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    {/* ONLY primary language here */}
+                    {primaryLanguage && (
                       <FilterChip
-                        key={level}
-                        label={level}
-                        isActive={selectedLevel === level}
-                        onClick={() => setSelectedLevel(level)}
+                        key={primaryLanguage.value}
+                        label={`${primaryLanguage.flag} ${primaryLanguage.label}`}
+                        isActive={selectedLanguage === primaryLanguage.value}
+                        onClick={() => setSelectedLanguage(primaryLanguage.value)}
+                        className={selectedLanguage === primaryLanguage.value ? 'ring-2 ring-accent-teal-400' : ''}
                       />
-                    ))}
+                    )}
                   </div>
                 </div>
 
-                {/* Genre Filters */}
+                {/* Other Languages (Collapsible) */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">Genre</label>
-                  <div className="flex flex-wrap gap-2">
-                    {genreOptions.map((genre) => (
-                      <FilterChip
-                        key={genre}
-                        label={genre}
-                        isActive={selectedGenre === genre}
-                        onClick={() => setSelectedGenre(genre)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  <button
+                    onClick={() => setShowOtherLanguages(!showOtherLanguages)}
+                    className="flex items-center gap-2 text-xs text-text-cream400 hover:text-text-cream200 transition-colors"
+                  >
+                    <span>Explore other languages</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showOtherLanguages ? 'rotate-180' : ''}`} />
+                  </button>
 
-                {/* Duration Filters */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-text-cream300 uppercase tracking-wide">Duration</label>
-                  <div className="flex flex-wrap gap-2">
-                    {durationOptions.map((duration) => (
-                      <FilterChip
-                        key={duration}
-                        label={duration}
-                        isActive={selectedDuration === duration}
-                        onClick={() => setSelectedDuration(duration)}
-                      />
-                    ))}
-                  </div>
+                  {showOtherLanguages && (
+                    <div className="flex flex-wrap gap-2 opacity-70">
+                      {otherLanguages.map((lang) => (
+                        <FilterChip
+                          key={lang.value}
+                          label={`${lang.flag} ${lang.label}`}
+                          isActive={selectedLanguage === lang.value}
+                          onClick={() => setSelectedLanguage(lang.value)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Context-aware nudging */}
+              {selectedLanguage !== userPreferredLanguage && selectedLanguage !== 'all' && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-yellow-300">
+                      💡 You're browsing {languageOptions.find(l => l.value === selectedLanguage)?.label} songs.
+                    </span>
+                    <button
+                      onClick={() => setSelectedLanguage(userPreferredLanguage)}
+                      className="text-yellow-400 hover:text-yellow-300 underline ml-2"
+                    >
+                      Return to {primaryLanguage?.label}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Mobile Filter Button - Shown only on Mobile */}
+            {/* Mobile Filter Button - Keep existing but update text */}
             <div className="lg:hidden w-full flex items-center justify-between">
               <Button
                 variant="outline"
@@ -217,10 +235,13 @@ export function Lessons() {
                 className="bg-base-dark3/60 border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10 flex items-center gap-2"
               >
                 <Filter className="w-4 h-4" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="bg-accent-teal-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {activeFilterCount}
+                {selectedLanguage === userPreferredLanguage
+                  ? `${primaryLanguage?.flag} ${primaryLanguage?.label}`
+                  : 'Language Filter'
+                }
+                {selectedLanguage !== userPreferredLanguage && selectedLanguage !== 'all' && (
+                  <span className="bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    !
                   </span>
                 )}
               </Button>
@@ -231,7 +252,7 @@ export function Lessons() {
                   onClick={clearAllFilters}
                   className="text-accent-teal-400 hover:text-accent-teal-300 text-sm"
                 >
-                  Clear All
+                  Reset
                 </Button>
               )}
             </div>
@@ -263,83 +284,64 @@ export function Lessons() {
           </div>
         </motion.div>
 
-        {/* Mobile Filter Sheet */}
+        {/* Mobile Filter Sheet - Update with hierarchical structure */}
         <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
-          <SheetContent side="bottom" className="bg-base-dark2 border-accent-teal-500/20 max-h-[80vh]">
+          <SheetContent side="bottom" className="bg-base-dark2 border-accent-teal-500/20 max-h-[70vh]">
             <SheetHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <SheetTitle className="text-text-cream100">Filter Lessons</SheetTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowMobileFilters(false)}
-                  className="text-text-cream400 hover:text-text-cream200 p-1"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <SheetTitle className="text-text-cream100">Select Language</SheetTitle>
               </div>
             </SheetHeader>
-            
-            <div className="space-y-6 overflow-y-auto max-h-[50vh] pb-4">
-              {/* Language Filters */}
+
+            <div className="space-y-4 overflow-y-auto max-h-[40vh] pb-4">
+              {/* Quick Browse Section */}
               <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream200">Language</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {languageOptions.map((lang) => (
+                <label className="text-sm font-medium text-text-cream200">Quick Browse</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {allLanguagesOption && (
+                    <FilterChip
+                      key={allLanguagesOption.value}
+                      label={`${allLanguagesOption.flag} ${allLanguagesOption.label}`}
+                      isActive={selectedLanguage === allLanguagesOption.value}
+                      onClick={() => setSelectedLanguage(allLanguagesOption.value)}
+                      className="justify-center py-3"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Primary Language Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-text-cream200">My Learning Language</label>
+                  <span className="text-xs bg-accent-teal-500/20 text-accent-teal-400 px-2 py-1 rounded">
+                    Primary
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {primaryLanguage && (
+                    <FilterChip
+                      key={primaryLanguage.value}
+                      label={`${primaryLanguage.flag} ${primaryLanguage.label}`}
+                      isActive={selectedLanguage === primaryLanguage.value}
+                      onClick={() => setSelectedLanguage(primaryLanguage.value)}
+                      className={`justify-center py-3 ${selectedLanguage === primaryLanguage.value ? 'ring-2 ring-accent-teal-400' : ''}`}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Other Languages Section */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-text-cream300">Explore Other Languages</label>
+                <div className="grid grid-cols-2 gap-3 opacity-70">
+                  {otherLanguages.map((lang) => (
                     <FilterChip
                       key={lang.value}
                       label={`${lang.flag} ${lang.label}`}
                       isActive={selectedLanguage === lang.value}
                       onClick={() => setSelectedLanguage(lang.value)}
-                      className="justify-center"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Level Filters */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream200">Proficiency Level</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {levelOptions.map((level) => (
-                    <FilterChip
-                      key={level}
-                      label={level}
-                      isActive={selectedLevel === level}
-                      onClick={() => setSelectedLevel(level)}
-                      className="justify-center"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Genre Filters */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream200">Genre</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {genreOptions.map((genre) => (
-                    <FilterChip
-                      key={genre}
-                      label={genre}
-                      isActive={selectedGenre === genre}
-                      onClick={() => setSelectedGenre(genre)}
-                      className="justify-center text-xs"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Duration Filters */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-text-cream200">Duration</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {durationOptions.map((duration) => (
-                    <FilterChip
-                      key={duration}
-                      label={duration}
-                      isActive={selectedDuration === duration}
-                      onClick={() => setSelectedDuration(duration)}
-                      className="justify-center"
+                      className="justify-center py-3 text-xs"
                     />
                   ))}
                 </div>
@@ -353,20 +355,20 @@ export function Lessons() {
                   onClick={clearAllFilters}
                   className="flex-1 bg-transparent border-accent-teal-500/30 text-text-cream200 hover:bg-accent-teal-500/10"
                 >
-                  Clear All
+                  Reset
                 </Button>
                 <Button
                   onClick={() => setShowMobileFilters(false)}
                   className="flex-1 button-gradient-primary text-white"
                 >
-                  Apply Filters
+                  Apply
                 </Button>
               </div>
             </SheetFooter>
           </SheetContent>
         </Sheet>
 
-        {/* Loading State */}
+        {/* Loading, Error, and Results sections remain the same */}
         {loading && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -380,7 +382,6 @@ export function Lessons() {
           </motion.div>
         )}
 
-        {/* Error State */}
         {error && !loading && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -390,8 +391,8 @@ export function Lessons() {
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 max-w-md mx-auto">
               <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Songs</h3>
               <p className="text-red-300 mb-4">{error}</p>
-              <Button 
-                onClick={() => window.location.reload()} 
+              <Button
+                onClick={() => window.location.reload()}
                 className="button-gradient-primary"
               >
                 Try Again
@@ -400,7 +401,6 @@ export function Lessons() {
           </motion.div>
         )}
 
-        {/* Results - Only show when not loading and no error */}
         {!loading && !error && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -412,9 +412,9 @@ export function Lessons() {
                 <Music className="w-16 h-16 text-text-cream400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-text-cream200 mb-2">No lessons found</h3>
                 <p className="text-text-cream400 mb-4">
-                  {songs.length === 0 
-                    ? "No songs available at the moment" 
-                    : "Try adjusting your search or filters"
+                  {songs.length === 0
+                    ? "No songs available at the moment"
+                    : "Try adjusting your search or language filter"
                   }
                 </p>
                 {hasActiveFilters && (
