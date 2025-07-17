@@ -12,20 +12,28 @@ const splitTextForLanguage = (text: string, language: string): string[] => {
   switch (language.toLowerCase()) {
     case 'japanese':
     case 'japanese-kanji':
-    case 'japanese-hiragana': 
+    case 'japanese-hiragana':
     case 'japanese-katakana':
-      // Split by character groups: kanji clusters, hiragana words, katakana words
-      return text.match(/[\u4e00-\u9faf]+|[\u3040-\u309f]+|[\u30a0-\u30ff]+|[a-zA-Z0-9]+|[^\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff\w]/g) || [text];
-    
+      // Check if the text actually contains Japanese characters
+      const hasJapaneseChars = /[\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]/.test(text);
+
+      if (hasJapaneseChars) {
+        // Split by character groups: kanji clusters, hiragana words, katakana words
+        return text.match(/[\u4e00-\u9faf]+|[\u3040-\u309f]+|[\u30a0-\u30ff]+|[a-zA-Z0-9]+|[^\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff\w]/g) || [text];
+      } else {
+        // Text is likely romanji, treat as space-separated
+        return text.split(/\s+/);
+      }
+
     case 'chinese':
     case 'mandarin':
       // Individual characters for Chinese
       return text.split('').filter(char => char.trim() !== '');
-    
+
     case 'korean':
       // Korean uses spaces but for language learning, split by syllable blocks for finer granularity
       return text.match(/[\uac00-\ud7af]+|[a-zA-Z0-9]+|[^\s\uac00-\ud7af\w]/g) || text.split(/\s+/);
-    
+
     default:
       // Space-separated languages (English, Spanish, French, etc.)
       return text.split(/\s+/);
@@ -38,7 +46,7 @@ const extractContext = (word: string, fullText: string, language: string): strin
     // Character-based context for CJK languages
     const cleanWord = word.replace(/[.,!?;:]$/, '');
     const wordIndex = fullText.indexOf(cleanWord);
-    
+
     if (wordIndex !== -1) {
       const contextStart = Math.max(0, wordIndex - 3);
       const contextEnd = Math.min(fullText.length, wordIndex + cleanWord.length + 3);
@@ -49,7 +57,7 @@ const extractContext = (word: string, fullText: string, language: string): strin
     // Syllable-based context for Korean
     const cleanWord = word.replace(/[.,!?;:]$/, '');
     const wordIndex = fullText.indexOf(cleanWord);
-    
+
     if (wordIndex !== -1) {
       const contextStart = Math.max(0, wordIndex - 2);
       const contextEnd = Math.min(fullText.length, wordIndex + cleanWord.length + 2);
@@ -61,7 +69,7 @@ const extractContext = (word: string, fullText: string, language: string): strin
     const words = fullText.split(' ');
     const cleanWord = word.replace(/[.,!?;:]$/, '');
     const wordIndex = words.findIndex(w => w.replace(/[.,!?;:]$/, '') === cleanWord);
-    
+
     if (wordIndex !== -1) {
       const contextStart = Math.max(0, wordIndex - 2);
       const contextEnd = Math.min(words.length, wordIndex + 3);
@@ -112,7 +120,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
-  const [hasStartedPlaying, setHasStartedPlaying] = useState(false); 
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<{
     word: string;
     context: string;
@@ -135,11 +143,11 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      
+
       // Find active lyric based on current time
       const currentTimeMs = audio.currentTime * 1000;
       let newActiveLyricIndex = -1;
-      
+
       for (let i = 0; i < lyrics.length; i++) {
         const lyric = lyrics[i];
         if (lyric.start_time_ms && lyric.end_time_ms) {
@@ -149,7 +157,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           }
         }
       }
-      
+
       setActiveLyricIndex(newActiveLyricIndex);
     };
 
@@ -271,14 +279,14 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
     if (element.dataset.hoverTimeout) {
       clearTimeout(parseInt(element.dataset.hoverTimeout));
     }
-    
+
     // Reduced delay for faster tooltip appearance
     const timeoutId = setTimeout(() => {
       const rect = element.getBoundingClientRect();
-      
+
       // Use language-aware context extraction
       const properContext = extractContext(word, fullText, song.language);
-      
+
       setHoveredWord({
         word: word.replace(/[.,!?;:]$/, ''),
         context: properContext,
@@ -288,7 +296,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         },
       });
     }, 300); // Reduced to 300ms for faster response
-    
+
     element.dataset.hoverTimeout = timeoutId.toString();
   };
 
@@ -309,7 +317,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
 
     // Use language-aware text splitting
     const words = splitTextForLanguage(text, song.language);
-    
+
     return (
       <span>
         {words.map((word, wordIndex) => (
@@ -322,8 +330,8 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
               {word}
             </span>
             {/* Only add spaces for languages that naturally use spaces between words */}
-            {wordIndex < words.length - 1 && 
-             !['japanese', 'chinese', 'mandarin', 'korean'].includes(song.language.toLowerCase()) && ' '}
+            {wordIndex < words.length - 1 &&
+              !['japanese', 'chinese', 'mandarin', 'korean'].includes(song.language.toLowerCase()) && ' '}
           </span>
         ))}
       </span>
@@ -353,13 +361,13 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         {/* Song Info */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-3 text-sm">
-            <motion.span 
+            <motion.span
               className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
               whileHover={{ scale: 1.05 }}
             >
               {song.language.charAt(0).toUpperCase() + song.language.slice(1)}
             </motion.span>
-            <motion.span 
+            <motion.span
               className="px-3 py-1 bg-accent-teal-500/20 rounded-full text-accent-teal-400 border border-accent-teal-500/30"
               whileHover={{ scale: 1.05 }}
             >
@@ -369,7 +377,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
         </div>
 
         {/* Audio Controls */}
-        <motion.div 
+        <motion.div
           className="frosted-glass p-6 rounded-xl border border-accent-teal-500/20 space-y-4"
           whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
           transition={{ duration: 0.3 }}
@@ -416,10 +424,10 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
               </Button>
             </motion.div>
 
-            <motion.div 
-              whileHover={{ scale: 1.05 }} 
+            <motion.div
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              animate={isPlaying ? { 
+              animate={isPlaying ? {
                 boxShadow: [
                   "0 0 0 0 rgba(45, 212, 191, 0.4)",
                   "0 0 0 10px rgba(45, 212, 191, 0)",
@@ -509,7 +517,7 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
           </div>
         </div>
 
-        <motion.div 
+        <motion.div
           ref={lyricsContainerRef}
           className="frosted-glass rounded-xl border border-accent-teal-500/20 max-h-[600px] overflow-hidden"
           whileHover={{ borderColor: 'rgba(45, 212, 191, 0.4)' }}
@@ -535,8 +543,8 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
                   <div className="flex items-start gap-3 mb-2">
                     <span className={cn(
                       "text-xs font-mono mt-1 min-w-[2rem] transition-colors duration-300",
-                      activeLyricIndex === index 
-                        ? "text-accent-teal-400 font-bold" 
+                      activeLyricIndex === index
+                        ? "text-accent-teal-400 font-bold"
                         : "text-text-cream400"
                     )}>
                       {lyric.line_number.toString().padStart(2, '0')}
@@ -545,22 +553,22 @@ export function SongPlayer({ song, lyrics }: SongPlayerProps) {
                       {/* Original Text */}
                       <p className={cn(
                         "leading-relaxed transition-colors duration-300",
-                        activeLyricIndex === index 
-                          ? "text-white font-medium" 
+                        activeLyricIndex === index
+                          ? "text-white font-medium"
                           : "text-text-cream100"
                       )}>
                         {renderInteractiveText(lyric.text)}
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Translation */}
                   {lyric.translation && (
                     <div className="ml-8 pl-3 border-l-2 border-accent-teal-500/30">
                       <p className={cn(
                         "text-sm transition-colors duration-300",
-                        activeLyricIndex === index 
-                          ? "text-accent-teal-200" 
+                        activeLyricIndex === index
+                          ? "text-accent-teal-200"
                           : "text-text-cream300"
                       )}>
                         {renderInteractiveText(lyric.translation, true)}

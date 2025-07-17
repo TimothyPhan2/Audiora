@@ -58,7 +58,7 @@ export function SongDetail() {
     }
 
     fetchSongData();
-    
+
     // Cleanup function to cancel pending requests
     return () => {
       if (abortControllerRef.current) {
@@ -73,22 +73,22 @@ export function SongDetail() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     try {
       setIsTranslating(true);
-      
+
       const linesToTranslate = missingLyrics.map(lyric => lyric.text);
       const lyricIds = missingLyrics.map(lyric => lyric.id);
       const translations = await batchTranslateLyrics(
-        linesToTranslate, 
-        songData.language, 
-        lyricIds, 
+        linesToTranslate,
+        songData.language,
+        lyricIds,
         abortControllerRef.current
       );
-      
+
       // Update lyrics in database
       const updatePromises = missingLyrics.map(async (lyric, index) => {
         const translation = translations[index];
@@ -97,28 +97,28 @@ export function SongDetail() {
             .from('lyrics')
             .update({ translation })
             .eq('id', lyric.id);
-          
+
           if (error) {
             console.error('Failed to update lyric translation:', error);
           }
-          
+
           return { ...lyric, translation };
         }
         return lyric;
       });
-      
+
       const updatedLyrics = await Promise.all(updatePromises);
-      
+
       // Update local state with translations
       setLyrics((prevLyrics: Lyric[]) => {
         const updatedMap = new Map(updatedLyrics.map((lyric: Lyric) => [lyric.id, lyric]));
         return prevLyrics.map((lyric: Lyric) => updatedMap.get(lyric.id) || lyric);
       });
-      
+
       toast.success('Translations loaded successfully!');
     } catch (error) {
       console.error('Failed to fetch translations:', error);
-      
+
       if (error instanceof Error) {
         if (error.message.includes('cancelled')) {
           // Request was cancelled, don't show error
@@ -272,40 +272,40 @@ export function SongDetail() {
 
       {/* Main Content */}
       <main className="container-center py-6 sm:py-8">
-          {/* Practice CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-8"
-          >
-            <div className="frosted-glass rounded-xl border border-accent-teal-500/20 p-6">
-              <h3 className="text-xl font-semibold text-text-cream100 mb-4">Practice with this Song</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link 
-                  to={`/practice/${songId}?type=vocabulary`}
-                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
-                >
-                  <BookOpen className="w-5 h-5" />
-                  Vocabulary Drill
-                </Link>
-                <Link 
-                  to={`/practice/${songId}?type=quiz`}
-                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
-                >
-                  <Brain className="w-5 h-5" />
-                  Quick Quiz
-                </Link>
-                <Link 
-                  to={`/practice/${songId}?type=listening`}
-                  className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
-                >
-                  <Volume2 className="w-5 h-5" />
-                 Listening Exercise
-                </Link>
-              </div>
+        {/* Practice CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-8"
+        >
+          <div className="frosted-glass rounded-xl border border-accent-teal-500/20 p-6">
+            <h3 className="text-xl font-semibold text-text-cream100 mb-4">Practice with this Song</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link
+                to={`/practice/${songId}?type=vocabulary`}
+                className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+              >
+                <BookOpen className="w-5 h-5" />
+                Vocabulary Drill
+              </Link>
+              <Link
+                to={`/practice/${songId}?type=quiz`}
+                className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+              >
+                <Brain className="w-5 h-5" />
+                Quick Quiz
+              </Link>
+              <Link
+                to={`/practice/${songId}?type=listening`}
+                className="bg-accent-teal-500 hover:bg-accent-teal-400 text-base-dark2 font-semibold py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+              >
+                <Volume2 className="w-5 h-5" />
+                Listening Exercise
+              </Link>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
