@@ -148,7 +148,7 @@ Return the response in JSON format matching the quiz schema.`;
 
 // Helper function to call Gemini API
 async function callGeminiAPI(prompt: string, schema: any): Promise<any> {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
